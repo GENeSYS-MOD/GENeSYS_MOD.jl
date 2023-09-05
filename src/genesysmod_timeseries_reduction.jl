@@ -51,9 +51,6 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     switch_dunkelflaute = Switch.elmod_dunkelflaute
 
-    #set OLD_TIMESLICE /Q1M,Q1P,Q1A,Q1N,Q2M,Q2P,Q2A,Q2N,Q3M,Q3P,Q3A,Q3N,Q4M,Q4P,Q4A,Q4N/
-    #alias (ol,OLD_TIMESLICE)
-
     Country_Data_Entries=[
     "LOAD",
     "PV_AVG", "PV_INF", "PV_OPT",
@@ -138,42 +135,11 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
     negativeCDE = Dict(x => mapcols(col -> min.(col,0), CountryData[x]) for x ∈ Country_Data_Entries)
 
     # choose every %elmod_nthhour% hour starting with the %elmod_starthour%
-    #Timeslice = [x for x in Timeslice_Full if (x-Switch.elmod_starthour)%(24*Switch.elmod_daystep+Switch.elmod_hourstep) == 0]
     Timeslice = [x for x in Timeslice_Full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
 
 
     LAST_TIMESLICE = Timeslice[end]
     FIRST_TIMESLICE = Timeslice[1]
-
-#=     i = 1
-    lll=0
-    #insert the Dunkelflaute
-    while i < 24 && length(Timeslice) < 500 #what is the second condition supposed to be?
-        lll = (24 - Switch.elmod_starthour) * (24*Switch.elmod_daystep+Switch.elmod_hourstep) + Switch.elmod_starthour + i
-        
-        Dunkelflaute["PV_INF"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_INF"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE"][lll,:] .= 0.1
-
-        Dunkelflaute["PV_AVG"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_AVG"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE_SHALLOW"][lll,:] .= 0.1
-
-        Dunkelflaute["PV_OPT"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_OPT"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE_DEEP"][lll,:] .= 0.1
-
-        #Depending on the length of the total time set the length of the dunkelflaute are included
-        if 24*Switch.elmod_daystep+Switch.elmod_hourstep > 97
-            i+=8
-        elseif 24*Switch.elmod_daystep+Switch.elmod_hourstep > 49
-            i+=4
-        elseif 24*Switch.elmod_daystep+Switch.elmod_hourstep > 25
-            i+=2
-        else
-            i+=1
-        end
-    end =#
 
     i = 1
     j = 0
@@ -336,50 +302,16 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
     else
         # SCALING
         model_scaling1 = JuMP.Model()
-        #register(model_scaling1, :max, 2, max; autodiff = true)
-        #register(model_scaling1, :length, 1, length; autodiff = true)
 
         @variable(model_scaling1, scaling_objective)
         @variable(model_scaling1, scaling_exponent[Sets.Region_full,Country_Data_Entries], start=1)
         @variable(model_scaling1, scaling_multiplicator[Sets.Region_full,Country_Data_Entries])
         @variable(model_scaling1, scaling_addition[Sets.Region_full,Country_Data_Entries])
 
-
-        #@constraint(model_scaling1, def_scaling_dummy, model_scaling1[:scaling_objective] >= 0)
-
-
         @NLconstraint(model_scaling1, def_scaling_max[r = Sets.Region_full, cde = Country_Data_Entries ; AverageCapacityFactor[cde][1,r] != 0 && (SmoothedCountryDataMax[cde][1,r] - SmoothedCountryDataMin[cde][1,r]) != 0],
         CountryDataMax[cde][1,r] - CountryDataMin[cde][1,r] == model_scaling1[:scaling_multiplicator][r,cde])
         @NLconstraint(model_scaling1, def_scaling_min[r = Sets.Region_full, cde = Country_Data_Entries ; AverageCapacityFactor[cde][1,r] != 0 && (SmoothedCountryDataMax[cde][1,r] - SmoothedCountryDataMin[cde][1,r]) != 0],
         CountryDataMin[cde][1,r] == model_scaling1[:scaling_addition][r,cde])
-
-    #=  scaling1.holdfixed=1
-        scaling2.holdfixed=1 =#
-
-        #$ontext
-
-        #for r ∈ Sets.Region_full for cde ∈ Country_Data_Entries
-            #if AverageCapacityFactor[cde][1,r] != 0 
-                #JuMP.set_lower_bound(model_scaling1[:scaling_exponent][r,cde], 0)
-                #JuMP.set_lower_bound(model_scaling1[:scaling_multiplicator][r,cde], 0)
-                #JuMP.set_lower_bound(model_scaling1[:scaling_addition][r,cde], -100)
-
-                #JuMP.set_upper_bound(model_scaling1[:scaling_exponent][r,cde], 100)
-                #JuMP.set_upper_bound(model_scaling1[:scaling_multiplicator][r,cde], 100)
-                #JuMP.set_upper_bound(model_scaling1[:scaling_addition][r,cde], 100)
-    #
-                #JuMP.set_start_value(model_scaling1[:scaling_exponent][r,cde], 1)
-                #JuMP.set_start_value(model_scaling1[:scaling_multiplicator][r,cde], 1)
-                #JuMP.set_start_value(model_scaling1[:scaling_addition][r,cde], 0)
-
-                #JuMP.fix(model_scaling1[:scaling_exponent][r,cde], 1; force = true)
-            #end
-        #end end
-
-        #@objective(model_scaling1, MOI.MIN_SENSE, model_scaling1[:scaling_objective])
-
-        #set_Optimizer(model_scaling1, Switch.DNLPsolver)
-        #Optimize!(model_scaling1)
 
         N=length(Timeslice)
         @NLconstraint(model_scaling1, def_scaling_objective, model_scaling1[:scaling_objective] == 
@@ -390,50 +322,15 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
         ) + CountryDataMin[cde][1,r]) for l ∈ Timeslice if (SmoothedCountryData[cde][l,r]-SmoothedCountryDataMin[cde][1,r]) != 0) - sum(max(0,CountryDataMin[cde][1,r]) for l ∈ Timeslice if (SmoothedCountryData[cde][l,r]-SmoothedCountryDataMin[cde][1,r]) == 0)
         )^2 for r ∈ Sets.Region_full for cde ∈ Country_Data_Entries if (AverageCapacityFactor[cde][1,r] != 0 && (SmoothedCountryDataMax[cde][1,r] - SmoothedCountryDataMin[cde][1,r]) != 0)))
 
-        #delete(model_scaling1, def_scaling_dummy)
-
-    #=     for r ∈ Sets.Region_full for cde ∈ Country_Data_Entries
-            if AverageCapacityFactor[cde][1,r] != 0 && (SmoothedCountryDataMax[cde][1,r] - SmoothedCountryDataMin[cde][1,r]) != 0
-                delete(model_scaling1, def_scaling_max[r,cde])
-                delete(model_scaling1, def_scaling_min[r,cde])
-            end
-        end end =#
-
-        #delete.(model_scaling1, def_scaling_max)
-        #delete.(model_scaling1, def_scaling_min)
-
-        #if JuMP.termination_status(model_scaling1) != MOI.OPTIMAL
-        #    error("Solver status is wrong")
-        #end
-
-        #abort$(scaling1.solvestat <> %solvestat.NormalCompletion%)  "Solvestat is wrong"
-        #abort$(scaling1.modelstat <> 1 and scaling1.modelstat <> 2 and scaling1.modelstat <> 8)  "Modelstat is wrong"
 
         for r ∈ Sets.Region_full for cde ∈ Country_Data_Entries
-            #if AverageCapacityFactor[cde][1,r] != 0
-            #    JuMP.unfix(model_scaling1[:scaling_exponent][r,cde])
-            #end
             JuMP.set_lower_bound(model_scaling1[:scaling_exponent][r,cde], 0)
             JuMP.set_upper_bound(model_scaling1[:scaling_exponent][r,cde], 10)
         end end
 
-        #=  for r ∈ Sets.Region_full for cde ∈ Country_Data_Entries
-            if AverageCapacityFactor[cde][1,r] != 0
-                JuMP.fix(model_scaling1[:scaling_multiplicator][r,cde], JuMP.start_value(model_scaling1[:scaling_multiplicator][r,cde]); force = true)
-                JuMP.fix(model_scaling1[:scaling_addition][r,cde], JuMP.start_value(model_scaling1[:scaling_addition][r,cde]); force = true)
-            end
-        end end =#
-
         @objective(model_scaling1, MOI.MIN_SENSE, model_scaling1[:scaling_objective])
         set_optimizer(model_scaling1, Switch.DNLPsolver)
         optimize!(model_scaling1)
-    
-
-        #if JuMP.termination_status(model_scaling1) != MOI.OPTIMAL
-        #    error("Solver status is wrong")
-        #end
-        #abort$(scaling2.solvestat <> %solvestat.NormalCompletion%)  "Solvestat is wrong"
-        #abort$(scaling2.modelstat <> 1 and scaling2.modelstat <> 2 and scaling2.modelstat <> 8)  "Modelstat is wrong"
 
         for cde ∈ Country_Data_Entries for r ∈ Sets.Region_full
             if SmoothedCountryDataMax[cde][1,r] - SmoothedCountryDataMin[cde][1,r] != 0

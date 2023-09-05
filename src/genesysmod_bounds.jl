@@ -24,7 +24,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     # ####### Default Values #############
     #
 
-    sub=["Power", "Heat_Low_Residential", "Heat_Low_Industrial", "Heat_Medium_Industrial", "Heat_High_Industrial"]
+    sub=["Power", "Heat_Low_Residential", "Heat_Low_Industrial", "Heat_Medium_Industrial",
+     "Heat_High_Industrial"]
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for t ∈ intersect(Sets.Technology,Subsets.Renewables)
@@ -76,17 +77,9 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
                         Params.VariableCost[r,t,m,y] = 0.01
     end end end end end 
 
-    ### Same thing, only for resource limits
-
-    ### Error handling, in case residual capacity > maximum capacity
-    # TO DO check if this one is needed even if this line is repeated later
-    #Params.TotalAnnualMaxCapacity[[data(Params.TotalAnnualMaxCapacity,:Region,r,:Technology,t,:Year,y,Switch.data_base_region) < data(Params.ResidualCapacity,:Region,r,:Technology,t,:Year,y,Switch.data_base_region) for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year]]
-    #TotalAnnualMaxCapacity(r,t,y)$(ResidualCapacity(r,t,y) > TotalAnnualMaxCapacity(r,t,y)) = ResidualCapacity(r,t,y); 
-
     #
     # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
     #
-     # TO DO
 
     if Switch.switch_infeasibility_tech == 1
         Params.TagTechnologyToSector[Subsets.DummyTechnology,"Infeasibility"] .= 1
@@ -117,7 +110,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
     for r ∈ Sets.Region_full
         for t ∈ Sets.Technology
-            if t ∈ vcat(Subsets.Transformation,Subsets.FossilPower,Subsets.FossilFuelGeneration,Subsets.CHPs,Subsets.Transport,Subsets.ImportTechnology,Subsets.Biomass,"P_Biomass")
+            if t ∈ vcat(Subsets.Transformation,Subsets.FossilPower,Subsets.FossilFuelGeneration,
+                Subsets.CHPs,Subsets.Transport,Subsets.ImportTechnology,Subsets.Biomass,"P_Biomass")
                 for y ∈ Sets.Year
                     Params.TotalAnnualMaxCapacity[r,t,y] = 999999
                 end
@@ -184,7 +178,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
             for t ∈ vcat(Subsets.Transformation,Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
                 JuMP.fix(model[:NewCapacity][Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Subsets.Biomass,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF","HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF"])
+            for t ∈ vcat(Subsets.Biomass,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF"])
                 if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
                     JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
                 end
@@ -205,15 +200,12 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
     ### ReserveMargin initialization 
 
-    for r ∈ Sets.Region_full
-        for t ∈ Sets.Technology
-            for y ∈ Sets.Year
-                if (max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y]) >0 ) && (max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y]) < 999999)
-                    Params.TotalAnnualMaxCapacity[r,t,y] = max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y])
-                end
+    for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year
+        if ((max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y]) >0 )
+            && (max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y]) < 999999))
+            Params.TotalAnnualMaxCapacity[r,t,y] = max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y])
+        end
     end end end
-    #ToSmallResidualCapacity(r,t,y)$(ResidualCapacity(r,t,y) > TotalAnnualMaxCapacity(r,t,y)) = ResidualCapacity(r,t,y);
-    #TotalAnnualMaxCapacity(r,t,y)$(ResidualCapacity(r,t,y) > TotalAnnualMaxCapacity(r,t,y)) = ResidualCapacity(r,t,y);
 
     ### Adds (negligible) variable costs to transport technologies, since they only had fuel costs before
     ### This is to combat strange "curtailment" effects of some transportation technologies
@@ -338,28 +330,15 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
             end
         end end
     end
-    #$offtext
 
     #marginal costs for better numerical stability
-
     for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year
         if Params.CapitalCost[r,t,y] == 0
             Params.CapitalCost[r,t,y] = 0.01
         end
     end end end
 
-    #TO DO check if those two are necessary? does not appear to be used?
-    #TrajectoryLowerLimit('2020') = 0.5;
-    #TrajectoryUpperLimit('2020') = 2;
 
-
-    #scalar hour_steps /%elmod_hour_steps%/;
-    #scalar start_hour /%elmod_starthour%/;
-
-    #StorageLevelTSStart.fx('S_Battery_Li-Ion',y,l,r)$(mod((ord(l)+(start_hour/hour_steps)),(24/hour_steps)) = 0) = 0;
-    #StorageLevelTSStart.fx('S_Battery_Redox',y,l,r)$(mod((ord(l)+(start_hour/hour_steps)),(24/hour_steps)) = 0) = 0;
-    #StorageLevelTSStart.fx('S_Heat_HLR',y,l,r)$(mod((ord(l)+(start_hour/hour_steps)),(24/hour_steps)) = 0) = 0;
-    #StorageLevelTSStart.fx('S_Heat_HLI',y,l,r)$(mod((ord(l)+(start_hour/hour_steps)),(24/hour_steps)) = 0) = 0;
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
         if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
             JuMP.fix(model[:StorageLevelTSStart]["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)

@@ -51,18 +51,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     for y ∈ Sets.Year for l ∈ Sets.Timeslice
         tmp[y,l,:,:,:,:] = tmp[y,l,:,:,:,:] * Params.YearSplit[l,y]
     end end
-#=     for se ∈ setdiff(Sets.Sector,"Transportation")
-        for t ∈ [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,se] >0]
-            df_tmp = convert_jump_container_to_df(tmp[:,:,t,:,:,:];dim_names=[:Year, :Timeslice, :Technology, :Mode_of_operation, :Fuel, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "Production"
-            df_tmp[!,:Unit] .= "PJ"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_energy_balance, df_tmp)
-            append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum))
-        end
-    end =#
+
     for se ∈ setdiff(Sets.Sector,"Transportation")
         tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,se] >0]
         if tmp_techs != []
@@ -157,8 +146,6 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     append!(output_energy_balance, df_tmp)
     append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
 
-    #$include genesysmod_baseyear_2020.gms
-
     ### parameter CapacityUsedByTechnologyEachTS, PeakCapacityByTechnology
     CapacityUsedByTechnologyEachTS = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Timeslice),length(Sets.Technology),length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Region_full)
     PeakCapacityByTechnology = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
@@ -238,9 +225,6 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     output_model = DataFrame([name => [] for name in colnames])
     push!(output_model, [name => val for (name,val) in zip(colnames,["Objective Value","$(Switch.emissionPathway)_$(Switch.emissionScenario)","$(Switch.emissionPathway)","$(Switch.emissionScenario)", JuMP.objective_value(model)])])
     push!(output_model, [name => val for (name,val) in zip(colnames,["Elapsed Time","$(Switch.emissionPathway)_$(Switch.emissionScenario)","$(Switch.emissionPathway)","$(Switch.emissionScenario)", elapsed])])
-
-    #output_model("Heapsize Before Solve","%emissionPathway%_%emissionScenario%","%emissionPathway%","%emissionScenario%") = heapSizeBeforSolve
-    #output_model("Heapsize After Solve","%emissionPathway%_%emissionScenario%","%emissionPathway%","%emissionScenario%") = heapSizeAfterSolve
 
     ### parameter z_maxgenerationperyear(r_full,t,y_full)
     z_maxgenerationperyear = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
@@ -558,14 +542,6 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
         "Industry",
         "Buildings",
         "CHP"]
-
-    #=         TagFinalDemandSector(se)
-    TagFinalDemandSector("Power")=1
-    TagFinalDemandSector("Transportation")=1
-    TagFinalDemandSector("Industry")=1
-    TagFinalDemandSector("Buildings")=1
-    TagFinalDemandSector("CHP")=1 =#
-
 
     colnames = [:Type, :Region, :Dim1, :Dim2, :Year, :Value]
     output_other = DataFrame([name => [] for name in colnames])
@@ -913,7 +889,5 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     CSV.write(joinpath(Switch.resultdir,"output_exogenous_costs_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_exogenous_costs[output_exogenous_costs.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir,"output_trade_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade_capacity[output_trade_capacity.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir,"output_energydemandstatistics_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energydemandstatistics[output_energydemandstatistics.Value .!= 0, :])
-    #CSV.write(joinpath(Switch.resultdir,"output_fuelcosts_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario).csv"), output_fuelcosts)
-    #CSV.write(joinpath(Switch.resultdir,"output_emissionintensity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario).csv"), output_emissionintensity)
     print("end of results : ",Dates.now()-start,"\n")
 end

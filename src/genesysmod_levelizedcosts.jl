@@ -63,10 +63,6 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
 
 
     Time=range(0,110)
-    #= alias (Time,o)
-    alias (FUEL,fff)
-    alias (t,tt)
-    alias (m,mm) =#
 
     #parameters
     levelizedcostsPJ = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Fuel),length(Sets.Mode_of_operation),length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Fuel, Sets.Mode_of_operation, Sets.Year)
@@ -90,24 +86,6 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
     RegionalEmissionContentPerFuel = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full),length(Sets.Fuel),length(Sets.Emission)), Sets.Year, Sets.Region_full, Sets.Fuel, Sets.Emission)
     #AnnualSectorEmissions
     #TechnologyEmissionsByMode
-
-    #= if %switch_only_write_results% == 1
-        $gdxin  test.gdx
-        $load AnnualProduction = ProductionAnnual.l
-        $load AnnualTechnologyProduction = ProductionByTechnologyAnnual.l
-        $load AnnualTechnologyProductionByMode = z_ProductionByTechnologyByModeAnnual
-        $load TechnologyEmissions = AnnualTechnologyEmission.l
-        #$load AnnualSectorEmissions = AnnualSectoralEmissions.l
-        $load TechnologyEmissionsByMode = AnnualTechnologyEmissionByMode.l
-        $gdxin
-    else
-        AnnualProduction[y,f,r] = ProductionAnnual(y,f,r)
-        AnnualTechnologyProduction(y,t,f,r) = ProductionByTechnologyAnnual.l(y,t,f,r) 
-        AnnualTechnologyProductionByMode(r,t,m,f,y) = sum(l,RateOfProductionByTechnologyByMode(y,l,t,m,f,r)*Params.YearSplit[l,y])
-        TechnologyEmissions(y,t,e,r) = AnnualTechnologyEmission.l(y,t,e,r)                         
-        AnnualSectorEmissions(r,e,se,y)  = AnnualSectoralEmissions.l(y,e,se,r)                         
-        TechnologyEmissionsByMode(y,t,e,m,r)   = AnnualTechnologyEmissionByMode.l(y,t,e,m,r)               
-    end =#
 
     AnnualProduction = VarPar.ProductionAnnual
     AnnualTechnologyProduction = value.(model[:ProductionByTechnologyAnnual])
@@ -140,13 +118,6 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         end
         RegionalEmissionContentPerFuel[y,r,"Power",e] = EmissionIntensity[y,r,"Power",e]
     end end end
-    #EmissionActivityRatio(r,t,e,m,y)$(EmissionActivityRatio(r,t,e,m,y) = 0) = 1
-
-    #if %switch_only_write_results% == 1
-    #else
-    #Params.VariableCost[r,t,m,y] = Params.VariableCost[r,t,m,y] / 5
-    #Params.FixedCost[r,t,y] = Params.FixedCost[r,t,y]/5
-    #end
 
     ####
     #### Tier 0: Preliminary Calculations (Generation Factors, O&M Costs, Capital Costs, Resource Commodity Prices)
@@ -300,10 +271,6 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
             resourcecosts[r,"Biofuel",y] = levelizedcostsPJ[r,"X_Biofuel","Biofuel",1,y]
         end
         resourcecosts[r,"Gas_Synth",y] = levelizedcostsPJ[r,"X_Methanation","Gas_Synth",1,y]
-        #resourcecosts[r,f,y]$(resourcecosts[r,f,y] = 0) = smax(yy,resourcecosts(r,f,yy))
-        #resourcecosts[r,f,y]$(resourcecosts[r,f,y] = 0 and AnnualProduction[y,f,r] = 0) = sum((t,m),(levelizedcostsPJ[r,t,f,m,y]))/sum((t,m)$(Params.OutputActivityRatio[r,t,f,m,y] <> 0),1)
-        #resourcecosts[r,f,y]$(resourcecosts[r,f,y] = 0) = smax(rr,resourcecosts(rr,f,y))
-        #resourcecosts[r,f,y]$(resourcecosts[r,f,y] = 0) = resourcecosts(r,f,y+1)
     end end
 
     #$ontext

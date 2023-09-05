@@ -23,7 +23,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018, switch_only
         timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023", threads=4, emissionPathway="MinimalExample",
         emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\", tempdir="TempFiles\\" ,resultdir="Results\\",
         switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,switch_intertemporal=0,
-        switch_short_term_storage=1, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
+        switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
         set_peaking_res_cf=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
         switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "", hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", 
         elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0)
@@ -61,7 +61,6 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018, switch_only
     switch_ramping,
     switch_weighted_emissions,
     switch_intertemporal,
-    switch_short_term_storage,
     switch_base_year_bounds,
     switch_peaking_capacity,
     set_peaking_slack,

@@ -26,7 +26,7 @@ function genesysmod_dataload(Switch)
     Year_full = 2015:2100
 
     inputdir = Switch.inputdir
-    data_base_region = Switch.data_base_region
+    dbr = Switch.data_base_region
 
     in_data=XLSX.readxlsx(joinpath(inputdir, Switch.data_file * ".xlsx"))
 
@@ -34,7 +34,6 @@ function genesysmod_dataload(Switch)
     Technology = DataFrame(XLSX.gettable(in_data["Sets"],"B";first_row=1))[!,"Technology"]
     Fuel = DataFrame(XLSX.gettable(in_data["Sets"],"C";first_row=1))[!,"Fuel"]
     Year = DataFrame(XLSX.gettable(in_data["Sets"],"D";first_row=1))[!,"Year"]
-    #Timeslice = DataFrame(XLSX.gettable(in_data["Sets"],"E";first_row=1))[!,"Timeslice"]
     Mode_of_operation = DataFrame(XLSX.gettable(in_data["Sets"],"F";first_row=1))[!,"Mode_of_operation"]
     Region_full = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"Region"]
     Season = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Season"]
@@ -44,123 +43,114 @@ function genesysmod_dataload(Switch)
     ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"L";first_row=1))[!,"ModalType"]
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"N";first_row=1))[!,"Sectors"]
     if Switch.switch_infeasibility_tech == 1
-        append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI", "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
+        append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
         push!(Sector,"Infeasibility")
     end
     
-
-    #timeserie_data=XLSX.readxlsx(joinpath(inputdir, Switch.timeseries_data_file * ".xlsx"))
-    #Timeslice=DataFrame(XLSX.gettable(timeserie_data["Set_TimeSlice"],"A";header=false)...)[!,:A]
-    #Timeslice_Full = 1:8760
     Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
 
 
-    Sets=GENeSYS_MOD.Sets(Timeslice_full,DailyTimeBracket,Year_full,Emission,Technology,Fuel,Year,Timeslice,Mode_of_operation,Region_full,Season,Daytype,Storage,ModalType,Sector)
+    Sets=GENeSYS_MOD.Sets(Timeslice_full,DailyTimeBracket,Year_full,Emission,Technology,Fuel,
+        Year,Timeslice,Mode_of_operation,Region_full,Season,Daytype,Storage,ModalType,Sector)
 
     Subsets = make_subsets(Sets)
     
     
     # Step 2: Read parameters from regional file  -> now includes World values
-    
-    #SpecifiedDemandProfile = GENeSYS_MOD.SpecifiedDemandProfile(DataFrame(XLSX.gettable(timeserie_data["Par_SpecifiedDemandProfile"];first_row=1)...))
-    #SpecifiedDemandProfile = specified_demand_profile(timeserie_data,Sets,"DE")
-
     StartYear = Switch.StartYear
 
-    #YearSplit = year_split(timeserie_data,Sets,"DE")
-    #CapacityFactor = capacity_factor(timeserie_data,Sets,"DE")
-
-    SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand", data_base_region, Sets.Region_full, Sets.Fuel, Sets.Year)
-    #        par=SpecifiedDemandProfile   Rng=Par_SpecifiedDemandProfile!A5                  rdim=3  cdim=1
-    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel", data_base_region, Sets.Region_full, Sets.Fuel, Sets.Year; copy_world=true)
-    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty", data_base_region, Sets.Region_full, Sets.Emission, Sets.Year)
-    EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech", data_base_region, Sets.Region_full, Sets.Technology, Sets.Emission, Sets.Year; inherit_base_world=true)
-    ReserveMargin = create_daa(in_data,"Par_ReserveMargin", data_base_region, Sets.Region_full, Sets.Year; copy_world=true)
-    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", data_base_region, Sets.Region_full, Sets.Emission, Sets.Year)
-    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", data_base_region, Sets.Region_full, Sets.Emission, Sets.Year)
-    AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit", data_base_region, Sets.Emission, Sets.Year)
-    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute", data_base_region, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    TradeCosts = create_daa(in_data,"Par_TradeCosts", data_base_region, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    #Readin_PowerTradeCapacity = DataFrame(XLSX.gettable(in_data["Par_TradeCapacity"];first_row=5)...) #TODO check intended behaviour with Konstantin: only give value for power, not for natural gas?
-    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity", data_base_region, Sets.Fuel, Sets.Region_full, Sets.Year, Sets.Region_full)
-#=     TradeCapacity = create_daa(in_data, "Par_TradeCapacity", data_base_region, Sets.Fuel, Sets.Region_full, Sets.Year, Sets.Region_full)
-    TradeCapacity[filter(x->x!="Power",Sets.Fuel),:,:,:] = JuMP.Containers.DenseAxisArray(
-        zeros(length(Sets.Fuel)-1, length(Sets.Region_full), length(Sets.Year),length(Sets.Region_full)), 
-        filter(x->x!="Power",Sets.Fuel), Sets.Region_full, Sets.Year, Sets.Region_full) =#
+    𝓡 = Sets.Region_full
+    𝓕 = Sets.Fuel
+    𝓨 = Sets.Year
+    𝓣 = Sets.Technology
+    𝓔 = Sets.Emission
+    𝓜 = Sets.Mode_of_operation
+    𝓛 = Sets.Timeslice
+    𝓢 = Sets.Storage
+    𝓜𝓽 = Sets.ModalType
+    𝓢𝓮 = Sets.Sector
 
 
-    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts", data_base_region, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit", data_base_region, Sets.Region_full, Sets.Technology)
-    InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio", data_base_region, Sets.Region_full, Sets.Technology, Sets.Fuel, Sets.Mode_of_operation, Sets.Year; inherit_base_world=true)
-    OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio", data_base_region, Sets.Region_full, Sets.Technology, Sets.Fuel, Sets.Mode_of_operation, Sets.Year; inherit_base_world=true)
-    FixedCost = create_daa(in_data, "Par_FixedCost", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year; inherit_base_world=true)
-    CapitalCost = create_daa(in_data, "Par_CapitalCost", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year; inherit_base_world=true)
-    VariableCost = create_daa(in_data, "Par_VariableCost", data_base_region, Sets.Region_full, Sets.Technology, Sets.Mode_of_operation, Sets.Year; inherit_base_world=true)
-    ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year)
-    AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year; inherit_base_world=true)
-    #CapacityFactor = create_daa(in_data, "Par_CapacityFactor", data_base_region, Sets.Region_full, Sets.Technology, Sets.Timeslice, Sets.Year)
-    EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio", data_base_region, Sets.Region_full, Sets.Technology, Sets.Emission, Sets.Mode_of_operation, Sets.Year; inherit_base_world=true)
-    EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel", data_base_region, Sets.Fuel, Sets.Emission)
-    OperationalLife = create_daa(in_data, "Par_OperationalLife", data_base_region, Sets.Region_full, Sets.Technology;inherit_base_world=true)
-    TotalAnnualMaxCapacity = create_daa(in_data, "Par_TotalAnnualMaxCapacity", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year)
-    TotalAnnualMinCapacity = create_daa(in_data, "Par_TotalAnnualMinCapacity", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year)
-    TotalTechnologyModelPeriodActivityUpperLimit = create_daa_init(in_data, "Par_ModelPeriodActivityMaxLimit", data_base_region, 999999, Sets.Region_full, Sets.Technology)
+    SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand",dbr, 𝓡, 𝓕, 𝓨)
+    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel",dbr, 𝓡, 𝓕, 𝓨; copy_world=true)
+    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty",dbr, 𝓡, 𝓔, 𝓨)
+    EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech",dbr, 𝓡, 𝓣, 𝓔, 𝓨; inherit_base_world=true)
+    ReserveMargin = create_daa(in_data,"Par_ReserveMargin",dbr, 𝓡, 𝓨; copy_world=true)
+    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission",dbr, 𝓡, 𝓔, 𝓨)
+    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit",dbr, 𝓡, 𝓔, 𝓨)
+    AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit",dbr, 𝓔, 𝓨)
+    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓕, 𝓡, 𝓡)
+    TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
+    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓕, 𝓡, 𝓨, 𝓡)
 
-    
-    TotalTechnologyAnnualActivityUpperLimit = create_daa(in_data, "Par_TotalAnnualMaxActivity", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year)
-    TotalTechnologyAnnualActivityLowerLimit = create_daa(in_data, "Par_TotalAnnualMinActivity", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year)
-    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology", data_base_region, Sets.Region_full, Sets.Technology, Sets.Year;copy_world=true)
-    RegionalCCSLimit = create_daa(in_data, "Par_RegionalCCSLimit", data_base_region, Sets.Region_full)
-    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage", data_base_region, Sets.Year, Sets.Mode_of_operation, Subsets.StorageDummies, Sets.Storage)
-    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage", data_base_region, Sets.Year, Sets.Mode_of_operation, Subsets.StorageDummies, Sets.Storage)
-    StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart", data_base_region, Sets.Region_full, Sets.Storage)
-    StorageMaxChargeRate = create_daa(in_data, "Par_StorageMaxChargeRate", data_base_region, Sets.Region_full, Sets.Storage; inherit_base_world=true) #TODO check if shoud be copy world, only values for DE
-    StorageMaxDischargeRate = create_daa(in_data, "Par_StorageMaxDischargeRate", data_base_region, Sets.Region_full, Sets.Storage; inherit_base_world=true)
-    MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge", data_base_region, Sets.Region_full, Sets.Storage, Sets.Year; copy_world=true)
-    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage", data_base_region, Sets.Region_full, Sets.Storage, Sets.Year;inherit_base_world=true)
-    CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage", data_base_region, 0.01, Sets.Region_full, Sets.Storage, Sets.Year;inherit_base_world=true)
-    ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity", data_base_region, Sets.Region_full, Sets.Storage, Sets.Year)
-    ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel", data_base_region, Sets.Region_full, Sets.Fuel, Sets.Year, Sets.ModalType)
-    TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType", data_base_region, Sets.Technology, Sets.Mode_of_operation, Sets.ModalType)
-    BaseYearProduction = create_daa(in_data, "Par_BaseYearProduction", data_base_region, Sets.Technology, Sets.Fuel)
-    RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction", data_base_region, Sets.Region_full, Sets.Technology, Sets.Fuel, Sets.Year)
-    TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector", data_base_region, Sets.Technology, Sets.Sector)
-    TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector", data_base_region, Sets.Fuel, Sets.Sector)
-    AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit", data_base_region, Sets.Emission, Sets.Sector, Sets.Year)
+    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓨, 𝓕, 𝓡, 𝓡)
+    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓕, 𝓡, 𝓡)
+    CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit",dbr, 𝓡, 𝓣)
+    InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
+    OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
+    FixedCost = create_daa(in_data, "Par_FixedCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
+    CapitalCost = create_daa(in_data, "Par_CapitalCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
+    VariableCost = create_daa(in_data, "Par_VariableCost",dbr, 𝓡, 𝓣, 𝓜, 𝓨; inherit_base_world=true)
+    ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡, 𝓣, 𝓨)
+    AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
+    #CapacityFactor = create_daa(in_data, "Par_CapacityFactor",dbr, 𝓡, 𝓣, 𝓛, 𝓨)
+    EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio",dbr, 𝓡, 𝓣, 𝓔, 𝓜, 𝓨; inherit_base_world=true)
+    EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel",dbr, 𝓕, 𝓔)
+    OperationalLife = create_daa(in_data, "Par_OperationalLife",dbr, 𝓡, 𝓣;inherit_base_world=true)
+    TotalAnnualMaxCapacity = create_daa(in_data, "Par_TotalAnnualMaxCapacity",dbr, 𝓡, 𝓣, 𝓨)
+    TotalAnnualMinCapacity = create_daa(in_data, "Par_TotalAnnualMinCapacity",dbr, 𝓡, 𝓣, 𝓨)
+    TotalTechnologyModelPeriodActivityUpperLimit = create_daa_init(in_data, "Par_ModelPeriodActivityMaxLimit",dbr, 999999, 𝓡, 𝓣)
 
-    RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Fuel, Sets.Region_full)
-    Demand = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Fuel, Sets.Region_full)
-    CapacityOfOneTechnologyUnit = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Technology), length(Sets.Region_full)), Sets.Year, Sets.Technology, Sets.Region_full)
-    TagDispatchableTechnology = JuMP.Containers.DenseAxisArray(ones(length(Sets.Technology)), Sets.Technology)
-    StorageMaxCapacity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Storage), length(Sets.Year)), Sets.Region_full, Sets.Storage, Sets.Year)
-    TotalAnnualMaxCapacityInvestment = JuMP.Containers.DenseAxisArray(fill(999999, length(Sets.Region_full), length(Sets.Technology), length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
-    TotalAnnualMinCapacityInvestment = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Technology), length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
-    TotalTechnologyModelPeriodActivityLowerLimit = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Technology)), Sets.Region_full, Sets.Technology)
+    TotalTechnologyAnnualActivityUpperLimit = create_daa(in_data, "Par_TotalAnnualMaxActivity",dbr, 𝓡, 𝓣, 𝓨)
+    TotalTechnologyAnnualActivityLowerLimit = create_daa(in_data, "Par_TotalAnnualMinActivity",dbr, 𝓡, 𝓣, 𝓨)
+    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology",dbr, 𝓡, 𝓣, 𝓨;copy_world=true)
+    RegionalCCSLimit = create_daa(in_data, "Par_RegionalCCSLimit",dbr, 𝓡)
+    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
+    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
+    StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
+    StorageMaxChargeRate = create_daa(in_data, "Par_StorageMaxChargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true) #TODO check if shoud be copy world, only values for DE
+    StorageMaxDischargeRate = create_daa(in_data, "Par_StorageMaxDischargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true)
+    MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
+    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
+    CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage",dbr, 0.01, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
+    ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
+    ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
+    TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
+    BaseYearProduction = create_daa(in_data, "Par_BaseYearProduction",dbr, 𝓣, 𝓕)
+    RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction",dbr, 𝓡, 𝓣, 𝓕, 𝓨)
+    TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
+    TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
+    AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit",dbr, 𝓔, 𝓢𝓮, 𝓨)
 
-    RETagTechnology = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Technology), length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
-    RETagFuel = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Fuel), length(Sets.Year)), Sets.Region_full, Sets.Fuel, Sets.Year)
-    REMinProductionTarget = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Fuel), length(Sets.Year)), Sets.Region_full, Sets.Fuel, Sets.Year)
+    RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
+    Demand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
+    CapacityOfOneTechnologyUnit = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓣), length(𝓡)), 𝓨, 𝓣, 𝓡)
+    TagDispatchableTechnology = JuMP.Containers.DenseAxisArray(ones(length(𝓣)), 𝓣)
+    StorageMaxCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓢), length(𝓨)), 𝓡, 𝓢, 𝓨)
+    TotalAnnualMaxCapacityInvestment = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
+    TotalAnnualMinCapacityInvestment = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
+    TotalTechnologyModelPeriodActivityLowerLimit = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓣)), 𝓡, 𝓣)
 
-    ModelPeriodExogenousEmission = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Emission)), Sets.Region_full, Sets.Emission)
-    ModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(Sets.Emission)), Sets.Emission)
-    RegionalModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(Sets.Emission), length(Sets.Region_full)), Sets.Emission, Sets.Region_full)
+    RETagTechnology = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
+    RETagFuel = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
+    REMinProductionTarget = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
 
-    CurtailmentCostFactor = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Fuel), length(Sets.Year)), Sets.Region_full, Sets.Fuel, Sets.Year)
-    TradeRoute = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full , Sets.Region_full)
-    TradeLossFactor = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel)), Sets.Year, Sets.Fuel)
-    TradeRouteInstalledCapacity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full , Sets.Region_full)
-    TradeLossBetweenRegions = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full , Sets.Region_full)
-    TradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full , Sets.Region_full)
+    ModelPeriodExogenousEmission = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓔)), 𝓡, 𝓔)
+    ModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓔)), 𝓔)
+    RegionalModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓔), length(𝓡)), 𝓔, 𝓡)
 
-    AdditionalTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full , Sets.Region_full)
+    CurtailmentCostFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
+    TradeRoute = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    TradeLossFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕)), 𝓨, 𝓕)
+    TradeRouteInstalledCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    TradeLossBetweenRegions = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    TradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
 
-    SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Fuel , Sets.Region_full)
-    TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology", data_base_region, Sets.Technology)
-    #Conversionls = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Timeslice), length(Sets.Season)), Sets.Timeslice, Sets.Season)
-    #Conversionld = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Timeslice), length(Sets.Daytype)), Sets.Timeslice, Sets.Daytype)
-    #Conversionlh = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Timeslice), length(Sets.DailyTimeBracket)), Sets.Timeslice, Sets.DailyTimeBracket)
-    #DaySplit = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice)), Sets.Year, Sets.Timeslice)
+    AdditionalTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+
+    SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
+    TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
 
     #
     # ####### Including Subsets #############
@@ -174,10 +164,10 @@ function genesysmod_dataload(Switch)
     # ####### Assigning TradeRoutes depending on initialized Regions and Year #############
     #
 
-    for y ∈ Sets.Year
+    for y ∈ 𝓨
         TradeLossFactor[y,"Power"] = 0.00003
-        for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-            for f ∈ Sets.Fuel
+        for r ∈ 𝓡 for rr ∈ 𝓡
+            for f ∈ 𝓕
                 TradeRoute[y,f,r,rr] = Readin_TradeRoute2015[f,r,rr]
                 TradeLossBetweenRegions[y,f,r,rr] = TradeLossFactor[y,f]*TradeRoute[y,f,r,rr]
             end
@@ -185,25 +175,18 @@ function genesysmod_dataload(Switch)
         end end
     end
 
-    for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for y ∈ Sets.Year[2:end]
-        GrowthRateTradeCapacity[y,"Power",r,rr] = GrowthRateTradeCapacity[Sets.Year[1],"Power",r,rr]
+    for r ∈ 𝓡 for rr ∈ 𝓡 for y ∈ 𝓨[2:end]
+        GrowthRateTradeCapacity[y,"Power",r,rr] = GrowthRateTradeCapacity[𝓨[1],"Power",r,rr]
     end end end
 
 
     #
-    # ######### Missing in Excel, Overwriten later in scenario data #############
-    #
-
-  
-
-    #
     # ######### YearValue assignment #############
     #
-    #YearVal(y) = y.val ; # probably not necessary for Julia
 
     if Switch.switch_ramping == 1
-        RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor", data_base_region, Sets.Technology,Sets.Year)
-        RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor", data_base_region,Sets.Technology,Sets.Year)
+        RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor",dbr, 𝓣,𝓨)
+        RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor",dbr,𝓣,𝓨)
     else
         RampingUpFactor = nothing
         RampingDownFactor = nothing
@@ -222,16 +205,17 @@ function genesysmod_dataload(Switch)
         Emp_Sets=GENeSYS_MOD.Emp_Sets(Technology,Year,Region)
 
 
-        EFactorConstruction = create_daa(employment_data, "Par_EFactorConstruction", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
-        EFactorOM = create_daa(employment_data, "Par_EFactorOM", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
-        EFactorManufacturing = create_daa(employment_data, "Par_EFactorManufacturing", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
-        EFactorFuelSupply = create_daa(employment_data, "Par_EFactorFuelSupply", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
-        EFactorCoalJobs = create_daa(employment_data, "Par_EFactorCoalJobs", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
-        CoalSupply = create_daa(employment_data, "Par_CoalSupply", data_base_region, Sets.Region_full, Emp_Sets.Year)
-        CoalDigging = create_daa(employment_data, "Par_CoalDigging", data_base_region, Switch.model_region, Emp_Sets.Technology, "$(Switch.emissionPathway)_$(Switch.emissionScenario)", Sets.Year)
-        RegionalAdjustmentFactor = create_daa(employment_data, "PAR_RegionalAdjustmentFactor", data_base_region, Switch.model_region, Emp_Sets.Year)
-        LocalManufacturingFactor = create_daa(employment_data, "PAR_LocalManufacturingFactor", data_base_region, Switch.model_region, Emp_Sets.Year)
-        DeclineRate = create_daa(employment_data, "PAR_DeclineRate", data_base_region, Emp_Sets.Technology, Emp_Sets.Year)
+        EFactorConstruction = create_daa(employment_data, "Par_EFactorConstruction",dbr, Emp_Sets.Technology, Emp_Sets.Year)
+        EFactorOM = create_daa(employment_data, "Par_EFactorOM",dbr, Emp_Sets.Technology, Emp_Sets.Year)
+        EFactorManufacturing = create_daa(employment_data, "Par_EFactorManufacturing",dbr, Emp_Sets.Technology, Emp_Sets.Year)
+        EFactorFuelSupply = create_daa(employment_data, "Par_EFactorFuelSupply",dbr, Emp_Sets.Technology, Emp_Sets.Year)
+        EFactorCoalJobs = create_daa(employment_data, "Par_EFactorCoalJobs",dbr, Emp_Sets.Technology, Emp_Sets.Year)
+        CoalSupply = create_daa(employment_data, "Par_CoalSupply",dbr, 𝓡, Emp_Sets.Year)
+        CoalDigging = create_daa(employment_data, "Par_CoalDigging",dbr, Switch.model_region,
+            Emp_Sets.Technology, "$(Switch.emissionPathway)_$(Switch.emissionScenario)", 𝓨)
+        RegionalAdjustmentFactor = create_daa(employment_data, "PAR_RegionalAdjustmentFactor",dbr, Switch.model_region, Emp_Sets.Year)
+        LocalManufacturingFactor = create_daa(employment_data, "PAR_LocalManufacturingFactor",dbr, Switch.model_region, Emp_Sets.Year)
+        DeclineRate = create_daa(employment_data, "PAR_DeclineRate",dbr, Emp_Sets.Technology, Emp_Sets.Year)
 
     else
         EFactorConstruction = nothing
@@ -248,37 +232,45 @@ function genesysmod_dataload(Switch)
         Emp_Sets=GENeSYS_MOD.Emp_Sets(nothing,nothing,nothing)
     end
 
-#=     if Switch.switch_peaking_capacity == 1
-        x_peakingDemand = read_x_peakingDemand(timeserie_data, Sets, "DE")
-    else
-        x_peakingDemand = nothing
-    end =#
-
     #
     # ####### Load from hourly Data #############
     #
     
-    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, DaySplit, Conversionls, Conversionld, Conversionlh = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
+    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, DaySplit,
+    Conversionls, Conversionld, Conversionlh = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
-    #$elseif %timeseries% == classic
-    #$offlisting
-    #$include genesysmod_timeseries_timeslices.gms
+    for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
+        Params.RateOfDemand[y,l,f,r] = Params.SpecifiedAnnualDemand[r,f,y]*Params.SpecifiedDemandProfile[r,f,l,y] / Params.YearSplit[l,y]
+        Params.Demand[y,l,f,r] = Params.RateOfDemand[y,l,f,r] * Params.YearSplit[l,y]
+        if Params.Demand[y,l,f,r] < 0.000001
+          Params.Demand[y,l,f,r] = 0
+        end
+    end end end end
 
-    #CapacityFactor(r,Solar,'Q1N',y) = 0;
-    #CapacityFactor(r,Solar,'Q2N',y) = 0;
-    #CapacityFactor(r,Solar,'Q3N',y) = 0;
-    #CapacityFactor(r,Solar,'Q4N',y) = 0;
-    #$endif
-
-    Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
-    CapacityOfOneTechnologyUnit,TagDispatchableTechnology,BaseYearProduction,RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,StorageLevelStart,StorageMaxChargeRate,
-    StorageMaxDischargeRate,MinStorageCharge,OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
-    TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,TotalTechnologyAnnualActivityLowerLimit,
-    TotalTechnologyModelPeriodActivityUpperLimit,TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,ReserveMarginTagFuel,ReserveMargin,RETagTechnology,RETagFuel,REMinProductionTarget,EmissionActivityRatio,
-    EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
-    CurtailmentCostFactor,Readin_TradeRoute2015,Readin_PowerTradeCapacity,TradeRoute,TradeCosts,TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,AdditionalTradeCapacity,TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,Conversionls,Conversionld,
-    Conversionlh, DaySplit,RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,ModalSplitByFuelAndModalType,TagTechnologyToModalType,
-    EFactorConstruction, EFactorOM, EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs, CoalSupply, CoalDigging, RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate, x_peakingDemand,TagDemandFuelToSector,TagElectricTechnology)
+    Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,
+    SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
+    AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
+    CapacityOfOneTechnologyUnit,TagDispatchableTechnology,BaseYearProduction,
+    RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
+    StorageLevelStart,StorageMaxChargeRate,StorageMaxDischargeRate,MinStorageCharge,
+    OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
+    TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
+    TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,
+    TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,
+    TotalTechnologyAnnualActivityLowerLimit, TotalTechnologyModelPeriodActivityUpperLimit,
+    TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,
+    ReserveMarginTagFuel,ReserveMargin,RETagTechnology,RETagFuel,REMinProductionTarget,
+    EmissionActivityRatio, EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,
+    AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
+    ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+    CurtailmentCostFactor,TradeRoute,TradeCosts,
+    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,AdditionalTradeCapacity,
+    TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
+    RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
+    ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,
+    EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
+    RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,
+    TagDemandFuelToSector,TagElectricTechnology)
 
     return Sets, Subsets, Params, Emp_Sets
 end
