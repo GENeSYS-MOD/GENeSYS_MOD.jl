@@ -148,15 +148,6 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     # ####### Bounds for storage technologies #############
     #
 
-    if Switch.switch_short_term_storage == 0
-        for s ∈ Sets.Storage for y ∈ Sets.Year for r ∈ Sets.Region_full
-            JuMP.fix(model[:StorageLevelYearFinish][s,y,r], 0; force=true)
-        end end end
-        for ls ∈ Sets.Season for ld ∈ Sets.Daytype for y ∈ Sets.Year for r ∈ Sets.Region_full
-            JuMP.fix(model[:StorageLevelDayTypeFinish]["S_Battery_Li-Ion",y,ls,ld,r], 0; force=true)
-            JuMP.fix(model[:StorageLevelDayTypeFinish]["S_Battery_Redox",y,ls,ld,r], 0; force=true)
-        end end end end
-    end
 
     #
     # ####### Capacity factor for heat technologies #############

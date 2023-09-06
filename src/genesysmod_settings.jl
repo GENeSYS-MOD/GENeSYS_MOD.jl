@@ -60,7 +60,7 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
     #GrowthRateTradeCapacity(y,'Power',r,rr) = 0.1;
 
     BaseYearSlack = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel)), Sets.Fuel)
-    BaseYearSlack[Sets.Fuel] = 0.0325
+    BaseYearSlack[Sets.Fuel] .= 0.03
     BaseYearSlack["Power"] = 0.03
 
     PhaseOut = Dict(2020=>2, 2025=>2, 2030=>2, 2035=>2, 2040=>2 ,2045=>2, 2050=>2)# this is an upper limit for fossil generation based on the previous year - to remove choose large value

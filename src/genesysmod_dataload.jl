@@ -240,10 +240,10 @@ function genesysmod_dataload(Switch)
     Conversionls, Conversionld, Conversionlh = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
-        Params.RateOfDemand[y,l,f,r] = Params.SpecifiedAnnualDemand[r,f,y]*Params.SpecifiedDemandProfile[r,f,l,y] / Params.YearSplit[l,y]
-        Params.Demand[y,l,f,r] = Params.RateOfDemand[y,l,f,r] * Params.YearSplit[l,y]
-        if Params.Demand[y,l,f,r] < 0.000001
-          Params.Demand[y,l,f,r] = 0
+        RateOfDemand[y,l,f,r] = SpecifiedAnnualDemand[r,f,y]*SpecifiedDemandProfile[r,f,l,y] / YearSplit[l,y]
+        Demand[y,l,f,r] = RateOfDemand[y,l,f,r] * YearSplit[l,y]
+        if Demand[y,l,f,r] < 0.000001
+          Demand[y,l,f,r] = 0
         end
     end end end end
 
