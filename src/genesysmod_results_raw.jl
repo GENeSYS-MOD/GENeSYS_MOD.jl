@@ -17,11 +17,16 @@
 # limitations under the License.
 #
 # #############################################################
+"""
 
+"""
 function _registered_variables(model)
     collect(keys(object_dictionary(model)))
 end
 
+"""
+
+"""
 function genesysmod_results_raw(model, Switch,extr_str)
     file = open(joinpath(Switch.resultdir,"log_raw_results.txt"), "a")
 

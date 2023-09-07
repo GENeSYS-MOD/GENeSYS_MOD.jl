@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 # #############################################################
+"""
 
+"""
 function genesysmod_dec(model,Sets, Subsets, Params,Switch)
 
     𝓡 = Sets.Region_full
@@ -114,12 +116,12 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
 
     @variable(model, AnnualTechnologyEmissionByMode[𝓨,𝓣,𝓔,𝓜,𝓡]) 
     @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡]) 
-    @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣, 𝓔,𝓡]) 
+    @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡]) 
     @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡]) 
     @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡]) 
     @variable(model, AnnualEmissions[𝓨,𝓔,𝓡]) 
     @variable(model, ModelPeriodEmissions[𝓔,𝓡]) 
-    @variable(model, WeightedAnnualEmissions[Sets.Year_full,𝓔,𝓡])
+    @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡])
 
     
 
@@ -159,11 +161,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
 
     if Switch.switch_ramping == 1
 
-    ######## Ramping #############  
-        RampingUpFactor(𝓡,𝓣,𝓨) 
-        RampingDownFactor(𝓡,𝓣,𝓨)   
-        ProductionChangeCost(𝓡,𝓣,𝓨)    
-        MinActiveProductionPerTimeslice(𝓨,𝓛,𝓕,𝓣,𝓡)    
+        ######## Ramping #############      
         @variable(model, ProductionUpChangeInTimeslice[𝓨,𝓛,𝓕,𝓣,𝓡] >= 0) 
         @variable(model, ProductionDownChangeInTimeslice[𝓨,𝓛,𝓕,𝓣,𝓡] >= 0)     
         @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0) 

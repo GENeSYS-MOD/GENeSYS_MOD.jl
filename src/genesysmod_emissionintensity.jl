@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 # #############################################################
+"""
 
+"""
 function genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel

@@ -51,15 +51,23 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
     return df
 end
 
+"""
 
+"""
 function read_time_series(year,inputdir,data_file,data_base_region,timeseries_data_file)
     XLSX.readxlsx(joinpath(inputdir, timeseries_data_file * ".xlsx"))
 end
 
+"""
+
+"""
 function read_in_data(year,inputdir,data_file,data_base_region,timeseries_data_file)
     XLSX.readxlsx(joinpath(inputdir, data_file * ".xlsx"))
 end
 
+"""
+
+"""
 function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
     # Initialize all combinations to zero:
@@ -129,6 +137,9 @@ function create_daa(in_data::DataFrame, tab_name, base_region="DE", els...) # el
     return A
 end
 
+"""
+
+"""
 function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
     """Same as create_daa but you can set the default value to be different than 0
     """
@@ -184,6 +195,9 @@ function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els..
     return A
 end
 
+"""
+
+"""
 function df_from_json(ccd, Sets)
     df = DataFrame()
     region = Sets.Region_full
@@ -199,6 +213,9 @@ function df_from_json(ccd, Sets)
     return df
 end
 
+"""
+
+"""
 function df_from_dd(dd, Sets)
     df = DataFrame()
     region = Sets.Region_full
@@ -210,6 +227,9 @@ function df_from_dd(dd, Sets)
     return df
 end
 
+"""
+
+"""
 function df_from_daa(daa, Sets)
     df = DataFrame()
     region = Sets.Region_full
@@ -221,6 +241,9 @@ function df_from_daa(daa, Sets)
     return df
 end
 
+"""
+
+"""
 function specified_demand_profile(time_series_data,Sets,base_region="DE")
 
     # Read table from Excel to DataFrame
@@ -345,37 +368,9 @@ function read_x_peakingDemand(time_series_data,Sets,base_region="DE")
     return A
 end
 
-#= function read_MinActiveProductionPerTimeslice(time_series_data,Sets,base_region="DE")
+"""
 
-    # Read table from Excel to DataFrame
-    # Tbl = XLSX.gettable(time_series_data["Par_SpecifiedDemandProfile"];first_row=1)
-    Tbl = XLSX.gettable(time_series_data["MinActiveRunperTimeslice"];
-        header=false,
-        infer_eltypes=true,
-        column_labels=[:Timeslice, :Fuel, :Technology, :Year, :Value])
-    # return Tbl
-    df = DataFrame(Tbl...)
-    A = JuMP.Containers.DenseAxisArray(
-        zeros(length(Sets.Timeslice), length(Sets.Fuel),length(Sets.Technology),length(Sets.Year)),
-        Sets.Timeslice, Sets.Fuel, Sets.Technology, Sets.Year)
-    for r in eachrow(df)
-        try
-            A[r[1:end-1]...] = r.Value 
-        catch err
-            @debug err
-        end
-    end
-
-    # Instantiate data to zero
-    # A = zeros(Ti())
-
-    # for r in eachrow(df)
-    #     println(r)
-    # end
-
-    return A
-end =#
-
+"""
 function print_iis(model;filename="iis")
     list_of_conflicting_constraints = ConstraintRef[]
     for (F, S) in list_of_constraint_types(model)

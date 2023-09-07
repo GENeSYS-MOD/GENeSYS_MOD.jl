@@ -18,7 +18,9 @@
 #
 # #############################################################
 
+"""
 
+"""
 function create_daa_hourly(in_data, tab_name, els...)
     df = DataFrame(XLSX.gettable(in_data[tab_name]))
     long_df = stack(df,3:ncol(df)) # 3 because data starts at column 3, 1 is the hours and 2 is the timeslice
@@ -38,6 +40,9 @@ function create_daa_hourly(in_data, tab_name, els...)
     return A
 end
 
+"""
+
+"""
 function create_df_hourly(in_data, tab_name)
     df = DataFrame(XLSX.gettable(in_data[tab_name]))
     long_df = stack(df,3:ncol(df)) # 3 because data starts at column 3, 1 is the hours and 2 is the timeslice
@@ -47,6 +52,9 @@ function create_df_hourly(in_data, tab_name)
     return long_df
 end
 
+"""
+
+"""
 function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     switch_dunkelflaute = Switch.elmod_dunkelflaute
@@ -353,8 +361,6 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     YearSplit = JuMP.Containers.DenseAxisArray(ones(length(Timeslice), length(Sets.Year)) * 1/length(Timeslice), Timeslice, Sets.Year)
 
-    DaySplit = JuMP.Containers.DenseAxisArray(ones(length(Sets.Year), length(Timeslice)) * 1/24/8760, Sets.Year, Timeslice)
-
     sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
     capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
     "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small"]
@@ -439,34 +445,12 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
         end
     end
 
-    Conversionls = JuMP.Containers.DenseAxisArray(zeros(length(Timeslice_Full), length(Sets.Season)), Timeslice_Full, Sets.Season)
-    Conversionld = JuMP.Containers.DenseAxisArray(ones(length(Timeslice_Full), length(Sets.Daytype)), Timeslice_Full, Sets.Daytype)
-    Conversionlh = JuMP.Containers.DenseAxisArray(zeros(length(Timeslice_Full), length(Sets.DailyTimeBracket)), Timeslice_Full, Sets.DailyTimeBracket)
-
-    for j ∈ eachindex(Timeslice)
-        if j >= 0 && j <= length(Timeslice)/4
-            Conversionls[Timeslice[j],1] = 1
-        elseif j <= length(Timeslice)/4*2
-            Conversionls[Timeslice[j],2] = 1
-        elseif j <= length(Timeslice)/4*3
-            Conversionls[Timeslice[j],3] = 1
-        else j <= length(Timeslice)
-            Conversionls[Timeslice[j],4] = 1
-        end
-
-        for k ∈ eachindex(Sets.DailyTimeBracket)
-            if (j+Switch.elmod_starthour)%24 == k
-                Conversionlh[Timeslice[j],Sets.DailyTimeBracket[k]] = 1
-            end
-        end
-    end
 
     if Switch.write_reduced_timeserie == 1
         df_SpecifiedDemandProfile = convert_jump_container_to_df(SpecifiedDemandProfile[:,sdp_list,:,:];dim_names=[:Region,:Fuel,:Timeslice,:Year])
         df_CapacityFactor = convert_jump_container_to_df(CapacityFactor[:,capf_list,:,:];dim_names=[:Region,:Technology,:Timeslice,:Year])
         df_x_peakingDemand = convert_jump_container_to_df(x_peakingDemand;dim_names=[:Region,:Sector])
         df_YearSplit = convert_jump_container_to_df(YearSplit;dim_names=[:Timeslice,:Year])
-        df_DaySplit = convert_jump_container_to_df(DaySplit;dim_names=[:Year,:Timeslice])
         
         filename = "$(Switch.inputdir)/input_reduced_timeserie_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(Switch.elmod_nthhour).xlsx"
         if isfile(filename)
@@ -474,8 +458,8 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
         end
         XLSX.writetable(filename,
         "SpecifiedDemandProfile" => df_SpecifiedDemandProfile, "CapacityFactor" => df_CapacityFactor, "x_peakingDemand" => df_x_peakingDemand,
-        "YearSplit" => df_YearSplit, "DaySplit" => df_DaySplit)
+        "YearSplit" => df_YearSplit)
     end
 
-    return SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, DaySplit, Conversionls, Conversionld, Conversionlh
+    return SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit
 end

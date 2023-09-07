@@ -18,8 +18,9 @@
 #
 # #############################################################
 
+"""
 
-# ################### OTHER GENERAL INPUTS ###################
+"""
 function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
 
     DepreciationMethod=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full)), Sets.Region_full)
@@ -37,7 +38,6 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
         end
         SocialDiscountRate[r] = socialdiscountrate
     end
-    DaysInDayType = 7
 
     InvestmentLimit = Float64(1.8)  #Freedom for investment choices to spread across periods. A value of 1 would mean equal share for each period.
     NewRESCapacity = Float64(0.1)
@@ -67,7 +67,7 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
 
     PhaseIn = Dict(2020=>1, 2025=>0.85, 2030=>0.85, 2035=>0.85, 2040=>0.85 ,2045=>0.85, 2050=>0.85) # this is a lower bound for renewable integration based on the previous year - to remove choose 0
 
-    Settings=GENeSYS_MOD.Settings(DepreciationMethod,GeneralDiscountRate,TechnologyDiscountRate,SocialDiscountRate,DaysInDayType,InvestmentLimit,NewRESCapacity,
+    Settings=GENeSYS_MOD.Settings(DepreciationMethod,GeneralDiscountRate,TechnologyDiscountRate,SocialDiscountRate,InvestmentLimit,NewRESCapacity,
     ProductionGrowthLimit,StorageLimitOffset,Trajectory2020UpperLimit,Trajectory2020LowerLimit, BaseYearSlack, PhaseIn, PhaseOut)
     return Settings
 end

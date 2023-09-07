@@ -18,7 +18,10 @@
 #
 # #############################################################
 
-function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018, switch_only_load_gdx=0, switch_test_data_load=0,
+"""
+
+"""
+function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         model_region="minimal", data_base_region="DE", data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
         timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023", threads=4, emissionPathway="MinimalExample",
         emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\", tempdir="TempFiles\\" ,resultdir="Results\\",
@@ -40,8 +43,6 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018, switch_only
     end
 
     Switch = GENeSYS_MOD.Switch(year,
-    switch_only_load_gdx,
-    switch_test_data_load,
     solver,
     DNLPsolver,
     model_region,

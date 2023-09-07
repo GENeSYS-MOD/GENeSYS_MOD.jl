@@ -18,12 +18,13 @@
 #
 # #############################################################
 
+"""
+
+"""
 function genesysmod_dataload(Switch)
 
     # Step 0, initial declarations, replace first part of genesysmod_dec for the julia implementation
     Timeslice_full = 1:8760
-    DailyTimeBracket = 1:24
-    Year_full = 2015:2100
 
     inputdir = Switch.inputdir
     dbr = Switch.data_base_region
@@ -36,9 +37,6 @@ function genesysmod_dataload(Switch)
     Year = DataFrame(XLSX.gettable(in_data["Sets"],"D";first_row=1))[!,"Year"]
     Mode_of_operation = DataFrame(XLSX.gettable(in_data["Sets"],"F";first_row=1))[!,"Mode_of_operation"]
     Region_full = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"Region"]
-    Season = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Season"]
-    Daytype = DataFrame(XLSX.gettable(in_data["Sets"],"I";first_row=1))[!,"Daytype"]
-    DailyTimeBracket = DataFrame(XLSX.gettable(in_data["Sets"],"J";first_row=1))[!,"Dailytimebracket"]
     Storage = DataFrame(XLSX.gettable(in_data["Sets"],"K";first_row=1))[!,"Storage"]
     ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"L";first_row=1))[!,"ModalType"]
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"N";first_row=1))[!,"Sectors"]
@@ -50,9 +48,8 @@ function genesysmod_dataload(Switch)
     
     Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
 
-
-    Sets=GENeSYS_MOD.Sets(Timeslice_full,DailyTimeBracket,Year_full,Emission,Technology,Fuel,
-        Year,Timeslice,Mode_of_operation,Region_full,Season,Daytype,Storage,ModalType,Sector)
+    Sets=GENeSYS_MOD.Sets(Timeslice_full,Emission,Technology,Fuel,
+        Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
 
     Subsets = make_subsets(Sets)
     
@@ -187,6 +184,8 @@ function genesysmod_dataload(Switch)
     if Switch.switch_ramping == 1
         RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor",dbr, 𝓣,𝓨)
         RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor",dbr,𝓣,𝓨)
+        ProductionChangeCost = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
+        MinActiveProductionPerTimeslice = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓣) length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓣, 𝓡)
     else
         RampingUpFactor = nothing
         RampingDownFactor = nothing
@@ -236,8 +235,7 @@ function genesysmod_dataload(Switch)
     # ####### Load from hourly Data #############
     #
     
-    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, DaySplit,
-    Conversionls, Conversionld, Conversionlh = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
+    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
         RateOfDemand[y,l,f,r] = SpecifiedAnnualDemand[r,f,y]*SpecifiedDemandProfile[r,f,l,y] / YearSplit[l,y]

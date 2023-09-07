@@ -17,7 +17,9 @@
 # limitations under the License.
 #
 # #############################################################
+"""
 
+"""
 function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     TierTwo = [
     "X_Methanation",

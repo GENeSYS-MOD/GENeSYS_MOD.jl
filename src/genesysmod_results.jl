@@ -18,6 +18,9 @@
 #
 # #############################################################
 
+"""
+
+"""
 function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Settings, elapsed, extr_str)
     start=Dates.now()
     LoopSetOutput = Dict()
