@@ -122,11 +122,13 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
+    # create tech, fuel and mode of operation mapping
+    Maps = make_mapping(Sets,Params)
     #
     # ####### Including Equations #############
     #
 
-    genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
+    genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch,Maps)
     #
     # ####### CPLEX Options #############
     #

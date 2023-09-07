@@ -620,3 +620,12 @@ struct Variable_Parameters <: InputClass
     ProductionAnnual ::JuMP.Containers.DenseAxisArray
     UseAnnual ::JuMP.Containers.DenseAxisArray
 end
+
+"""
+Structure containing the mappings of sets combinations
+"""
+struct Maps <: InputClass
+    Tech_Fuel ::Dict
+    Tech_MO ::Dict
+    Fuel_Tech ::Dict
+end

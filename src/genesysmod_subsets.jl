@@ -864,11 +864,30 @@ function make_subsets(Sets)
     "Infeasibility_Mob_Freight"
     ]
     
-    Subsets=SubsetsIni(Solar,Wind,Renewables, CCS, Transformation,RenewableTransformation,FossilFuelGeneration,
-    FossilFuels,FossilPower,CHPs,RenewableTransport,Transport,Passenger,Freight,TransportFuels,
-    ImportTechnology,Heat,PowerSupply,PowerBiomass,Coal,Lignite,Gas,StorageDummies,SectorCoupling,
-    HeatFuels,ModalGroups,PhaseInSet,PhaseOutSet,HeatSlowRamper,HeatQuickRamper,Hydro,Geothermal,Onshore,
-    Offshore,SolarUtility,Oil,HeatLowRes,HeatLowInd,HeatMedInd,HeatHighInd,Biomass,Households,Companies,HydrogenTechnologies,DummyTechnology)
+    Subsets=SubsetsIni(Solar,Wind,Renewables, CCS, Transformation,RenewableTransformation,
+    FossilFuelGeneration,FossilFuels,FossilPower,CHPs,RenewableTransport,Transport,Passenger,
+    Freight,TransportFuels,ImportTechnology,Heat,PowerSupply,PowerBiomass,Coal,Lignite,Gas,
+    StorageDummies,SectorCoupling,HeatFuels,ModalGroups,PhaseInSet,PhaseOutSet,HeatSlowRamper,
+    HeatQuickRamper,Hydro,Geothermal,Onshore,Offshore,SolarUtility,Oil,HeatLowRes,HeatLowInd,
+    HeatMedInd,HeatHighInd,Biomass,Households,Companies,HydrogenTechnologies,DummyTechnology)
 
     return Subsets
+end
+
+"""
+make_mapping(Sets,Params)
+
+Creates a mapping of the allowed combinations of technology and fuel (and revers) and mode of operations.
+"""
+function make_mapping(Sets,Params)
+    Map_Tech_Fuel = Dict(t=>[f for f ∈ Sets.Fuel if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
+    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for t ∈ Sets.Technology)
+
+   Map_Tech_MO = Dict(t=>[m for m ∈ Sets.Mode_of_operation if (any(Params.OutputActivityRatio[:,t,:,m,:].>0)
+    || any(Params.InputActivityRatio[:,t,:,m,:].>0))] for t ∈ Sets.Technology)
+
+   Map_Fuel_Tech = Dict(f=>[t for t ∈ Sets.Technology if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
+    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for f ∈ Sets.Fuel)
+
+    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
 end
