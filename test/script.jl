@@ -122,10 +122,10 @@ Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdis
 print("Settings : ",Dates.now()-start,"\n")
 GENeSYS_MOD.genesysmod_bounds(model,Sets, Subsets,Params,Settings,Switch);
 print("Bounds : ",Dates.now()-start,"\n")
-#Maps = GENeSYS_MOD.make_mapping(Sets,Params)
-#print("Mapping : ",Dates.now()-start,"\n")
-#GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps)
-GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
+Maps = GENeSYS_MOD.make_mapping(Sets,Params)
+print("Mapping : ",Dates.now()-start,"\n")
+GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps)
+#GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
 print("Constraints : ",Dates.now()-start,"\n")
 set_optimizer(model, solver)
 if solver == Gurobi.Optimizer
@@ -140,7 +140,7 @@ elseif solver == CPLEX.Optimizer
     #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
 end
 #write_to_file(model,"julia_perf.mps")
-#write_to_file(model,"test_perf.lp")
+write_to_file(model,"test_perf.lp")
 optimize!(model)
 solution_summary(model)
 elapsed = (Dates.now() - start)
