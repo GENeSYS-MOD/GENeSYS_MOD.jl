@@ -26,3 +26,7 @@ makedocs(
         ]
     ]
 )
+
+deploydocs(
+    repo = "github.com/dqpinel/GENeSYS_MOD.jl.git",
+)
