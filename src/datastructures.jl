@@ -385,7 +385,7 @@ struct Sets <: InputClass
     Emission ::Vector{String}
     Technology ::Vector{String}
     Fuel ::Vector{String}
-    Year :Vector{Int}
+    Year ::Vector{Int}
     Timeslice ::Vector{Int}
     Mode_of_operation ::Vector{Int}
     Region_full ::Vector{String}
