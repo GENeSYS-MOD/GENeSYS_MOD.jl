@@ -25,6 +25,9 @@ using Dates
 using JuMP
 using XLSX
 using CSV
+using TimerOutputs
+
+const to = TimerOutput()
 
 include("datastructures.jl")
 include("utils.jl")
@@ -43,6 +46,19 @@ include("genesysmod_results.jl")
 include("genesysmod_levelizedcosts.jl")
 include("genesysmod_emissionintensity.jl")
 include("genesysmod_simple_dispatch.jl")
+include(joinpath("equations", "objective.jl"))
+include(joinpath("equations", "equa_cap_adequacy.jl"))
+include(joinpath("equations", "equa_energy_balance.jl"))
+include(joinpath("equations", "equa_trade.jl"))
+include(joinpath("equations", "equa_acc.jl"))
+include(joinpath("equations", "equa_capital_cost.jl"))
+include(joinpath("equations", "equa_salvage.jl"))
+include(joinpath("equations", "equa_op_cost.jl"))
+include(joinpath("equations", "equa_disc_cost.jl"))
+include(joinpath("equations", "equa_capacity.jl"))
+include(joinpath("equations", "equa_activity.jl"))
+include(joinpath("equations", "equa_re_target.jl"))
+include(joinpath("equations", "other.jl"))
 
 export genesysmod, genesysmod_simple_dispatch
 

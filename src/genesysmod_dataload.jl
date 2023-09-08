@@ -54,8 +54,22 @@ function genesysmod_dataload(Switch)
     #Timeslice_Full = 1:8760
     Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
 
-
-    Sets=GENeSYS_MOD.Sets(Timeslice_full,DailyTimeBracket,Year_full,Emission,Technology,Fuel,Year,Timeslice,Mode_of_operation,Region_full,Season,Daytype,Storage,ModalType,Sector)
+    Sets = GENeSYS_MOD.Sets(
+        Timeslice_full,
+        DailyTimeBracket,
+        Year_full,Emission,
+        Technology,
+        Fuel,
+        Year,
+        Timeslice,
+        Mode_of_operation,
+        Region_full,
+        Season,
+        Daytype,
+        Storage,
+        ModalType,
+        Sector
+    )
 
     Subsets = make_subsets(Sets)
     
@@ -270,15 +284,17 @@ function genesysmod_dataload(Switch)
     #CapacityFactor(r,Solar,'Q4N',y) = 0;
     #$endif
 
-    Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
-    CapacityOfOneTechnologyUnit,TagDispatchableTechnology,BaseYearProduction,RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,StorageLevelStart,StorageMaxChargeRate,
-    StorageMaxDischargeRate,MinStorageCharge,OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
-    TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,TotalTechnologyAnnualActivityLowerLimit,
-    TotalTechnologyModelPeriodActivityUpperLimit,TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,ReserveMarginTagFuel,ReserveMargin,RETagTechnology,RETagFuel,REMinProductionTarget,EmissionActivityRatio,
-    EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
-    CurtailmentCostFactor,Readin_TradeRoute2015,Readin_PowerTradeCapacity,TradeRoute,TradeCosts,TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,AdditionalTradeCapacity,TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,Conversionls,Conversionld,
-    Conversionlh, DaySplit,RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,ModalSplitByFuelAndModalType,TagTechnologyToModalType,
-    EFactorConstruction, EFactorOM, EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs, CoalSupply, CoalDigging, RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate, x_peakingDemand,TagDemandFuelToSector,TagElectricTechnology)
-
-    return Sets, Subsets, Params, Emp_Sets
+    Params = (;
+        StartYear,YearSplit,SpecifiedAnnualDemand,SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
+        CapacityOfOneTechnologyUnit,TagDispatchableTechnology,BaseYearProduction,RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,StorageLevelStart,StorageMaxChargeRate,
+        StorageMaxDischargeRate,MinStorageCharge,OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
+        TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,TotalTechnologyAnnualActivityLowerLimit,
+        TotalTechnologyModelPeriodActivityUpperLimit,TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,ReserveMarginTagFuel,ReserveMargin,RETagTechnology,RETagFuel,REMinProductionTarget,EmissionActivityRatio,
+        EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+        CurtailmentCostFactor,Readin_TradeRoute2015,Readin_PowerTradeCapacity,TradeRoute,TradeCosts,TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,AdditionalTradeCapacity,TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,Conversionls,Conversionld,
+        Conversionlh, DaySplit,RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,ModalSplitByFuelAndModalType,TagTechnologyToModalType,
+        EFactorConstruction, EFactorOM, EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs, CoalSupply, CoalDigging, RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate, x_peakingDemand,TagDemandFuelToSector,TagElectricTechnology
+    )
+    
+    return Sets, Params, Emp_Sets, Subsets, Settings, Switch
 end

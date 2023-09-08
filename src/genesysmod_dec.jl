@@ -25,7 +25,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
     # Model Variables #
     #####################
 
-    ############### Capacity Variables ############*
+    ############### Capacity Variables ############
     @variable(model, NewCapacity[Sets.Year,Sets.Technology,Sets.Region_full] >= 0)
     @variable(model, AccumulatedNewCapacity[Sets.Year,Sets.Technology,Sets.Region_full] >= 0)
     @variable(model, TotalCapacityAnnual[Sets.Year,Sets.Technology,Sets.Region_full] >= 0)

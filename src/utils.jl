@@ -60,7 +60,8 @@ function read_in_data(year,inputdir,data_file,data_base_region,timeseries_data_f
     XLSX.readxlsx(joinpath(inputdir, data_file * ".xlsx"))
 end
 
-function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
+function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;
+    inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
