@@ -376,17 +376,17 @@ Sets used for the model run
     aggregation and accounting purposes.\n
 """
 struct Sets <: InputClass
-    Timeslice_full ::Array
-    Emission ::Array
-    Technology ::Array
-    Fuel ::Array
-    Year ::Array
-    Timeslice ::Array
-    Mode_of_operation ::Array
-    Region_full ::Array
-    Storage ::Array
-    ModalType ::Array
-    Sector ::Array
+    Timeslice_full ::UnitRange{Int64}
+    Emission ::Vector{String}
+    Technology ::Vector{String}
+    Fuel ::Vector{String}
+    Year :Vector{Int}
+    Timeslice ::Vector{Int}
+    Mode_of_operation ::Vector{Int}
+    Region_full ::Vector{String}
+    Storage ::Vector{String}
+    ModalType ::Vector{String}
+    Sector ::Vector{String}
 end
 
 """
