@@ -18,7 +18,10 @@
 #
 # #############################################################
 """
+Main module for `GENeSYS_MOD.jl`.
 
+This module provides the means to run GENeSYS-MOD in julia. It is a translation of the
+GAMS version of the model.
 """
 module GENeSYS_MOD
 

@@ -24,13 +24,11 @@ data_base_region="DE"
 #data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new"
 data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones_dispatch"
 hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022"
-timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023"
 threads=20
 emissionPathway="MinimalExample"
 emissionScenario="globalLimit"
 socialdiscountrate=0.05
 inputdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Inputdata")
-tempdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","TempFiles")
 resultdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Results")
 switch_infeasibility_tech = 1
 switch_investLimit=1
@@ -89,7 +87,6 @@ Switch = GENeSYS_MOD.Switch(start_year,
     emissionScenario,
     socialdiscountrate,
     inputdir,
-    tempdir,
     resultdir,
     switch_infeasibility_tech,
     switch_investLimit,

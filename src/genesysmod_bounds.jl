@@ -18,7 +18,7 @@
 #
 # #############################################################
 """
-
+Internal function used in the run process to modify batches of input data.
 """
 function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 

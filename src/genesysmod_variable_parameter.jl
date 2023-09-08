@@ -18,7 +18,8 @@
 #
 # #############################################################
 """
-
+Internal function used in the run process after solving to compute aggregated versions of the rate of activity,
+    rate of use and demand, on mode of operation, timeslice and technology.
 """
 function genesysmod_variable_parameter(model, Sets, Params)
     RateOfTotalActivity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Region_full)

@@ -1,7 +1,7 @@
-#= import Pkg;
-Pkg.activate(@__DIR__)
-Pkg.instantiate() =#
-include("init.jl")
+import Pkg
+cd("C:\\Users\\dimitrip\\GENeSYS-MOD\\dev_jl")
+Pkg.activate(".")
+Pkg.develop(path="..\\GENeSYS_MOD.jl")
 using GENeSYS_MOD
 using JuMP
 using Dates
@@ -13,10 +13,8 @@ using Revise
 start = Dates.now()
 
 year=2018
-switch_only_load_gdx=0
-switch_test_data_load=0
-solver=CPLEX.Optimizer
-#solver=Gurobi.Optimizer
+#solver=CPLEX.Optimizer
+solver=Gurobi.Optimizer
 DNLPsolver= Ipopt.Optimizer
 model_region="minimal"
 data_base_region="DE"
@@ -24,22 +22,19 @@ data_base_region="DE"
 #data_file = "Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_only_DE_test"
 data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones"
 hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022"
-timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023"
-threads=20
+threads=6
 emissionPathway="MinimalExample"
 emissionScenario="globalLimit"
 socialdiscountrate=0.05
-inputdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Inputdata")
-tempdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","TempFiles")
-resultdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Results")
+inputdir = joinpath(pkgdir(GENeSYS_MOD),"..","GENeSYS-MOD-python","Julia_test","Inputdata")
+resultdir = joinpath(pkgdir(GENeSYS_MOD),"..","GENeSYS-MOD-python","Julia_test","Results")
 switch_infeasibility_tech = 0
 switch_investLimit=1
 switch_ccs=1
 switch_ramping=0
 switch_weighted_emissions=1
 switch_intertemporal=0
-switch_short_term_storage=1
-switch_base_year_bounds = 1
+switch_base_year_bounds = 0
 switch_peaking_capacity = 1
 set_peaking_slack = 1.0
 set_peaking_minrun_share = 0.15
@@ -57,7 +52,7 @@ elmod_nthhour = 0
 elmod_starthour = 8
 elmod_dunkelflaute= 0
 elmod_skipdays = 80
-elmod_skiphours = 8
+elmod_skiphours = 4
 #elmod_skipdays = 0
 #elmod_skiphours = 0
 switch_raw_results = 1
@@ -76,20 +71,17 @@ elseif elmod_nthhour == 0
 end
 
 Switch = GENeSYS_MOD.Switch(year,
-    switch_only_load_gdx,
-    switch_test_data_load,
     solver,
     DNLPsolver,
     model_region,
     data_base_region,
     data_file,
-    timeseries_data_file,
+    hourly_data_file,
     threads,
     emissionPathway,
     emissionScenario,
     socialdiscountrate,
     inputdir,
-    tempdir,
     resultdir,
     switch_infeasibility_tech,
     switch_investLimit,
@@ -97,7 +89,6 @@ Switch = GENeSYS_MOD.Switch(year,
     switch_ramping,
     switch_weighted_emissions,
     switch_intertemporal,
-    switch_short_term_storage,
     switch_base_year_bounds,
     switch_peaking_capacity,
     set_peaking_slack,
@@ -111,7 +102,6 @@ Switch = GENeSYS_MOD.Switch(year,
     switch_endogenous_employment,
     employment_data_file,
     switch_dispatch,
-    hourly_data_file,
     elmod_nthhour,
     elmod_starthour,
     elmod_dunkelflaute,
@@ -132,6 +122,9 @@ Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdis
 print("Settings : ",Dates.now()-start,"\n")
 GENeSYS_MOD.genesysmod_bounds(model,Sets, Subsets,Params,Settings,Switch);
 print("Bounds : ",Dates.now()-start,"\n")
+#Maps = GENeSYS_MOD.make_mapping(Sets,Params)
+#print("Mapping : ",Dates.now()-start,"\n")
+#GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps)
 GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
 print("Constraints : ",Dates.now()-start,"\n")
 set_optimizer(model, solver)
@@ -146,17 +139,29 @@ elseif solver == CPLEX.Optimizer
     set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
     #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
 end
-write_to_file(model,"julia.mps")
+#write_to_file(model,"julia_perf.mps")
+#write_to_file(model,"test_perf.lp")
 optimize!(model)
 solution_summary(model)
 elapsed = (Dates.now() - start)
 print("After Solve : ",Dates.now()-start,"\n")
 VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
 print("VarPar : ",Dates.now()-start,"\n")
-if switch_processed_results == 1
-    GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch, Settings, elapsed,"")
-end
-if switch_raw_results == 1
-    GENeSYS_MOD.genesysmod_results_raw(model, Switch,"")
+if termination_status(model) == MOI.INFEASIBLE
+    println("Model Infeasible! Computing IIS")
+    compute_conflict!(model)
+    println("Saving IIS to file")
+    GENeSYS_MOD.print_iis(model)
+
+elseif termination_status(model) == MOI.OPTIMAL
+    if switch_processed_results == 1
+        GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch,
+         Settings, elapsed,"dispatch")
+    end
+    if switch_raw_results == 1
+        GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
+    end
+else
+    println(termination_status(model))
 end
 print("Total : ",Dates.now()-start,"\n")

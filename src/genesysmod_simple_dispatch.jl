@@ -19,16 +19,17 @@
 # #############################################################
 
 """
-
+Run the simple dispatch model. A previous run is necessary to allow to read in investment 
+decisions. For information about the switches, refer to the datastructure documentation
 """
 function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         model_region="minimal", data_base_region="DE", data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
-        timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023", threads=4, emissionPathway="MinimalExample",
-        emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\", tempdir="TempFiles\\" ,resultdir="Results\\",
+        hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", threads=4, emissionPathway="MinimalExample",
+        emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\",resultdir="Results\\",
         switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,switch_intertemporal=0,
         switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
         set_peaking_res_cf=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
-        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "", hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", 
+        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",  
         elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0)
     
     elmod_daystep = 0
@@ -48,13 +49,12 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     model_region,
     data_base_region,
     data_file,
-    timeseries_data_file,
+    hourly_data_file,
     threads,
     emissionPathway,
     emissionScenario,
     socialdiscountrate,
     inputdir,
-    tempdir,
     resultdir,
     switch_infeasibility_tech,
     switch_investLimit,
@@ -75,7 +75,6 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     switch_endogenous_employment,
     employment_data_file,
     switch_dispatch,
-    hourly_data_file,
     elmod_nthhour,
     elmod_starthour,
     elmod_dunkelflaute,

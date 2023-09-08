@@ -18,7 +18,7 @@
 #
 # #############################################################
 """
-
+Internal function used in the run process to compute results related to levelized costs.
 """
 function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     TierTwo = [

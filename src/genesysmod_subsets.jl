@@ -19,7 +19,7 @@
 # #############################################################
 
 """
-
+Internal function used in the run process to create subsets.
 """
 function make_subsets(Sets)
     Solar =["RES_PV_Rooftop_Residential",

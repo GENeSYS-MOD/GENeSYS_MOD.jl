@@ -35,8 +35,8 @@ All the parameters read for a model run
 - **`SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray`** Annual fraction of 
     energy-service or commodity demand that is required in each time slice. For each
     year, all the defined SpecifiedDemandProfile input values should sum up to 1.\n
-- **`RateOfDemand ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`Demand ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`RateOfDemand ::JuMP.Containers.DenseAxisArray`** Rate of Demand in each timeslice.\n
+- **`Demand ::JuMP.Containers.DenseAxisArray`** Amount of demand in each timeslice.\n
 - **`CapacityToActivityUnit ::JuMP.Containers.DenseAxisArray`** Conversion factor relating
     the energy that would be produced when one unit of capacity is fully used in one year.\n
 - **`CapacityFactor ::JuMP.Containers.DenseAxisArray`** Capacity available per each
@@ -47,15 +47,16 @@ All the parameters read for a model run
     possibility to account for planned outages.\n
 - **`OperationalLife ::JuMP.Containers.DenseAxisArray`** Useful lifetime of a technology,
     expressed in years.\n
-- **`ResidualCapacity ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`ResidualCapacity ::JuMP.Containers.DenseAxisArray`** Amount of capacity from the capacity
+existing in the system in the start year to remain in the given year.\n
 - **`InputActivityRatio ::JuMP.Containers.DenseAxisArray`** Rate of use of a fuel by a
     technology, as a ratio of the rate of activity. Used to express technology efficiencies.\n
 - **`OutputActivityRatio ::JuMP.Containers.DenseAxisArray`** Rate of fuel output from a
     technology, as a ratio of the rate of activity.\n
-- **`CapacityOfOneTechnologyUnit ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`BaseYearProduction ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray`** Tag defining if a technology 
+can be dispatched.\n 
+- **`RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray`** Amount of energy produced by 
+technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
 - **`RegionalCCSLimit ::JuMP.Containers.DenseAxisArray`** Total amount of storeable emissions
     in a certain region over the entire modelled period.\n
 - **`CapitalCost ::JuMP.Containers.DenseAxisArray`** Capital investment cost of a technology,
@@ -87,7 +88,7 @@ All the parameters read for a model run
 - **`TechnologyFromStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a
     storage facility to the technology it feeds. It has value 1 if the technology and the
     storage facility are linked, 0 otherwise.\n
-- **`StorageMaxCapacity ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`StorageMaxCapacity ::JuMP.Containers.DenseAxisArray`** Maximum storage capacity.\n
 - **`TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray`** Total maximum existing 
     (residual plus cumulatively installed) capacity allowed for a technology in a specified
     year.\n
@@ -119,9 +120,10 @@ All the parameters read for a model run
     required to be provided for all the tagged commodities, by the tagged technologies. 
     If no reserve margin is required, the parameter will have value 1; if, for instance, 20%
     reserve margin is required, the parameter will have value 1.2.\n
-- **`RETagTechnology ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`RETagFuel ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`REMinProductionTarget ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`RETagTechnology ::JuMP.Containers.DenseAxisArray`** Tag to identify renewable technologies.\n
+- **`RETagFuel ::JuMP.Containers.DenseAxisArray`** Tag to identify renewable fuels.\n
+- **`REMinProductionTarget ::JuMP.Containers.DenseAxisArray`** Minimum production from renewable
+    technologies.\n
 - **`EmissionActivityRatio ::JuMP.Containers.DenseAxisArray`** Emission factor of a 
     technology per unit of activity, per mode of operation.\n
 - **`EmissionContentPerFuel ::JuMP.Containers.DenseAxisArray`** Defines the emission contents 
@@ -147,11 +149,14 @@ All the parameters read for a model run
     to another. Also controls the ability to trade on fuel from a region to another.\n
 - **`TradeCosts ::JuMP.Containers.DenseAxisArray`** Costs for trading one unit of energy from
     one region to another.\n
-- **`TradeLossFactor ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`TradeLossFactor ::JuMP.Containers.DenseAxisArray`** Factor for the amount of losses per
+    kilometer of a given fuel\n
+- **`TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray`** Installed transmission 
+    capacity between nodes.\n
 - **`TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray`** Percentage loss of traded 
     fuel from one region to another. Used to model losses in power transmission networks.\n
-- **`AdditionalTradeCapacity ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray`** Transmission line already 
+    commissioned.\n
 - **`TradeCapacity ::JuMP.Containers.DenseAxisArray`** Initial capacity for trading fuels 
     from one region to another.\n
 - **`TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray`** Costs for adding one unit 
@@ -183,9 +188,11 @@ All the parameters read for a model run
 - **`RegionalAdjustmentFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
 - **`LocalManufacturingFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
 - **`DeclineRate ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
-- **`x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
-- **`TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray`** \n TODO
-- **`TagElectricTechnology ::JuMP.Containers.DenseAxisArray`** \n TODO
+- **`x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Peak demand in the 
+    original timeseries. Used for the peaking constraints.\n
+- **`TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray`** Tag to link fuels to sectors.\n
+- **`TagElectricTechnology ::JuMP.Containers.DenseAxisArray`** Indicate if a technology is
+    considered to be "direct electrification".\n 
 """
 struct Parameters <: InputClass
     StartYear ::Int64
@@ -203,9 +210,7 @@ struct Parameters <: InputClass
     ResidualCapacity ::JuMP.Containers.DenseAxisArray
     InputActivityRatio ::JuMP.Containers.DenseAxisArray
     OutputActivityRatio ::JuMP.Containers.DenseAxisArray
-    CapacityOfOneTechnologyUnit ::JuMP.Containers.DenseAxisArray
     TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray
-    BaseYearProduction ::JuMP.Containers.DenseAxisArray
     RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray
 
     RegionalCCSLimit ::JuMP.Containers.DenseAxisArray
@@ -267,7 +272,7 @@ struct Parameters <: InputClass
     TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray
 
 
-    AdditionalTradeCapacity ::JuMP.Containers.DenseAxisArray
+    CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray
     GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray
@@ -511,47 +516,62 @@ folders, as well as the inclusion or not of various features.
 # Fields
 
 - **`StartYear :: Int16`** First year of the study horizon.\n
-- **`solver `** TODO.\n
-- **`DNLPsolver`** TODO.\n
-- **`model_region ::String`** TODO.\n
-- **`data_base_region ::String`** TODO.\n
-- **`data_file ::String`** TODO.\n
-- **`timeseries_data_file ::String`** TODO.\n
-- **`threads ::Int16`** TODO.\n
-- **`emissionPathway ::String`** TODO.\n
-- **`emissionScenario ::String`** TODO.\n
-- **`socialdiscountrate ::Float64`** TODO.\n
-- **`inputdir ::String`** TODO.\n
-- **`tempdir ::String`** TODO.\n
-- **`resultdir ::String`** TODO.\n
-- **`switch_infeasibility_tech :: Int8`** TODO.\n
-- **`switch_investLimit ::Int16`** TODO.\n
-- **`switch_ccs ::Int16`** TODO.\n
-- **`switch_ramping ::Int16`** TODO.\n
+- **`solver `** Solver to be used to solve the LP. The corresponding package must be called.
+ For instance: using Gurobi, then the solver is Gurobi.Optimizer. \n
+- **`DNLPsolver`** Solver used for the time reduction algorithm. The recommended solver 
+is Ipopt as it is open but other commercial solvers with a julia integration can be used.\n
+- **`model_region ::String`** Name of the modelled region. It will be used in naming files.\n
+- **`data_base_region ::String`** Default region of the model. The missing data will be copied
+from the default region.\n
+- **`data_file ::String`** Path to the main input data file.\n
+- **`hourly_data_file ::String`** Path to the input data file containing the timeseries.\n
+- **`threads ::Int16`** Number of threads to use for solving the model. Default is 4. To 
+automatically use th emaximum available number of threads, use the value 0.\n
+- **`emissionPathway ::String`** Name of the emission pathway. Used in naming files.\n
+- **`emissionScenario ::String`** Name of the emission scenario. Used in naming files.\n
+- **`socialdiscountrate ::Float64`** Sets the value of the setting social discount rate.\n
+- **`inputdir ::String`** Directory containing the input files.\n
+- **`resultdir ::String`** Directory where the results files will be written.\n
+- **`switch_infeasibility_tech :: Int8`** Switch used to include the infeasibility 
+technologies in the model. These technologies are used to debug an infeasible model and 
+allow the model to run feasible by relaxing the problem with slack production technologies.\n
+- **`switch_investLimit ::Int16`** Used to enable Investment limits. This activates phase in
+constraints for renewable technologies, phase out constraints for fossil technologies. 
+It also activates a constraint smoothing the investment and to prevent large investment in
+a single period. It also activates a constraint limiting the investment in renewable each year to 
+a percentage of the total technical potential.\n
+- **`switch_ccs ::Int16`** Used to enable CCS technologies.\n
+- **`switch_ramping ::Int16`** Used to enable ramping constraints.\n
 - **`switch_weighted_emissions ::Int16`** TODO.\n
 - **`switch_intertemporal ::Int16`** TODO.\n
-- **`switch_base_year_bounds ::Int16`** TODO.\n
+- **`switch_base_year_bounds ::Int16`** Used to enable base year bounds. This enforces the
+annual production of the different technologies in the start year.\n
 - **`switch_peaking_capacity ::Int16`** TODO.\n
 - **`set_peaking_slack ::Float16`** TODO.\n
 - **`set_peaking_minrun_share ::Float16`** TODO.\n
 - **`set_peaking_res_cf ::Float16`** TODO.\n
-- **`set_peaking_startyear ::Int16`** TODO.\n
-- **`switch_peaking_with_storages ::Int16`** TODO.\n
-- **`switch_peaking_with_trade ::Int16`** TODO.\n
+- **`set_peaking_startyear ::Int16`** Year in which the peaking constraint becomes active.\n
+- **`switch_peaking_with_storages ::Int16`** Enables to fulfill the peaking constraint with storages.\n
+- **`switch_peaking_with_trade ::Int16`** Enables to fulfill the peaking constraint with trade.\n
 - **`switch_peaking_minrun ::Int16`** TODO.\n
 - **`switch_employment_calculation ::Int16`** TODO.\n
 - **`switch_endogenous_employment ::Int16`** TODO.\n
 - **`employment_data_file ::String`** TODO.\n
-- **`switch_dispatch ::Int8`** TODO.\n
-- **`hourly_data_file ::String`** TODO.\n
-- **`elmod_nthhour ::Int16`** TODO.\n
-- **`elmod_starthour ::Int16`** TODO.\n
-- **`elmod_dunkelflaute ::Int16`** TODO.\n
-- **`elmod_daystep ::Int16`** TODO.\n
-- **`elmod_hourstep ::Int16`** TODO.\n
-- **`switch_raw_results ::Int8`** TODO.\n
-- **`switch_processed_results ::Int8`** TODO.\n
-- **`write_reduced_timeserie ::Int8`** TODO.\n
+- **`switch_dispatch ::Int8`** Used to enable the dispatch run.\n
+- **`elmod_nthhour ::Int16`** Step size in hour for the sampling in the time reduction algorithm.
+The default is 0 since the preferred method is to define daystep and hourstep instead.
+It corresponds to 24*daystep + hourstep.\n
+- **`elmod_starthour ::Int16`** Starting hour for the sampling in the time reduction algorithm.\n
+- **`elmod_dunkelflaute ::Int16`** Enables the addition of a period with very low wind and 
+sun in the winter during the time reduction algorithm.\n
+- **`elmod_daystep ::Int16`** Number of days between each sample during the time reduction algorithm.\n
+- **`elmod_hourstep ::Int16`** Number of hours in addition tothe day step between each sample.\n
+- **`switch_raw_results ::Int8`** Used to enable the writing of raw results after a model run.
+The raw results dumps the content of all variables into CSVs.\n
+- **`switch_processed_results ::Int8`** Used to produce processed result files containing 
+additional metrics not part of the raw results.\n
+- **`write_reduced_timeserie ::Int8`** Used to enable the writing of a file containing the
+ results of the time reduction algorithm.\n
 """
 struct Switch <: InputClass
     StartYear :: Int16
@@ -560,13 +580,12 @@ struct Switch <: InputClass
     model_region ::String
     data_base_region ::String
     data_file ::String
-    timeseries_data_file ::String
+    hourly_data_file ::String
     threads ::Int16
     emissionPathway ::String
     emissionScenario ::String
     socialdiscountrate ::Float64
     inputdir ::String
-    tempdir ::String
     resultdir ::String
     switch_infeasibility_tech :: Int8
     switch_investLimit ::Int16
@@ -587,7 +606,6 @@ struct Switch <: InputClass
     switch_endogenous_employment ::Int16
     employment_data_file ::String
     switch_dispatch ::Int8
-    hourly_data_file ::String
     elmod_nthhour ::Int16
     elmod_starthour ::Int16
     elmod_dunkelflaute ::Int16
