@@ -19,7 +19,9 @@
 # #############################################################
 
 """
-
+Internal function used in the run process after reading the input data to reduce the hourly
+timeseries for the whole year to a given number of timeslices. The algorithm maintain the max
+and min value and also fit the new timeserie to minimise deviation from the mean of the original timeseire.
 """
 function create_daa_hourly(in_data, tab_name, els...)
     df = DataFrame(XLSX.gettable(in_data[tab_name]))

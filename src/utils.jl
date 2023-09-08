@@ -52,21 +52,13 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
 end
 
 """
+Creates DenseAxisArrays containing the input parameters to the model considering hierarchy
+with base region data and world data.
 
-"""
-function read_time_series(year,inputdir,data_file,data_base_region,timeseries_data_file)
-    XLSX.readxlsx(joinpath(inputdir, timeseries_data_file * ".xlsx"))
-end
-
-"""
-
-"""
-function read_in_data(year,inputdir,data_file,data_base_region,timeseries_data_file)
-    XLSX.readxlsx(joinpath(inputdir, data_file * ".xlsx"))
-end
-
-"""
-
+The function creates a DenseAxisArray for a given parameter indexed by the given sets. The 
+values are intialized to 0. If copy world is true, the value for the region world are copied.
+If inherit_base_world is 1, missing data will be fetched from the base region if they exist
+and again from the world region if necessary.
 """
 function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
@@ -138,11 +130,9 @@ function create_daa(in_data::DataFrame, tab_name, base_region="DE", els...) # el
 end
 
 """
-
+Create dense axis array initialized at a given value. 
 """
 function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
-    """Same as create_daa but you can set the default value to be different than 0
-    """
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
@@ -195,55 +185,6 @@ function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els..
     return A
 end
 
-"""
-
-"""
-function df_from_json(ccd, Sets)
-    df = DataFrame()
-    region = Sets.Region_full
-    technology = Sets.Technology
-    year = Sets.Year
-    for r in Symbol.(region), t in Symbol.(technology), y in Symbol.(string.(year))
-        try
-            push!(df, (region=r, technology=t, year=y, value=data(ccd, r, t, y,y)))
-        catch e
-            println(y)
-        end
-    end
-    return df
-end
-
-"""
-
-"""
-function df_from_dd(dd, Sets)
-    df = DataFrame()
-    region = Sets.Region_full
-    technology = Sets.Technology
-    year = Sets.Year
-    for r in At.(region), t in At.(technology), y in At.(year)
-        push!(df, (region=r.val, technology=t.val, year=y.val, value=dd[r, t, y]))
-    end
-    return df
-end
-
-"""
-
-"""
-function df_from_daa(daa, Sets)
-    df = DataFrame()
-    region = Sets.Region_full
-    technology = Sets.Technology
-    year = Sets.Year
-    for r in region, t in technology, y in year
-        push!(df, (region=r, technology=t, year=y, value=daa[r, t, y]))
-    end
-    return df
-end
-
-"""
-
-"""
 function specified_demand_profile(time_series_data,Sets,base_region="DE")
 
     # Read table from Excel to DataFrame
@@ -369,7 +310,11 @@ function read_x_peakingDemand(time_series_data,Sets,base_region="DE")
 end
 
 """
+Write a text file containing the iis.
 
+The function is used to write the iis to a file. By default the file is written in the working
+directory and is named iis.txt. The function compute_conflict!(model) must be run beforehands.
+The iis contains the set of constraint causing the infeasibility.
 """
 function print_iis(model;filename="iis")
     list_of_conflicting_constraints = ConstraintRef[]

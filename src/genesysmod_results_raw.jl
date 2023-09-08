@@ -18,28 +18,23 @@
 #
 # #############################################################
 """
-
+Return all variables in the model
 """
 function _registered_variables(model)
     collect(keys(object_dictionary(model)))
 end
 
 """
-
+Write the values of each variable in the model to CSV files.
 """
 function genesysmod_results_raw(model, Switch,extr_str)
-    file = open(joinpath(Switch.resultdir,"log_raw_results.txt"), "a")
-
     vars = _registered_variables(model)
-    start = Dates.now()
     Threads.@threads for v in vars
         if v ∉ [:cost, :z]
             @debug "Saving " v
-            fn = joinpath(Switch.resultdir, string(v) * "_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+            fn = joinpath(Switch.resultdir, string(v) * "_" * Switch.model_region * "_"
+             * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
             CSV.write(fn, JuMP.Containers.rowtable(value, model[v])) 
-            write(file, "$(v): $(Dates.now()-start) \n")
         end
     end
-    close(file)
-
 end

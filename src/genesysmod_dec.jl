@@ -18,7 +18,7 @@
 #
 # #############################################################
 """
-
+Internal function used in the run process to define the model variables.
 """
 function genesysmod_dec(model,Sets, Subsets, Params,Switch)
 

@@ -19,7 +19,8 @@
 # #############################################################
 
 """
-
+Internal function used in the run pårocess to compute results. 
+It also runs the functions for processing emissions and levelized costs.
 """
 function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Settings, elapsed, extr_str)
     start=Dates.now()
