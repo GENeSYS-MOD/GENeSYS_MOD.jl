@@ -80,7 +80,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_base_year_bounds,
     switch_peaking_capacity,
     set_peaking_slack,
-    set_peaking_minrun_share,
+    # set_peaking_minrun_share,
     set_peaking_res_cf,
     set_peaking_startyear,
     switch_peaking_with_storages,
