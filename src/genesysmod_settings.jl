@@ -19,7 +19,7 @@
 # #############################################################
 
 """
-
+Internal function used in the run process to set run settings such as dicount rates.
 """
 function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
 

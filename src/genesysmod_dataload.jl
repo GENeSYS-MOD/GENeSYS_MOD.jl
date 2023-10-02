@@ -19,7 +19,7 @@
 # #############################################################
 
 """
-
+Internal function used in the run process to load the input data and create the reduced timeseries.
 """
 function genesysmod_dataload(Switch)
 
@@ -114,7 +114,6 @@ function genesysmod_dataload(Switch)
     ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
     TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
-    BaseYearProduction = create_daa(in_data, "Par_BaseYearProduction",dbr, 𝓣, 𝓕)
     RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction",dbr, 𝓡, 𝓣, 𝓕, 𝓨)
     TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
     TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
@@ -122,7 +121,6 @@ function genesysmod_dataload(Switch)
 
     RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
     Demand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
-    CapacityOfOneTechnologyUnit = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓣), length(𝓡)), 𝓨, 𝓣, 𝓡)
     TagDispatchableTechnology = JuMP.Containers.DenseAxisArray(ones(length(𝓣)), 𝓣)
     StorageMaxCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓢), length(𝓨)), 𝓡, 𝓢, 𝓨)
     TotalAnnualMaxCapacityInvestment = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
@@ -144,7 +142,7 @@ function genesysmod_dataload(Switch)
     TradeLossBetweenRegions = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
     TradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
 
-    AdditionalTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
 
     SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
     TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
@@ -248,7 +246,7 @@ function genesysmod_dataload(Switch)
     Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,
     SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
-    CapacityOfOneTechnologyUnit,TagDispatchableTechnology,BaseYearProduction,
+    TagDispatchableTechnology,
     RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
     StorageLevelStart,StorageMaxChargeRate,StorageMaxDischargeRate,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
@@ -262,7 +260,7 @@ function genesysmod_dataload(Switch)
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
     ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
-    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,AdditionalTradeCapacity,
+    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,CommissionedTradeCapacity,
     TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
     RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
     ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,

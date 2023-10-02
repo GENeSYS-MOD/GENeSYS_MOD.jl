@@ -33,14 +33,18 @@ data_base_region="DE"
 data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new"
 #data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones_dispatch"
 hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022"
-timeseries_data_file="genesysmod_timeseriesdata_minimalexample_v02_kl_15_03_2023"
 threads=20
 emissionPathway="MinimalExample"
 emissionScenario="globalLimit"
 socialdiscountrate=0.05
+<<<<<<< HEAD
 inputdir = joinpath(pkgdir(GENeSYS_MOD),"data")
 tempdir = joinpath(pkgdir(GENeSYS_MOD),"TempData")
 resultdir = joinpath(pkgdir(GENeSYS_MOD),"Results")
+=======
+inputdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Inputdata")
+resultdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Results")
+>>>>>>> da2ca3983022b1803cdba0a39ed755489a7b7233
 switch_infeasibility_tech = 1
 switch_investLimit=1
 switch_ccs=1
@@ -84,8 +88,54 @@ elseif elmod_nthhour == 0
 end
 
 Switch = GENeSYS_MOD.Switch(start_year,
+<<<<<<< HEAD
 
 )
+=======
+    switch_only_load_gdx,
+    switch_test_data_load,
+    solver,
+    DNLPsolver,
+    model_region,
+    data_base_region,
+    data_file,
+    timeseries_data_file,
+    threads,
+    emissionPathway,
+    emissionScenario,
+    socialdiscountrate,
+    inputdir,
+    resultdir,
+    switch_infeasibility_tech,
+    switch_investLimit,
+    switch_ccs,
+    switch_ramping,
+    switch_weighted_emissions,
+    switch_intertemporal,
+    switch_short_term_storage,
+    switch_base_year_bounds,
+    switch_peaking_capacity,
+    set_peaking_slack,
+    set_peaking_minrun_share,
+    set_peaking_res_cf,
+    set_peaking_startyear,
+    switch_peaking_with_storages,
+    switch_peaking_with_trade,
+    switch_peaking_minrun,
+    switch_employment_calculation,
+    switch_endogenous_employment,
+    employment_data_file,
+    switch_dispatch,
+    hourly_data_file,
+    elmod_nthhour,
+    elmod_starthour,
+    elmod_dunkelflaute,
+    elmod_skipdays,
+    elmod_skiphours,
+    switch_raw_results,
+    switch_processed_results,
+    write_reduced_timeserie)
+>>>>>>> da2ca3983022b1803cdba0a39ed755489a7b7233
     starttime= Dates.now()
         
 model= JuMP.Model()

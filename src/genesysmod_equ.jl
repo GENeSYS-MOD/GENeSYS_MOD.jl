@@ -18,7 +18,7 @@
 #
 # #############################################################
 """
-
+Internal function used in the run process to define the model constraints.
 """
 function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
 
@@ -389,7 +389,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
           if 𝓨[i] == Switch.StartYear
             @constraint(model, model[:TotalTradeCapacity][𝓨[i],f,r,rr] == Params.TradeCapacity[𝓨[i],f,r,rr], base_name="TrC2a_TotalTradeCapacityStartYear_$(𝓨[i])_$(f)_$(r)_$(rr)")
           elseif 𝓨[i] > Switch.StartYear
-            @constraint(model, model[:TotalTradeCapacity][𝓨[i],f,r,rr] == model[:TotalTradeCapacity][𝓨[i-1],f,r,rr] + model[:NewTradeCapacity][𝓨[i],f,r,rr] + Params.AdditionalTradeCapacity[𝓨[i],f,r,rr], 
+            @constraint(model, model[:TotalTradeCapacity][𝓨[i],f,r,rr] == model[:TotalTradeCapacity][𝓨[i-1],f,r,rr] + model[:NewTradeCapacity][𝓨[i],f,r,rr] + Params.CommissionedTradeCapacity[𝓨[i],f,r,rr], 
             base_name="TrC2b_TotalTradeCapacity_$(𝓨[i])_$(f)_$(r)_$(rr)")
           end
 
