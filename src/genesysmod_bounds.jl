@@ -209,7 +209,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(Subsets.Solar, Subsets.Wind, Subsets.Transport,["RES_Hydro_Small"])
+    subs = vcat(Subsets.Solar, Subsets.Wind, ["RES_Hydro_Small"])
     Params.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
 
     for r ∈ Sets.Region_full for t ∈ Subsets.Solar
