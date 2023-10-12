@@ -54,8 +54,9 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
     @variable(model, UseByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
     
     @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
-    @variable(model, Curtailment[𝓨,𝓛,𝓕,𝓡] >= 0)
-    @variable(model, CurtailmentAnnual[𝓨,𝓕,𝓡] >= 0)
+    @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
+    @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
+    @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
     @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
 
     

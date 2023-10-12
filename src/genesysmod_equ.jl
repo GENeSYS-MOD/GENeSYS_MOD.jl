@@ -134,20 +134,6 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
     end
   end end end 
 
-  function CanFuelBeProducedByModeByTech(y, f, r,t,m)
-    temp = Params.OutputActivityRatio[r,t,f,m,y]*
-    Params.TotalAnnualMaxCapacity[r,t,y] * 
-    sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛) *
-    Params.AvailabilityFactor[r,t,y] * 
-    Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] * 
-    Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y]
-    if (!ismissing(temp)) && (temp > 0)
-      return 1
-    else
-      return 0
-    end
-  end
-
   function CanFuelBeProducedByTech(y, f, r,t)
     temp = sum(Params.OutputActivityRatio[r,t,f,m,y]*
     Params.TotalAnnualMaxCapacity[r,t,y] * 
@@ -155,6 +141,20 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
     Params.AvailabilityFactor[r,t,y] * 
     Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] * 
     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] for m ∈ 𝓜)
+    if (!ismissing(temp)) && (temp > 0)
+      return 1
+    else
+      return 0
+    end
+  end
+
+  function CanFuelBeProducedByModeByTech(y, f, r,t,m)
+    temp = Params.OutputActivityRatio[r,t,f,m,y]*
+    Params.TotalAnnualMaxCapacity[r,t,y] * 
+    sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛) *
+    Params.AvailabilityFactor[r,t,y] * 
+    Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] * 
+    Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y]
     if (!ismissing(temp)) && (temp > 0)
       return 1
     else
@@ -250,7 +250,8 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
       (Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] == 0) ||
       (Params.TotalAnnualMaxCapacity[r,t,y] == 0) ||
       ((JuMP.has_upper_bound(model[:TotalCapacityAnnual][y,t,r])) && (JuMP.upper_bound(model[:TotalCapacityAnnual][y,t,r]) == 0)) ||
-      ((JuMP.is_fixed(model[:TotalCapacityAnnual][y,t,r])) && (JuMP.fix_value(model[:TotalCapacityAnnual][y,t,r]) == 0))
+      ((JuMP.is_fixed(model[:TotalCapacityAnnual][y,t,r])) && (JuMP.fix_value(model[:TotalCapacityAnnual][y,t,r]) == 0)) ||
+      (sum(Params.OutputActivityRatio[r,t,f,m,y] for f ∈ 𝓕) == 0 && sum(Params.InputActivityRatio[r,t,f,m,y] for f ∈ 𝓕) == 0)
         JuMP.fix(model[:RateOfActivity][y,l,t,m,r], 0; force=true)
     end
   end end end end end
@@ -277,9 +278,10 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
         (Params.AvailabilityFactor[r,t,y] > 0) &&
         (Params.TotalAnnualMaxCapacity[r,t,y] > 0) &&
         (Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0)
-          @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r] for m ∈ Maps.Tech_MO[t]) == model[:TotalCapacityAnnual][y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[r,t] * Params.AvailabilityFactor[r,t,y] - model[:DispatchDummy][r,l,t,y] * Params.TagDispatchableTechnology[t],
+          @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r] for m ∈ Maps.Tech_MO[t]) == model[:TotalCapacityAnnual][y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[r,t] * Params.AvailabilityFactor[r,t,y] - model[:DispatchDummy][r,l,t,y] * Params.TagDispatchableTechnology[t] - model[:CurtailedCapacity][r,l,t,y] * Params.CapacityToActivityUnit[r,t],
           base_name="CA3b_RateOfTotalActivity_$(r)_$(l)_$(t)_$(y)")
       end
+      @constraint(model, model[:TotalCapacityAnnual][y,t,r] >= model[:CurtailedCapacity][r,l,t,y], base_name="CA3c_CurtailedCapacity_$(r)_$(t)_$(y)")
     end end end end
   end
   print("Cstr: Cap Adequacy A3 : ",Dates.now()-start,"\n")
@@ -329,7 +331,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
     if IgnoreFuel[y,f,r] == 0
       for l ∈ 𝓛
         @constraint(model,sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)])* Params.YearSplit[l,y] ==
-       (Params.Demand[y,l,f,r] + sum(model[:RateOfActivity][y,l,t,m,r]*Params.InputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetInput[(r,f,y)])*Params.YearSplit[l,y] + model[:NetTrade][y,l,f,r] + model[:Curtailment][y,l,f,r]),
+       (Params.Demand[y,l,f,r] + sum(model[:RateOfActivity][y,l,t,m,r]*Params.InputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetInput[(r,f,y)])*Params.YearSplit[l,y] + model[:NetTrade][y,l,f,r]),
         base_name="EB2_EnergyBalanceEachTS_$(y)_$(l)_$(f)_$(r)")
       end
     end
@@ -338,11 +340,8 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
   print("Cstr: Energy Balance A1 : ",Dates.now()-start,"\n")
   start=Dates.now()
   for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
-    if any(x->x>0, [JuMP.has_upper_bound(model[:Curtailment][y,l,f,r]) ? JuMP.upper_bound(model[:Curtailment][y,l,f,r]) : ((JuMP.is_fixed(model[:Curtailment][y,l,f,r])) && (JuMP.fix_value(model[:Curtailment][y,l,f,r]) == 0)) ? 0 : 999999 for l ∈ 𝓛])
-      @constraint(model, model[:CurtailmentAnnual][y,f,r] == sum(model[:Curtailment][y,l,f,r] for l ∈ 𝓛), base_name="EB6_AnnualCurtailment_$(y)_$(f)_$(r)")
-    else
-      JuMP.fix(model[:CurtailmentAnnual][y,f,r],0; force=true)
-    end
+    @constraint(model, model[:CurtailedEnergyAnnual][y,f,r] == sum(model[:CurtailedCapacity][r,l,t,y] * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[r,t] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,y)]), 
+    base_name="EB6_AnnualEnergyCurtailment_$(y)_$(f)_$(r)")
 
     if Params.SelfSufficiency[y,f,r] != 0
       @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y]*Params.YearSplit[l,y] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,y)]) == (Params.SpecifiedAnnualDemand[r,f,y] + sum(model[:RateOfActivity][y,l,t,m,r]*Params.InputActivityRatio[r,t,f,m,y]*Params.YearSplit[l,y] for l ∈ 𝓛 for (t,m) ∈ LoopSetInput[(r,f,y)]))*Params.SelfSufficiency[y,f,r], base_name="EB7_AnnualSelfSufficiency_$(y)_$(f)_$(r)")
@@ -1013,16 +1012,22 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps
   print("Cstr: Ramping : ",Dates.now()-start,"\n")
   end
 
-  ############### Curtailment Costs #############
+  ############### Curtailment && Curtailment Costs #############
   start=Dates.now()
   for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
     @constraint(model,
-    sum(model[:Curtailment][y,l,f,r]*Params.CurtailmentCostFactor[r,f,y] for l ∈ 𝓛 ) == model[:AnnualCurtailmentCost][y,f,r],
+    sum(model[:CurtailedEnergyAnnual][y,f,r]*Params.CurtailmentCostFactor) == model[:AnnualCurtailmentCost][y,f,r],
     base_name="CC1_AnnualCurtailmentCosts_$(y)_$(f)_$(r)")
     @constraint(model,
     model[:AnnualCurtailmentCost][y,f,r]/((1+Settings.GeneralDiscountRate[r])^(y-Switch.StartYear+0.5)) == model[:DiscountedAnnualCurtailmentCost][y,f,r],
     base_name="CC2_DiscountedAnnualCurtailmentCosts_$(y)_$(f)_$(r)")
   end end end
+
+  for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
+    @constraint(model,
+    sum(model[:CurtailedCapacity][r,l,t,y] * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[r,t] for (t,m) ∈ LoopSetOutput[(r,f,y)]) == model[:CurtailedEnergy][y,l,f,r],
+    base_name="CC3_CurtailedEnergy_$(y)_$(f)_$(r)_$(l)")
+  end end end end
 
   print("Cstr: Curtailment : ",Dates.now()-start,"\n")
 

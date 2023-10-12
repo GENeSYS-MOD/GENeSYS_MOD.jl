@@ -209,22 +209,13 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(Subsets.Solar, Subsets.Wind, Subsets.Transport,["RES_Hydro_Small"])
+    subs = vcat(Subsets.Solar, Subsets.Wind, ["RES_Hydro_Small"])
     Params.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
+    Params.CurtailmentCostFactor == 0.1
 
     for r ∈ Sets.Region_full for t ∈ Subsets.Solar
     Params.AvailabilityFactor[r,t,:] .= 1
     end end
-
-    for y ∈ Sets.Year for l ∈ Sets.Timeslice for r ∈ Sets.Region_full
-        for t ∈ Subsets.TransportFuels
-            JuMP.fix(model[:Curtailment][y,l,t,r], 0; force=true)
-        end
-        for t ∈ ["Heat_High_Industrial","Heat_Medium_Industrial","Heat_Low_Industrial","Heat_District"]
-            JuMP.set_upper_bound(model[:Curtailment][y,l,t,r], 1)
-        end
-        JuMP.set_upper_bound(model[:Curtailment][y,l,"Heat_Low_Residential",r], 0.5)
-    end end end
 
     for e ∈ Sets.Emission for s ∈ Sets.Sector for y ∈ Sets.Year
         if Params.AnnualSectoralEmissionLimit[e,s,y] == 0
