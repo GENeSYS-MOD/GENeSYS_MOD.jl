@@ -303,6 +303,89 @@ struct Parameters <: InputClass
     TagElectricTechnology ::JuMP.Containers.DenseAxisArray
 end
 
+struct Variables
+    NewCapacity ::JuMP.Containers.DenseAxisArray
+    AccumulatedNewCapacity ::JuMP.Containers.DenseAxisArray
+    TotalCapacityAnnual ::JuMP.Containers.DenseAxisArray
+
+    RateOfActivity ::JuMP.Containers.DenseAxisArray
+    TotalAnnualTechnologyActivityByMode ::JuMP.Containers.DenseAxisArray
+    ProductionByTechnologyAnnual ::JuMP.Containers.DenseAxisArray
+    UseByTechnologyAnnual ::JuMP.Containers.DenseAxisArray
+    TotalTechnologyAnnualActivity ::JuMP.Containers.DenseAxisArray
+    TotalActivityPerYear ::JuMP.Containers.DenseAxisArray
+    CurtailedEnergyAnnual ::JuMP.Containers.DenseAxisArray
+    CurtailedCapacity ::JuMP.Containers.DenseAxisArray
+    CurtailedEnergy ::JuMP.Containers.DenseAxisArray
+    DispatchDummy ::JuMP.Containers.DenseAxisArray
+
+    CapitalInvestment ::JuMP.Containers.DenseAxisArray
+    DiscountedCapitalInvestment ::JuMP.Containers.DenseAxisArray
+    SalvageValue ::JuMP.Containers.DenseAxisArray
+    DiscountedSalvageValue ::JuMP.Containers.DenseAxisArray
+    OperatingCost ::JuMP.Containers.DenseAxisArray
+    DiscountedOperatingCost ::JuMP.Containers.DenseAxisArray
+    AnnualVariableOperatingCost ::JuMP.Containers.DenseAxisArray
+    AnnualFixedOperatingCost ::JuMP.Containers.DenseAxisArray
+    VariableOperatingCost ::JuMP.Containers.DenseAxisArray
+    TotalDiscountedCost ::JuMP.Containers.DenseAxisArray
+    TotalDiscountedCostByTechnology ::JuMP.Containers.DenseAxisArray
+    ModelPeriodCostByRegion ::JuMP.Containers.DenseAxisArray
+    AnnualCurtailmentCost ::JuMP.Containers.DenseAxisArray
+    DiscountedAnnualCurtailmentCost ::JuMP.Containers.DenseAxisArray
+
+    StorageLevelYearStart ::JuMP.Containers.DenseAxisArray
+    StorageLevelTSStart ::JuMP.Containers.DenseAxisArray
+    AccumulatedNewStorageCapacity ::JuMP.Containers.DenseAxisArray
+    NewStorageCapacity ::JuMP.Containers.DenseAxisArray
+    CapitalInvestmentStorage ::JuMP.Containers.DenseAxisArray
+    DiscountedCapitalInvestmentStorage ::JuMP.Containers.DenseAxisArray
+    SalvageValueStorage ::JuMP.Containers.DenseAxisArray
+    DiscountedSalvageValueStorage ::JuMP.Containers.DenseAxisArray
+    TotalDiscountedStorageCost ::JuMP.Containers.DenseAxisArray
+
+    TotalActivityInReserveMargin ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+    DemandNeedingReserveMargin ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+
+    TotalREProductionAnnual ::JuMP.Containers.DenseAxisArray
+    RETotalDemandOfTargetFuelAnnual ::JuMP.Containers.DenseAxisArray
+    TotalTechnologyModelPeriodActivity ::JuMP.Containers.DenseAxisArray
+    RETargetMin ::JuMP.Containers.DenseAxisArray
+
+    AnnualTechnologyEmissionByMode ::JuMP.Containers.DenseAxisArray
+    AnnualTechnologyEmission ::JuMP.Containers.DenseAxisArray
+    AnnualTechnologyEmissionPenaltyByEmission ::JuMP.Containers.DenseAxisArray
+    AnnualTechnologyEmissionsPenalty ::JuMP.Containers.DenseAxisArray
+    DiscountedTechnologyEmissionsPenalty ::JuMP.Containers.DenseAxisArray
+    AnnualEmissions ::JuMP.Containers.DenseAxisArray
+    ModelPeriodEmissions ::JuMP.Containers.DenseAxisArray
+    WeightedAnnualEmissions ::JuMP.Containers.DenseAxisArray
+
+    AnnualSectoralEmissions ::JuMP.Containers.DenseAxisArray
+
+    Import ::JuMP.Containers.DenseAxisArray
+    Export ::JuMP.Containers.DenseAxisArray
+    NewTradeCapacity ::JuMP.Containers.DenseAxisArray
+    TotalTradeCapacity ::JuMP.Containers.DenseAxisArray
+    NewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
+    DiscountedNewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
+    NetTrade ::JuMP.Containers.DenseAxisArray
+    NetTradeAnnual ::JuMP.Containers.DenseAxisArray
+    TotalTradeCosts ::JuMP.Containers.DenseAxisArray
+    AnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
+    DiscountedAnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
+
+    DemandSplitByModalType ::JuMP.Containers.DenseAxisArray
+    ProductionSplitByModalType ::JuMP.Containers.DenseAxisArray
+    ProductionUpChangeInTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+    ProductionDownChangeInTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+
+    RateOfTotalActivity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+
+    BaseYearSlack ::JuMP.Containers.DenseAxisArray
+    BaseYearOvershoot ::JuMP.Containers.DenseAxisArray
+end
+
 """
 Model settings necessary for running the model
 

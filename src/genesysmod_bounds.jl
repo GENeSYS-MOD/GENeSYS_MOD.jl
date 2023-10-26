@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to modify batches of input data.
 """
-function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
+function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
 
     #
     # ####### Default Values #############
@@ -79,32 +79,6 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
                         Params.VariableCost[r,t,m,y] = 0.01
     end end end end end 
 
-    #
-    # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
-    #
-
-    if Switch.switch_infeasibility_tech == 1
-        Params.TagTechnologyToSector[Subsets.DummyTechnology,"Infeasibility"] .= 1
-        Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 0
-
-        Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
-
-        Params.CapacityToActivityUnit[:,Subsets.DummyTechnology] .= 31.56
-        Params.TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
-        Params.FixedCost[:,Subsets.DummyTechnology,:] .= 999
-        Params.CapitalCost[:,Subsets.DummyTechnology,:] .= 999
-        Params.VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
-        Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
-        Params.CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
-        Params.OperationalLife[:,Subsets.DummyTechnology] .= 1 
-        Params.EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
-    end
 
     #
     # ####### Bounds for non-supply technologies #############
@@ -169,12 +143,12 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
             for t ∈ vcat(Subsets.Transformation,Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
-                JuMP.fix(model[:NewCapacity][Switch.StartYear,t,r],0; force=true)
+                JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
             for t ∈ vcat(Subsets.Biomass,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
                 "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF"])
-                if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
-                    JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
+                if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
+                    JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                 end
             end
         end
@@ -182,8 +156,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
         for t ∈ Sets.Technology
             if Params.TagTechnologyToSector[t,"CHP"] == 1
                 for r ∈ Sets.Region_full
-                    if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
-                        JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
+                    if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
+                        JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                     end
                 end
             end
@@ -243,8 +217,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
                 for t ∈ Subsets.CCS
                     Params.TotalAnnualMaxCapacity[r,t,y] = 0
                     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] = 0
-                    for f ∈ Sets.Fuel
-                        JuMP.fix(model[:ProductionByTechnologyAnnual][y,t,f,r],0; force=true)
+                    for f ∈ Maps.Tech_Fuel[t]
+                        JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r],0; force=true)
                     end
                 end 
             end
@@ -260,7 +234,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
             for f ∈ Sets.Fuel
-                JuMP.fix(model[:ProductionByTechnologyAnnual][y,t,f,r], 0; force = true)
+                JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r], 0; force = true)
             end
         end end end
     end
@@ -325,10 +299,10 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
         if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
-            JuMP.fix(model[:StorageLevelTSStart]["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(model[:StorageLevelTSStart]["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(model[:StorageLevelTSStart]["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(model[:StorageLevelTSStart]["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
+            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
+            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
+            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
         end
     Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]

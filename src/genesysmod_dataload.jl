@@ -243,6 +243,33 @@ function genesysmod_dataload(Switch)
         end
     end end end end
 
+        #
+    # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
+    #
+
+    if Switch.switch_infeasibility_tech == 1
+        TagTechnologyToSector[Subsets.DummyTechnology,"Infeasibility"] .= 1
+        AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 0
+
+        OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
+        OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
+        OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
+        OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
+        OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
+        OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
+        OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+
+        CapacityToActivityUnit[:,Subsets.DummyTechnology] .= 31.56
+        TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
+        FixedCost[:,Subsets.DummyTechnology,:] .= 999
+        CapitalCost[:,Subsets.DummyTechnology,:] .= 999
+        VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
+        AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
+        CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
+        OperationalLife[:,Subsets.DummyTechnology] .= 1 
+        EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
+    end
+
     Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,
     SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,

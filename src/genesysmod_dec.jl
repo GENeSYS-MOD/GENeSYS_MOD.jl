@@ -17,10 +17,25 @@
 # limitations under the License.
 #
 # #############################################################
+function def_daa(sets...)
+    daa = JuMP.Containers.DenseAxisArray{Union{Float64,VariableRef}}(
+        undef, sets...);
+    fill!(daa,0.0);
+
+#=     for i in eachindex(sets...)
+        if sets...[i] == Sets.Technology & any(x -> x == Sets.Mode_of_operation, sets...[i:end])
+            M = findfirst(x -> x == Sets.Mode_of_operation, sets...[i:end])
+            
+    end
+    for x... in sets... =#
+
+    return daa
+end
+
 """
 Internal function used in the run process to define the model variables.
 """
-function genesysmod_dec(model,Sets, Subsets, Params,Switch)
+function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
 
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
@@ -37,117 +52,137 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
     # Model Variables #
     #####################
 
-    ############### Capacity Variables ############*
-    @variable(model, NewCapacity[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, AccumulatedNewCapacity[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, TotalCapacityAnnual[𝓨,𝓣,𝓡] >= 0)
+    ############### Capacity Variables ############
+    
+    NewCapacity = @variable(model, NewCapacity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    AccumulatedNewCapacity = @variable(model, AccumulatedNewCapacity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    TotalCapacityAnnual = @variable(model, TotalCapacityAnnual[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
     ############### Activity Variables #############
 
-    @variable(model, RateOfActivity[𝓨,𝓛,𝓣,𝓜,𝓡] >= 0)
-    @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
-    
-    @variable(model, TotalAnnualTechnologyActivityByMode[𝓨,𝓣,𝓜,𝓡] >= 0)
-    
-    @variable(model, ProductionByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
-    
-    @variable(model, UseByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
-    
-    @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
-    @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
-    @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
-    @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
-    @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
+    RateOfActivity = def_daa(𝓨,𝓛,𝓣,𝓜,𝓡)
+    TotalAnnualTechnologyActivityByMode = def_daa(𝓨,𝓣,𝓜,𝓡)
+    ProductionByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
+    UseByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
+
+    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
+        for m ∈ Maps.Tech_MO[t]
+            TotalAnnualTechnologyActivityByMode[y,t,m,r] = @variable(model, lower_bound = 0, base_name= "TotalAnnualTechnologyActivityByMode[$y,$t,$m,$r]")
+        end
+        for l ∈ 𝓛
+            for m ∈ Maps.Tech_MO[t]
+                RateOfActivity[y,l,t,m,r] = @variable(model, lower_bound = 0, base_name= "RateOfActivity[$y,$l,$t,$m,$r]")
+            end
+        end
+        for f ∈ Maps.Tech_Fuel[t]
+            ProductionByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "ProductionByTechnologyAnnual[$y,$t,$f,$r]")
+            UseByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "UseByTechnologyAnnual[$y,$t,$f,$r]")
+        end 
+    end end end
+
+    TotalTechnologyAnnualActivity = @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+                
+    TotalActivityPerYear = @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
+    CurtailedEnergyAnnual = @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    CurtailedCapacity = @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
+    CurtailedEnergy = @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    DispatchDummy = @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
 
     
     ############### Costing Variables #############
 
-    @variable(model, CapitalInvestment[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, DiscountedCapitalInvestment[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, SalvageValue[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, DiscountedSalvageValue[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, OperatingCost[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, DiscountedOperatingCost[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, AnnualVariableOperatingCost[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, AnnualFixedOperatingCost[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, VariableOperatingCost[𝓨,𝓛,𝓣,𝓡] >= 0)
-    @variable(model, TotalDiscountedCost[𝓨,𝓡] >= 0)
-    @variable(model, TotalDiscountedCostByTechnology[𝓨,𝓣,𝓡] >= 0)
-    @variable(model, ModelPeriodCostByRegion[𝓡] >= 0)
+    CapitalInvestment = @variable(model, CapitalInvestment[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    DiscountedCapitalInvestment = @variable(model, DiscountedCapitalInvestment[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    SalvageValue = @variable(model, SalvageValue[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    DiscountedSalvageValue = @variable(model, DiscountedSalvageValue[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    OperatingCost = @variable(model, OperatingCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    DiscountedOperatingCost = @variable(model, DiscountedOperatingCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    AnnualVariableOperatingCost = @variable(model, AnnualVariableOperatingCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    AnnualFixedOperatingCost = @variable(model, AnnualFixedOperatingCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    VariableOperatingCost = @variable(model, VariableOperatingCost[𝓨,𝓛,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    TotalDiscountedCost = @variable(model, TotalDiscountedCost[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    TotalDiscountedCostByTechnology = @variable(model, TotalDiscountedCostByTechnology[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    ModelPeriodCostByRegion = @variable(model, ModelPeriodCostByRegion[𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
-    @variable(model, AnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0)
-    @variable(model, DiscountedAnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0)
+    AnnualCurtailmentCost = @variable(model, AnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    DiscountedAnnualCurtailmentCost = @variable(model, DiscountedAnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
     
 
     ############### Storage Variables #############
 
-    @variable(model, StorageLevelYearStart[𝓢,𝓨,𝓡] >= 0)
-    @variable(model, StorageLevelTSStart[𝓢,𝓨,𝓛,𝓡] >= 0)
+    StorageLevelYearStart = @variable(model, StorageLevelYearStart[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+    StorageLevelTSStart = @variable(model, StorageLevelTSStart[𝓢,𝓨,𝓛,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
-    @variable(model, AccumulatedNewStorageCapacity[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, NewStorageCapacity[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, CapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, DiscountedCapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, SalvageValueStorage[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, DiscountedSalvageValueStorage[𝓢,𝓨,𝓡] >= 0) 
-    @variable(model, TotalDiscountedStorageCost[𝓢,𝓨,𝓡] >= 0) 
+    AccumulatedNewStorageCapacity = @variable(model, AccumulatedNewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    NewStorageCapacity = @variable(model, NewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    CapitalInvestmentStorage = @variable(model, CapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    DiscountedCapitalInvestmentStorage = @variable(model, DiscountedCapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    SalvageValueStorage = @variable(model, SalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    DiscountedSalvageValueStorage = @variable(model, DiscountedSalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    TotalDiscountedStorageCost = @variable(model, TotalDiscountedStorageCost[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
     
 
     ######## Reserve Margin #############
 
     if Switch.switch_dispatch == 0
-        @variable(model, TotalActivityInReserveMargin[𝓡,𝓨,𝓛] >= 0)
-        @variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0) 
+        TotalActivityInReserveMargin=@variable(model, TotalActivityInReserveMargin[𝓡,𝓨,𝓛] >= 0, container=JuMP.Containers.DenseAxisArray)
+        DemandNeedingReserveMargin=@variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    else
+        TotalActivityInReserveMargin = nothing
+        DemandNeedingReserveMargin = nothing
     end
 
     
 
     ######## RE Gen Target #############
 
-    @variable(model, TotalREProductionAnnual[𝓨,𝓡,𝓕]) 
-    @variable(model, RETotalDemandOfTargetFuelAnnual[𝓨,𝓡,𝓕]) 
-    @variable(model, TotalTechnologyModelPeriodActivity[𝓣,𝓡]) 
-    @variable(model, RETargetMin[𝓨,𝓡] >= 0) 
+    TotalREProductionAnnual = @variable(model, TotalREProductionAnnual[𝓨,𝓡,𝓕], container=JuMP.Containers.DenseAxisArray) 
+    RETotalDemandOfTargetFuelAnnual = @variable(model, RETotalDemandOfTargetFuelAnnual[𝓨,𝓡,𝓕], container=JuMP.Containers.DenseAxisArray) 
+    TotalTechnologyModelPeriodActivity = @variable(model, TotalTechnologyModelPeriodActivity[𝓣,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    RETargetMin = @variable(model, RETargetMin[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
     
 
     ######## Emissions #############
 
-    @variable(model, AnnualTechnologyEmissionByMode[𝓨,𝓣,𝓔,𝓜,𝓡]) 
-    @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡]) 
-    @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡]) 
-    @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡]) 
-    @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡]) 
-    @variable(model, AnnualEmissions[𝓨,𝓔,𝓡]) 
-    @variable(model, ModelPeriodEmissions[𝓔,𝓡]) 
-    @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡])
+    AnnualTechnologyEmissionByMode = def_daa(𝓨,𝓣,𝓔,𝓜,𝓡)
+    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔 
+        for m ∈ Maps.Tech_MO[t]
+            AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
+        end
+    end end end end 
+    AnnualTechnologyEmission = @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    AnnualTechnologyEmissionPenaltyByEmission = @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    AnnualTechnologyEmissionsPenalty = @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    DiscountedTechnologyEmissionsPenalty = @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    AnnualEmissions = @variable(model, AnnualEmissions[𝓨,𝓔,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓔,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    WeightedAnnualEmissions = @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡], container=JuMP.Containers.DenseAxisArray)
 
     
-
-
     ######### SectoralEmissions #############
 
-    @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡]) 
+    AnnualSectoralEmissions = @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡], container=JuMP.Containers.DenseAxisArray) 
 
     
 
     ######### Trade #############
 
-    @variable(model, Import[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0) 
-    @variable(model, Export[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0) 
+    Import = @variable(model, Import[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    Export = @variable(model, Export[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
-    @variable(model, NewTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0) 
-    @variable(model, TotalTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0) 
-    @variable(model, NewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0) 
-    @variable(model, DiscountedNewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0) 
+    NewTradeCapacity = @variable(model, NewTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    TotalTradeCapacity = @variable(model, TotalTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    NewTradeCapacityCosts = @variable(model, NewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    DiscountedNewTradeCapacityCosts = @variable(model, DiscountedNewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
-    @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡]) 
-    @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡]) 
-    @variable(model, TotalTradeCosts[𝓨,𝓛,𝓡]) 
-    @variable(model, AnnualTotalTradeCosts[𝓨,𝓡]) 
-    @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡]) 
+    NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    TotalTradeCosts = @variable(model, TotalTradeCosts[𝓨,𝓛,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
+    DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
 
     
 
@@ -157,24 +192,61 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
     #TrajectoryLowerLimit(𝓨) 
     #TrajectoryUpperLimit(𝓨) 
 
-    @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨]) 
-    @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨]) 
+    DemandSplitByModalType = @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨], container=JuMP.Containers.DenseAxisArray) 
+    ProductionSplitByModalType = @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨], container=JuMP.Containers.DenseAxisArray) 
 
     if Switch.switch_ramping == 1
 
-        ######## Ramping #############      
-        @variable(model, ProductionUpChangeInTimeslice[𝓨,𝓛,𝓕,𝓣,𝓡] >= 0) 
-        @variable(model, ProductionDownChangeInTimeslice[𝓨,𝓛,𝓕,𝓣,𝓡] >= 0)     
-        @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0) 
-        @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0) 
+        ######## Ramping #############    
+        ProductionUpChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
+        ProductionDownChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
+        for y ∈ 𝓨 for r ∈ 𝓡 for f ∈ 𝓕 for l ∈ 𝓛
+            for t ∈ Maps.Fuel_Tech[f]
+                ProductionUpChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionUpChangeInTimeslice[$y,$l,$f,$t,$r]")
+                ProductionDownChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionDownChangeInTimeslice[$y,$l,$f,$t,$r]")
+            end
+        end end end end    
+        @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+        @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    else
+        ProductionUpChangeInTimeslice=nothing
+        ProductionDownChangeInTimeslice=nothing
     end
 
     if Switch.switch_intertemporal == 1
-        @variable(model, RateOfTotalActivity[𝓨,𝓛,𝓣,𝓡])
+        RateOfTotalActivity = @variable(model, RateOfTotalActivity[𝓨,𝓛,𝓣,𝓡], container=JuMP.Containers.DenseAxisArray)
+    else
+        RateOfTotalActivity=nothing
     end
 
-    @variable(model, BaseYearSlack[𝓕]) 
+    BaseYearSlack= @variable(model, BaseYearSlack[𝓕], container=JuMP.Containers.DenseAxisArray) 
+    BaseYearOvershoot = def_daa(𝓡,𝓣,𝓕,𝓨)
+    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
+        for f ∈ Maps.Tech_Fuel[t]
+            BaseYearOvershoot[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$r,$t,$f,$y]")
+        end
+    end end end
     @variable(model, BaseYearOvershoot[𝓡,𝓣,𝓕,𝓨] >= 0) 
     
+    Vars = GENeSYS_MOD.Variables(NewCapacity,AccumulatedNewCapacity,TotalCapacityAnnual,
+    RateOfActivity,TotalAnnualTechnologyActivityByMode,ProductionByTechnologyAnnual,
+    UseByTechnologyAnnual,TotalTechnologyAnnualActivity,TotalActivityPerYear,CurtailedEnergyAnnual,
+    CurtailedCapacity,CurtailedEnergy,DispatchDummy,CapitalInvestment,DiscountedCapitalInvestment,
+    SalvageValue,DiscountedSalvageValue,OperatingCost,DiscountedOperatingCost,AnnualVariableOperatingCost,
+    AnnualFixedOperatingCost,VariableOperatingCost,TotalDiscountedCost,TotalDiscountedCostByTechnology,
+    ModelPeriodCostByRegion,AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
+    StorageLevelYearStart,StorageLevelTSStart,AccumulatedNewStorageCapacity,NewStorageCapacity,
+    CapitalInvestmentStorage,DiscountedCapitalInvestmentStorage,SalvageValueStorage,
+    DiscountedSalvageValueStorage,TotalDiscountedStorageCost,TotalActivityInReserveMargin,
+    DemandNeedingReserveMargin,TotalREProductionAnnual,RETotalDemandOfTargetFuelAnnual,
+    TotalTechnologyModelPeriodActivity,RETargetMin,AnnualTechnologyEmissionByMode,
+    AnnualTechnologyEmission,AnnualTechnologyEmissionPenaltyByEmission,AnnualTechnologyEmissionsPenalty,
+    DiscountedTechnologyEmissionsPenalty,AnnualEmissions,ModelPeriodEmissions,WeightedAnnualEmissions,
+    AnnualSectoralEmissions,Import,Export,NewTradeCapacity,TotalTradeCapacity,NewTradeCapacityCosts,
+    DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
+    DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
+    ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
+    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot)
+    return Vars
 end
 
