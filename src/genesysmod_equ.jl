@@ -48,7 +48,8 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   + sum(model[:DiscountedAnnualTotalTradeCosts][y,r] for y ∈ 𝓨 for r ∈ 𝓡)
   + sum(model[:DiscountedNewTradeCapacityCosts][y,f,r,rr] for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡 for rr ∈ 𝓡)
   + sum(model[:DiscountedAnnualCurtailmentCost][y,f,r] for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡)
-  + sum(model[:BaseYearOvershoot][r,t,"Power",y]*999 for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣))
+  + sum(model[:BaseYearOvershoot][r,t,"Power",y]*999 for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣)
+  - sum(model[:DiscountedSalvageValueTransmission][y,r] for y ∈ 𝓨 for r ∈ 𝓡))
   print("Cstr: Cost : ",Dates.now()-start,"\n")
   
 
@@ -405,14 +406,14 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     end
 
     for f ∈ 𝓕
-      if f != "Power"
+      if f != "Power" #|| f != "H2" 
         JuMP.fix(model[:NewTradeCapacity][𝓨[i],f,r,rr],0; force=true)
       end
-      if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power"
+      if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power" #|| f != "H2" 
         JuMP.fix(model[:DiscountedNewTradeCapacityCosts][𝓨[i],f,r,rr],0; force=true)
       end
     end
-  end end end
+  end end end #end
 
   ############### Trading Costs #############
 
@@ -537,6 +538,12 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
       @constraint(model,
       model[:SalvageValue][y,t,r] == 0,
       base_name="SV3_SalvageValueAtEndOfPeriod3_$(y)_$(t)_$(r)")
+    end
+
+    if ((Settings.DepreciationMethod[r]==1) && ((y + 40) > max(𝓨...)))
+      @constraint(model,
+      model[:DiscountedSalvageValueTransmission][y,r] == sum(Params.TradeCapacityGrowthCosts[f,r,rr]*Params.TradeRoute[y,f,r,rr]*model[:NewTradeCapacity][y,f,r,rr]*(1-(((1+Settings.GeneralDiscountRate[r])^(max(𝓨...) - y+1)-1)/((1+Settings.GeneralDiscountRate[r])^40))) for f ∈ 𝓕 for rr ∈ 𝓡)/((1+Settings.GeneralDiscountRate[r])^(1+max(𝓨...) - min(𝓨...))),
+      base_name="SV1b_SalvageValueAtEndOfPeriod1_$(y)_$(r)")
     end
 
     @constraint(model,

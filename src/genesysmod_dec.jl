@@ -174,7 +174,8 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch)
     end
 
     @variable(model, BaseYearSlack[𝓕]) 
-    @variable(model, BaseYearOvershoot[𝓡,𝓣,𝓕,𝓨] >= 0) 
+    @variable(model, BaseYearOvershoot[𝓡,𝓣,𝓕,𝓨] >= 0)
+    @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0) 
     
 end
 
