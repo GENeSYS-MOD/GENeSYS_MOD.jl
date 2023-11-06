@@ -282,14 +282,12 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
           @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r] for m ∈ 𝓜) == model[:TotalCapacityAnnual][y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[r,t] * Params.AvailabilityFactor[r,t,y] - model[:DispatchDummy][r,l,t,y] * Params.TagDispatchableTechnology[t] - model[:CurtailedCapacity][r,l,t,y] * Params.CapacityToActivityUnit[r,t],
           base_name="CA3b_RateOfTotalActivity_$(r)_$(l)_$(t)_$(y)")
       end
-      @constraint(model, model[:CurtailedCapacity][r,l,t,y] <= model[:TotalCapacityAnnual][y,t,r], base_name="CA3c_CurtailedCapacity_$(r)_$(t)_$(y)")
+      @constraint(model, model[:CurtailedCapacity][r,l,t,y] <= model[:TotalCapacityAnnual][y,t,r], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
     end end end end
   end
   print("Cstr: Cap Adequacy A3 : ",Dates.now()-start,"\n")
 
-  
-  ############### Capacity Adequacy B #############
-  
+   
   start=Dates.now()
   for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡
     if (Params.AvailabilityFactor[r,t,y] < 1) &&
@@ -401,7 +399,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
       end
     end
 
-    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 || Params.GrowthRateTradeCapacity[𝓨[i],"Power",r,rr] == 0
+    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 
       JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
     end
 
@@ -409,7 +407,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
       if f != "Power" #|| f != "H2" 
         JuMP.fix(model[:NewTradeCapacity][𝓨[i],f,r,rr],0; force=true)
       end
-      if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power" #|| f != "H2" 
+      if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power"
         JuMP.fix(model[:DiscountedNewTradeCapacityCosts][𝓨[i],f,r,rr],0; force=true)
       end
     end
