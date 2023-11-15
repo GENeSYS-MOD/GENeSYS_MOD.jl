@@ -391,20 +391,20 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
             base_name="TrC2b_TotalTradeCapacity_$(𝓨[i])_$(f)_$(r)_$(rr)")
           end
 
-          if i > 1 && Params.GrowthRateTradeCapacity[𝓨[i],f,r,rr] > 0 && Params.TradeRoute[𝓨[i],f,r,rr] > 0
+          if f == "Power" && i > 1 && Params.GrowthRateTradeCapacity[𝓨[i],f,r,rr] > 0 
             @constraint(model, (Params.GrowthRateTradeCapacity[𝓨[i],f,r,rr]*YearlyDifferenceMultiplier(𝓨[i],Sets))*model[:TotalTradeCapacity][𝓨[i-1],f,r,rr] >= model[:NewTradeCapacity][𝓨[i],f,r,rr], 
-            base_name="TrC3_NewTradeCapacityLimit_$(𝓨[i])_$(f)_$(r)_$(rr)")
+            base_name="TrC3_NewTradeCapacityLimitPowerLines_$(𝓨[i])_Power_$(r)_$(rr)")
           end
         end
       end
     end
 
-    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 
+    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 || Params.GrowthRateTradeCapacity[𝓨[i],"Power",r,rr] > 0
       JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
     end
 
     for f ∈ 𝓕
-      if f != "Power" #|| f != "H2" 
+      if f != "Power" 
         JuMP.fix(model[:NewTradeCapacity][𝓨[i],f,r,rr],0; force=true)
       end
       if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power"
