@@ -1028,12 +1028,6 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     base_name="CC2_DiscountedAnnualCurtailmentCosts_$(y)_$(f)_$(r)")
   end end end
 
-  for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
-    @constraint(model,
-    sum(model[:CurtailedCapacity][r,l,t,y] * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[r,t] for (t,m) ∈ LoopSetOutput[(r,f,y)]) == model[:CurtailedEnergy][y,l,f,r],
-    base_name="CC3_CurtailedEnergy_$(y)_$(f)_$(r)_$(l)")
-  end end end end
-
   print("Cstr: Curtailment : ",Dates.now()-start,"\n")
 
   if Switch.switch_base_year_bounds == 1
