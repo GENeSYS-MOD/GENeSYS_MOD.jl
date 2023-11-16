@@ -36,6 +36,7 @@ function genesysmod_variable_parameter(model, Sets, Params)
     ProductionAnnual = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full)
     UseAnnual = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full)
     CurtailedEnergy = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Timeslice)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Timeslice)
+    ModelPeriodCostByRegion = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full)), Sets.Region_full)
 
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
@@ -77,7 +78,12 @@ function genesysmod_variable_parameter(model, Sets, Params)
         UseAnnual[y,f,r] = sum(Use[y,:,f,r])
         end
     end end
+
+    for r ∈ Sets.Region_full
+        ModelPeriodCostByRegion[r] = sum(JuMP.value.(model[:TotalDiscountedCost][:,r]))
+    end
+
     VarPar = Variable_Parameters(RateOfTotalActivity, RateOfProductionByTechnologyByMode, RateOfUseByTechnologyByMode, RateOfProductionByTechnology, RateOfUseByTechnology,
-    ProductionByTechnology, UseByTechnology, RateOfProduction, RateOfUse, Production, Use, ProductionAnnual, UseAnnual, CurtailedEnergy)
+    ProductionByTechnology, UseByTechnology, RateOfProduction, RateOfUse, Production, Use, ProductionAnnual, UseAnnual, CurtailedEnergy, ModelPeriodCostByRegion)
     return VarPar
 end

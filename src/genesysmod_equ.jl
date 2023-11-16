@@ -435,11 +435,6 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     end
   end end end end 
   print("Cstr: Acc. Tech. 1 : ",Dates.now()-start,"\n")
-  start=Dates.now()
-  for r ∈ 𝓡
-    @constraint(model, sum(model[:TotalDiscountedCost][y,r] for y ∈ 𝓨) == model[:ModelPeriodCostByRegion][r], base_name="Acc4_ModelPeriodCostByRegion_$(r)")
-  end
-  print("Cstr: Acc. Tech. 2 : ",Dates.now()-start,"\n")
   
   ############### Capital Costs #############
   
