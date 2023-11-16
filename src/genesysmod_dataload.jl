@@ -106,8 +106,6 @@ function genesysmod_dataload(Switch)
     TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
     TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
     StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
-    StorageMaxChargeRate = create_daa(in_data, "Par_StorageMaxChargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true) #TODO check if shoud be copy world, only values for DE
-    StorageMaxDischargeRate = create_daa(in_data, "Par_StorageMaxDischargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true)
     MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
     OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
     CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage",dbr, 0.01, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
@@ -248,7 +246,7 @@ function genesysmod_dataload(Switch)
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     TagDispatchableTechnology,
     RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
-    StorageLevelStart,StorageMaxChargeRate,StorageMaxDischargeRate,MinStorageCharge,
+    StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
     TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
     TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,
