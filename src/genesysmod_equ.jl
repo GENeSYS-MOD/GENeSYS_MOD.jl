@@ -266,7 +266,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
         model[:RateOfTotalActivity][y,l,t,r] == model[:TotalActivityPerYear][r,l,t,y]*Params.AvailabilityFactor[r,t,y] - model[:DispatchDummy][r,l,t,y]*Params.TagDispatchableTechnology[t],
         base_name="CA3a_RateOfTotalActivity_Intertemporal_$(r)_$(l)_$(t)_$(y)")
       end
-      if (sum(Params.CapacityFactor[r,t,l,yy] for yy ∈ 𝓨 if y-yy < Params.OperationalLife[r,t] && y-yy >= 0) > 0 || Params.CapacityFactor[r,t,l,Switch.StartYear] > 0) && Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0 && Params.AvailabilityFactor[r,t,y] > 0 && Params.TotalAnnualMaxCapacity[r,t,y] > 0
+      if (sum(Params.CapacityFactor[r,t,l,yy] for yy ∈ 𝓨 if y-yy < Params.OperationalLife[r,t] && y-yy >= 0) > 0 || Params.CapacityFactor[r,t,l,Switch.StartYear] > 0) && Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0 && Params.AvailabilityFactor[r,t,y] > 0 && Params.TotalAnnualMaxCapacity[r,t,y] > 0 && Params.ResidualCapacity[r,t,y] > 0
         @constraint(model,
         model[:TotalActivityPerYear][r,l,t,y] == sum(model[:NewCapacity][yy,t,r] * Params.CapacityFactor[r,t,l,yy] * Params.CapacityToActivityUnit[r,t] for yy ∈ 𝓨 if y-yy < Params.OperationalLife[r,t] && y-yy >= 0)+(Params.ResidualCapacity[r,t,y]*Params.CapacityFactor[r,t,l,Switch.StartYear] * Params.CapacityToActivityUnit[r,t]),
         base_name="CA4_TotalActivityPerYear_Intertemporal_$(r)_$(l)_$(t)_$(y)")
