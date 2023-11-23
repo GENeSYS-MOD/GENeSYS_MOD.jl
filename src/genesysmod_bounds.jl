@@ -95,14 +95,14 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        Params.CapacityToActivityUnit[:,Subsets.DummyTechnology] .= 31.56
+        Params.CapacityToActivityUnit[Subsets.DummyTechnology] .= 31.56
         Params.TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
         Params.FixedCost[:,Subsets.DummyTechnology,:] .= 999
         Params.CapitalCost[:,Subsets.DummyTechnology,:] .= 999
         Params.VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
         Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
         Params.CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
-        Params.OperationalLife[:,Subsets.DummyTechnology] .= 1 
+        Params.OperationalLife[Subsets.DummyTechnology] .= 1 
         Params.EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
     end
 
@@ -137,7 +137,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
     for r ∈ Sets.Region_full
         for t ∈ Subsets.ImportTechnology
-                Params.OperationalLife[r,t] = 1    
+                Params.OperationalLife[t] = 1    
         end
     end
 

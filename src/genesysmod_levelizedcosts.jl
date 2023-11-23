@@ -127,7 +127,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for f ∈ Sets.Fuel
             for (t,m) ∈ LoopSetOutput[(r,f,y)]
-                maxgeneration[r,t,y,m,f] =  sum(Params.CapacityFactor[r,t,l,y]*Params.YearSplit[l,y] for l ∈ Sets.Timeslice)* maximum(Params.AvailabilityFactor[r,t,:])*Params.CapacityToActivityUnit[r,t]*Params.OutputActivityRatio[r,t,f,m,y]
+                maxgeneration[r,t,y,m,f] =  sum(Params.CapacityFactor[r,t,l,y]*Params.YearSplit[l,y] for l ∈ Sets.Timeslice)* maximum(Params.AvailabilityFactor[r,t,:])*Params.CapacityToActivityUnit[t]*Params.OutputActivityRatio[r,t,f,m,y]
             end 
         end
         for f ∈ Resources
@@ -140,14 +140,14 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         end
         for f ∈ Sets.Fuel
             for (t,m) ∈ LoopSetOutput[(r,f,y)] 
-                maxgeneration[r,t,y,m,f] =  sum(Params.CapacityFactor[r,t,l,y]*Params.YearSplit[l,y] for l ∈ Sets.Timeslice)* maximum(Params.AvailabilityFactor[r,t,:])*Params.CapacityToActivityUnit[r,t]*Params.OutputActivityRatio[r,t,f,m,y]
+                maxgeneration[r,t,y,m,f] =  sum(Params.CapacityFactor[r,t,l,y]*Params.YearSplit[l,y] for l ∈ Sets.Timeslice)* maximum(Params.AvailabilityFactor[r,t,:])*Params.CapacityToActivityUnit[t]*Params.OutputActivityRatio[r,t,f,m,y]
             
                 if Params.OutputActivityRatio[r,t,f,m,y] > 0
                     fuelcosts[r,t,f,m,y] = sum(Params.InputActivityRatio[r,t,fff,m,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/Params.OutputActivityRatio[r,t,f,m,y]
-                    emissioncosts[r,t,f,m,y] = sum(Params.InputActivityRatio[r,t,fff,m,y]*sum(Params.EmissionActivityRatio[r,t,e,m,y]*RegionalEmissionContentPerFuel[y,r,fff,e]*CarbonPrice[r,e,y] for e ∈ Sets.Emission) for fff ∈ Sets.Fuel)/Params.OutputActivityRatio[r,t,f,m,y]
+                    emissioncosts[r,t,f,m,y] = sum(Params.InputActivityRatio[r,t,fff,m,y]*sum(Params.EmissionActivityRatio[r,t,m,e,y]*RegionalEmissionContentPerFuel[y,r,fff,e]*CarbonPrice[r,e,y] for e ∈ Sets.Emission) for fff ∈ Sets.Fuel)/Params.OutputActivityRatio[r,t,f,m,y]
                     if maxgeneration[r,t,y,m,f] > 0
-                        capitalcosts[r,t,f,m,y]  = (Params.CapitalCost[r,t,y]) / sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
-                        omcosts[r,t,f,m,y] = (sum(((Params.FixedCost[r,t,y]+(Params.VariableCost[r,t,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) / sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                        capitalcosts[r,t,f,m,y]  = (Params.CapitalCost[r,t,y]) / sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
+                        omcosts[r,t,f,m,y] = (sum(((Params.FixedCost[r,t,y]+(Params.VariableCost[r,t,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) / sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                     end
                 end
             end 
@@ -162,11 +162,11 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
     for r ∈ Sets.Region_full for y ∈ Sets.Year 
         for (t,m) ∈ LoopSetOutput[(r,"Power",y)]
             if Params.OutputActivityRatio[r,t,"Power",m,y] > 0 && maxgeneration[r,t,y,m,"Power"] > 0
-                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
 
-                testlevelizedcostsPJ[r,t,"Power",m,y] = (Params.CapitalCost[r,t,y]+sum(((Params.FixedCost[r,t,y]+(Params.VariableCost[r,t,m,y]+fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                testlevelizedcostsPJ[r,t,"Power",m,y] = (Params.CapitalCost[r,t,y]+sum(((Params.FixedCost[r,t,y]+(Params.VariableCost[r,t,m,y]+fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
             end
 
             levelizedcostsPJ[r,t,"Power",m,y] = capitalcosts[r,t,"Power",m,y]+omcosts[r,t,"Power",m,y]+discountedfuelcosts[r,t,"Power",m,y]+emissioncosts[r,t,"Power",m,y]
@@ -192,8 +192,8 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         end
         for (t,m) ∈ LoopSetOutput[(r,"H2",y)]
             if Params.OutputActivityRatio[r,t,"H2",m,y] > 0 && maxgeneration[r,t,y,m,"H2"] > 0
-                discountedfuelcosts[r,t,"H2",m,y] = (sum((((fuelcosts[r,t,"H2",m,y])*maxgeneration[r,t,y,m,"H2"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"H2"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                discountedfuelcosts[r,t,"H2",m,y] = (sum((((fuelcosts[r,t,"H2",m,y])*maxgeneration[r,t,y,m,"H2"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"H2"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                 levelizedcostsPJ[r,t,"H2",m,y] = capitalcosts[r,t,"H2",m,y]+omcosts[r,t,"H2",m,y]+discountedfuelcosts[r,t,"H2",m,y]+emissioncosts[r,t,"H2",m,y]
             end
         end
@@ -216,8 +216,8 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         for f ∈ TierThree
             for (t,m) ∈ LoopSetOutput[(r,f,y)]
                 if maxgeneration[r,t,y,m,f] > 0
-                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                     levelizedcostsPJ[r,t,f,m,y] = capitalcosts[r,t,f,m,y]+omcosts[r,t,f,m,y]+discountedfuelcosts[r,t,f,m,y]+emissioncosts[r,t,f,m,y]
                 end
             end
@@ -245,14 +245,14 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
             end
             for t ∈ Subsets.StorageDummies
                 if Params.OutputActivityRatio[r,t,f,2,y] > 0
-                    fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[y,1,t,s]^2 for s ∈ Sets.Storage))
+                    fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[t,s,1,y]^2 for s ∈ Sets.Storage))
                 end
             end
         end
         for (t,m) ∈ LoopSetOutput[(r,"Power",y)]
             if Params.OutputActivityRatio[r,t,"Power",m,y] > 0 && maxgeneration[r,t,y,m,"Power"] > 0
-                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                 levelizedcostsPJ[r,t,"Power",m,y] = capitalcosts[r,t,"Power",m,y]+omcosts[r,t,"Power",m,y]+discountedfuelcosts[r,t,"Power",m,y]+emissioncosts[r,t,"Power",m,y]
             end
         end
@@ -290,8 +290,8 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         end
         for (t,m) ∈ LoopSetOutput[(r,"H2",y)]
             if Params.OutputActivityRatio[r,t,"H2",m,y] > 0 && maxgeneration[r,t,y,m,"H2"] > 0
-                discountedfuelcosts[r,t,"H2",m,y] = (sum((((fuelcosts[r,t,"H2",m,y])*maxgeneration[r,t,y,m,"H2"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"H2"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                discountedfuelcosts[r,t,"H2",m,y] = (sum((((fuelcosts[r,t,"H2",m,y])*maxgeneration[r,t,y,m,"H2"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"H2"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                 levelizedcostsPJ[r,t,"H2",m,y] = capitalcosts[r,t,"H2",m,y]+omcosts[r,t,"H2",m,y]+discountedfuelcosts[r,t,"H2",m,y]+emissioncosts[r,t,"H2",m,y]
             end
         end
@@ -316,8 +316,8 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         for f ∈ TierThree
             for (t,m) ∈ LoopSetOutput[(r,f,y)]
                 if Params.OutputActivityRatio[r,t,f,m,y] > 0 && maxgeneration[r,t,y,m,f] > 0
-                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                     levelizedcostsPJ[r,t,f,m,y] = capitalcosts[r,t,f,m,y]+omcosts[r,t,f,m,y]+discountedfuelcosts[r,t,f,m,y]+emissioncosts[r,t,f,m,y]
                 end
             end
@@ -346,14 +346,14 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
             end
             for t ∈ Subsets.StorageDummies
                 if Params.OutputActivityRatio[r,t,f,2,y] > 0
-                    fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[y,1,t,s]^2 for s ∈ Sets.Storage))
+                    fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[t,s,1,y]^2 for s ∈ Sets.Storage))
                 end
             end
         end 
         for (t,m) ∈ LoopSetOutput[(r,"Power",y)]
             if Params.OutputActivityRatio[r,t,"Power",m,y] > 0 && maxgeneration[r,t,y,m,"Power"] > 0
-                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                discountedfuelcosts[r,t,"Power",m,y] = (sum((((fuelcosts[r,t,"Power",m,y])*maxgeneration[r,t,y,m,"Power"])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                sum((maxgeneration[r,t,y,m,"Power"]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                 levelizedcostsPJ[r,t,"Power",m,y] = capitalcosts[r,t,"Power",m,y]+omcosts[r,t,"Power",m,y]+discountedfuelcosts[r,t,"Power",m,y]+emissioncosts[r,t,"Power",m,y]
             end
         end
@@ -378,8 +378,8 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         for f ∈ TierFive
             for (t,m) ∈ LoopSetOutput[(r,f,y)]
                 if Params.OutputActivityRatio[r,t,f,m,y] > 0 && maxgeneration[r,t,y,m,f] > 0
-                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])) /
-                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[r,t])
+                    discountedfuelcosts[r,t,f,m,y] = (sum((((fuelcosts[r,t,f,m,y])*maxgeneration[r,t,y,m,f])/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])) /
+                    sum((maxgeneration[r,t,y,m,f]/((1+Settings.GeneralDiscountRate[r])^o)) for o ∈ Time if o <= Params.OperationalLife[t])
                     levelizedcostsPJ[r,t,f,m,y] = capitalcosts[r,t,f,m,y]+omcosts[r,t,f,m,y]+discountedfuelcosts[r,t,f,m,y]+emissioncosts[r,t,f,m,y]
                 end
             end

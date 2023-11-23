@@ -55,9 +55,9 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
     Trajectory2020UpperLimit = 3
     Trajectory2020LowerLimit = Float64(0.7)
     for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-        Params.GrowthRateTradeCapacity[y,"Power",r,rr]=0.1 #to remove in favor of the excel after testing
+        Params.GrowthRateTradeCapacity[r,rr,"Power",y]=0.1 #to remove in favor of the excel after testing
     end end end
-    #GrowthRateTradeCapacity(y,'Power',r,rr) = 0.1;
+    #GrowthRateTradeCapacity(r,rr,'Power',y) = 0.1;
 
     BaseYearSlack = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel)), Sets.Fuel)
     BaseYearSlack[Sets.Fuel] .= 0.03

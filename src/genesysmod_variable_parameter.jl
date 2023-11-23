@@ -55,7 +55,7 @@ function genesysmod_variable_parameter(model, Sets, Params)
                     RateOfProductionByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
                     RateOfProductionByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
                     ProductionByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y]
-                    CurtailedEnergy[y,f,r,l] += JuMP.value(model[:CurtailedCapacity][r,l,t,y]) * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[r,t]
+                    CurtailedEnergy[y,f,r,l] += JuMP.value(model[:CurtailedCapacity][r,l,t,y]) * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[t]
                 end
                 for (t,m) ∈ LoopSetInput[(r,f,y)]
                     RateOfUseByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y]

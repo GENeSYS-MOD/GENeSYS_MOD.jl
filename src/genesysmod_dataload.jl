@@ -31,15 +31,15 @@ function genesysmod_dataload(Switch)
 
     in_data=XLSX.readxlsx(joinpath(inputdir, Switch.data_file * ".xlsx"))
 
-    Emission = DataFrame(XLSX.gettable(in_data["Sets"],"A";first_row=1))[!,"Emission"]
+    Emission = DataFrame(XLSX.gettable(in_data["Sets"],"F";first_row=1))[!,"Emission"]
     Technology = DataFrame(XLSX.gettable(in_data["Sets"],"B";first_row=1))[!,"Technology"]
-    Fuel = DataFrame(XLSX.gettable(in_data["Sets"],"C";first_row=1))[!,"Fuel"]
-    Year = DataFrame(XLSX.gettable(in_data["Sets"],"D";first_row=1))[!,"Year"]
-    Mode_of_operation = DataFrame(XLSX.gettable(in_data["Sets"],"F";first_row=1))[!,"Mode_of_operation"]
-    Region_full = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"Region"]
-    Storage = DataFrame(XLSX.gettable(in_data["Sets"],"K";first_row=1))[!,"Storage"]
-    ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"L";first_row=1))[!,"ModalType"]
-    Sector = DataFrame(XLSX.gettable(in_data["Sets"],"N";first_row=1))[!,"Sectors"]
+    Fuel = DataFrame(XLSX.gettable(in_data["Sets"],"D";first_row=1))[!,"Fuel"]
+    Year = DataFrame(XLSX.gettable(in_data["Sets"],"I";first_row=1))[!,"Year"]
+    Mode_of_operation = DataFrame(XLSX.gettable(in_data["Sets"],"E";first_row=1))[!,"Mode_of_operation"]
+    Region_full = DataFrame(XLSX.gettable(in_data["Sets"],"A";first_row=1))[!,"Region"]
+    Storage = DataFrame(XLSX.gettable(in_data["Sets"],"C";first_row=1))[!,"Storage"]
+    ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"ModalType"]
+    Sector = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Sector"]
     if Switch.switch_infeasibility_tech == 1
         append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
          "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
@@ -70,7 +70,7 @@ function genesysmod_dataload(Switch)
 
 
     AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
-    CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit",dbr, 𝓡, 𝓣)
+    CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit",dbr, 𝓣)
     InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
     OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
 
@@ -78,7 +78,7 @@ function genesysmod_dataload(Switch)
     FixedCost = create_daa(in_data, "Par_FixedCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
     VariableCost = create_daa(in_data, "Par_VariableCost",dbr, 𝓡, 𝓣, 𝓜, 𝓨; inherit_base_world=true)
 
-    EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio",dbr, 𝓡, 𝓣, 𝓔, 𝓜, 𝓨; inherit_base_world=true)
+    EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio",dbr, 𝓡, 𝓣, 𝓜, 𝓔, 𝓨; inherit_base_world=true)
     EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty",dbr, 𝓡, 𝓔, 𝓨)
     EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech",dbr, 𝓡, 𝓣, 𝓔, 𝓨; inherit_base_world=true)
 
@@ -100,15 +100,15 @@ function genesysmod_dataload(Switch)
     SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand",dbr, 𝓡, 𝓕, 𝓨)
 
     AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit",dbr, 𝓔, 𝓨)
-    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission",dbr, 𝓡, 𝓔, 𝓨)
+    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission",dbr, 𝓡, 𝓔, 𝓨)             
     AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit",dbr, 𝓔, 𝓢𝓮, 𝓨)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel",dbr, 𝓕, 𝓔)
     RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit",dbr, 𝓡, 𝓔, 𝓨)
 
-    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓨, 𝓕, 𝓡, 𝓡)
-    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓕, 𝓡, 𝓨, 𝓡)
-    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓕, 𝓡, 𝓡)
-    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓕, 𝓡, 𝓡)
+    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
+    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
+    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓡, 𝓡, 𝓕)
+    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓡, 𝓡, 𝓕)
     TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
 
     ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡, 𝓣, 𝓨)
@@ -119,15 +119,15 @@ function genesysmod_dataload(Switch)
     TotalTechnologyAnnualActivityLowerLimit = create_daa(in_data, "Par_TotalAnnualMinActivity",dbr, 𝓡, 𝓣, 𝓨)
     TotalTechnologyModelPeriodActivityUpperLimit = create_daa_init(in_data, "Par_ModelPeriodActivityMaxLimit",dbr, 999999, 𝓡, 𝓣)
 
-    OperationalLife = create_daa(in_data, "Par_OperationalLife",dbr, 𝓡, 𝓣;inherit_base_world=true)
+    OperationalLife = create_daa(in_data, "Par_OperationalLife",dbr, 𝓣)
 
     RegionalCCSLimit = create_daa(in_data, "Par_RegionalCCSLimit",dbr, 𝓡)
 
-    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
+    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓢)
     ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
     StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
-    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
-    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
+    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, Subsets.StorageDummies, 𝓢, 𝓜, 𝓨)
+    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, Subsets.StorageDummies, 𝓢, 𝓜, 𝓨)
 
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
     TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
@@ -153,16 +153,16 @@ function genesysmod_dataload(Switch)
     RegionalModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓔), length(𝓡)), 𝓔, 𝓡)
 
     CurtailmentCostFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
-    TradeRoute = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
-    TradeLossFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕)), 𝓨, 𝓕)
-    TradeRouteInstalledCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
-    TradeLossBetweenRegions = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
-    TradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    TradeRoute = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
+    TradeLossFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓕), length(𝓨)), 𝓕, 𝓨)
+    TradeRouteInstalledCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
+    TradeLossBetweenRegions = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
+    TradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
 
-    CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
+    CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
 
     SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
-
+    
     #
     # ####### Including Subsets #############
     #
@@ -174,18 +174,18 @@ function genesysmod_dataload(Switch)
     #
 
     for y ∈ 𝓨
-        TradeLossFactor[y,"Power"] = 0.00003
+        TradeLossFactor["Power",y] = 0.00003
         for r ∈ 𝓡 for rr ∈ 𝓡
             for f ∈ 𝓕
-                TradeRoute[y,f,r,rr] = Readin_TradeRoute2015[f,r,rr]
-                TradeLossBetweenRegions[y,f,r,rr] = TradeLossFactor[y,f]*TradeRoute[y,f,r,rr]
+                TradeRoute[r,rr,f,y] = Readin_TradeRoute2015[r,rr,f]
+                TradeLossBetweenRegions[r,rr,f,y] = TradeLossFactor[f,y]*TradeRoute[r,rr,f,y]
             end
-            TradeCapacity[y,"Power",r,rr] = Readin_PowerTradeCapacity["Power",r,y,rr]
+            TradeCapacity[r,rr,"Power",y] = Readin_PowerTradeCapacity[r,rr,"Power",y]
         end end
     end
 
     for r ∈ 𝓡 for rr ∈ 𝓡 for y ∈ 𝓨[2:end]
-        GrowthRateTradeCapacity[y,"Power",r,rr] = GrowthRateTradeCapacity[𝓨[1],"Power",r,rr]
+        GrowthRateTradeCapacity[r,rr,"Power",y] = GrowthRateTradeCapacity[r,rr,"Power",𝓨[1]]
     end end end
 
 
