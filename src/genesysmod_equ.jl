@@ -399,7 +399,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
       end
     end
 
-    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 || Params.GrowthRateTradeCapacity[𝓨[i],"Power",r,rr] > 0
+    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 || Params.GrowthRateTradeCapacity[𝓨[i],"Power",r,rr] == 0
       JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
     end
 
