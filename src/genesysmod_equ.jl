@@ -725,17 +725,17 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   start=Dates.now()
   for i ∈ eachindex(𝓨) for f ∈ 𝓕 for r ∈ 𝓡
     @constraint(model,
-    sum(model[:ProductionByTechnologyAnnual][𝓨[i],t,f,r] for t ∈ Subsets.Renewables ) == model[:TotalREProductionAnnual][𝓨[i],r,f],base_name="RE2_TechIncluded_$(𝓨[i])_$(r)_$(f)")
+    sum(model[:ProductionByTechnologyAnnual][𝓨[i],t,f,r] for t ∈ Subsets.Renewables ) == model[:TotalREProductionAnnual][𝓨[i],r,f],base_name="RE1_ComputeTotalAnnualREProduction_$(𝓨[i])_$(r)_$(f)")
 
     @constraint(model,
     Params.REMinProductionTarget[r,f,𝓨[i]]*sum(model[:RateOfActivity][𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]]*Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛 for t ∈ 𝓣 for m ∈ 𝓜 if Params.OutputActivityRatio[r,t,f,m,𝓨[i]] != 0 )*Params.RETagFuel[r,f,𝓨[i]] <= model[:TotalREProductionAnnual][𝓨[i],r,f],
-    base_name="RE4_EnergyConstraint_$(𝓨[i])_$(r)_$(f)")
+    base_name="RE2_AnnualREProductionLowerLimit$(𝓨[i])_$(r)_$(f)")
 
     if Switch.switch_dispatch == 0
       if 𝓨[i]> Switch.StartYear && Params.SpecifiedAnnualDemand[r,f,𝓨[i]]>0
         @constraint(model,
         model[:TotalREProductionAnnual][𝓨[i],r,f] >= model[:TotalREProductionAnnual][𝓨[i-1],r,f]*((Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]])),
-        base_name="RE6_RETargetPath_$(𝓨[i])_$(r)_$(f)")
+        base_name="RE3_RETargetPath_$(𝓨[i])_$(r)_$(f)")
       end
     end
 
