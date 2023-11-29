@@ -399,10 +399,23 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
           end
         end
 
+<<<<<<< HEAD
         if f ∉ Subsets.TradeCapacities || Params.GrowthRateTradeCapacity[𝓨[i],f,r,rr] == 0 || Params.TradeRoute[𝓨[i],f,r,rr] == 0
           JuMP.fix(model[:NewTradeCapacity][𝓨[i],f,r,rr],0; force=true)
           JuMP.fix(model[:DiscountedNewTradeCapacityCosts][𝓨[i],f,r,rr],0; force=true)
         end
+=======
+    if Params.TradeRoute[𝓨[i],"Power",r,rr] == 0 || Params.GrowthRateTradeCapacity[𝓨[i],"Power",r,rr] == 0
+      JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
+    end
+
+    for f ∈ 𝓕
+      if f != "Power" 
+        JuMP.fix(model[:NewTradeCapacity][𝓨[i],f,r,rr],0; force=true)
+      end
+      if Params.TradeRoute[𝓨[i],f,r,rr] == 0 || f != "Power"
+        JuMP.fix(model[:DiscountedNewTradeCapacityCosts][𝓨[i],f,r,rr],0; force=true)
+>>>>>>> 5ea584e7c0835cb1c52664f22e9b295496981612
       end
     end
   end end end
