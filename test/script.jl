@@ -18,9 +18,9 @@ solver=Gurobi.Optimizer
 DNLPsolver= Ipopt.Optimizer
 model_region="minimal"
 data_base_region="DE"
-#data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new"
+data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new"
 #data_file = "Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_only_DE_test"
-data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones"
+#data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones"
 hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022"
 threads=6
 emissionPathway="MinimalExample"
@@ -35,7 +35,7 @@ switch_ramping=0
 switch_weighted_emissions=1
 switch_intertemporal=0
 switch_base_year_bounds = 0
-switch_peaking_capacity = 1
+switch_peaking_capacity = 0
 set_peaking_slack = 1.0
 set_peaking_minrun_share = 0.15
 set_peaking_res_cf = 0.5
@@ -52,7 +52,7 @@ elmod_nthhour = 0
 elmod_starthour = 8
 elmod_dunkelflaute= 0
 elmod_skipdays = 80
-elmod_skiphours = 4
+elmod_skiphours = 1
 #elmod_skipdays = 0
 #elmod_skiphours = 0
 switch_raw_results = 1
@@ -116,15 +116,15 @@ model= JuMP.Model()
 print("Model Init : ",Dates.now()-start,"\n")
 Sets, Subsets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
 print("Dataload Init : ",Dates.now()-start,"\n")
-GENeSYS_MOD.genesysmod_dec(model,Sets,Subsets,Params,Switch);
+Maps = GENeSYS_MOD.make_mapping(Sets,Params)
+print("Mapping : ",Dates.now()-start,"\n")
+Vars = GENeSYS_MOD.genesysmod_dec(model,Sets,Subsets,Params,Switch, Maps);
 print("Variable Declaration : ",Dates.now()-start,"\n")
 Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdiscountrate);
 print("Settings : ",Dates.now()-start,"\n")
-GENeSYS_MOD.genesysmod_bounds(model,Sets, Subsets,Params,Settings,Switch);
+GENeSYS_MOD.genesysmod_bounds(model,Sets, Subsets,Params,Vars,Settings,Switch,Maps);
 print("Bounds : ",Dates.now()-start,"\n")
-Maps = GENeSYS_MOD.make_mapping(Sets,Params)
-print("Mapping : ",Dates.now()-start,"\n")
-GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps)
+GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 #GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
 print("Constraints : ",Dates.now()-start,"\n")
 set_optimizer(model, solver)
