@@ -365,24 +365,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   print("Cstr: Energy Balance B : ",Dates.now()-start,"\n")
 
   
-  ############### Trade Capacities & Investments #############
-  
-  
-  start=Dates.now()
-  for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
-    if sum(Params.TradeRoute[y,f,r,rr] for rr ∈ 𝓡) > 0
-      @constraint(model, sum(model[:NetTrade][y,l,f,r] for l ∈ 𝓛) == model[:NetTradeAnnual][y,f,r], base_name="EB5_AnnualNetTradeBalance_$(y)_$(f)_$(r)")
-    else
-      JuMP.fix(model[:NetTradeAnnual][y,f,r],0; force=true)
-    end
-  
-    @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y]*Params.YearSplit[l,y] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,y)]) >= 
-    sum( model[:RateOfActivity][y,l,t,m,r]*Params.InputActivityRatio[r,t,f,m,y]*Params.YearSplit[l,y] for l ∈ 𝓛 for (t,m) ∈ LoopSetInput[(r,f,y)]) + model[:NetTradeAnnual][y,f,r], 
-    base_name="EB3_EnergyBalanceEachYear_$(y)_$(f)_$(r)")
-  end end end
-  print("Cstr: Energy Balance B : ",Dates.now()-start,"\n")
-
-  
+ 
   ############### Trade Capacities & Investments #############
   
   for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡
