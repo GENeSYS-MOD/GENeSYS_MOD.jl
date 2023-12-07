@@ -501,7 +501,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     append!(output_trade_capacity, df_tmp)
 
     r2 = (length(Sets.Region_full) > 1 ? 2 : 1)
-    df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2]],"Power"))
+    df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],"Power"]))
     select!(df_tmp,colnames)
     append!(output_trade_capacity, df_tmp)
 
