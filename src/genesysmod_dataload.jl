@@ -69,55 +69,72 @@ function genesysmod_dataload(Switch)
     𝓢𝓮 = Sets.Sector
 
 
-    SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand",dbr, 𝓡, 𝓕, 𝓨)
-    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel",dbr, 𝓡, 𝓕, 𝓨; copy_world=true)
-    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty",dbr, 𝓡, 𝓔, 𝓨)
-    EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech",dbr, 𝓡, 𝓣, 𝓔, 𝓨; inherit_base_world=true)
-    ReserveMargin = create_daa(in_data,"Par_ReserveMargin",dbr, 𝓡, 𝓨; copy_world=true)
-    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission",dbr, 𝓡, 𝓔, 𝓨)
-    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit",dbr, 𝓡, 𝓔, 𝓨)
-    AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit",dbr, 𝓔, 𝓨)
-    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓕, 𝓡, 𝓡)
-    TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
-    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓕, 𝓡, 𝓨, 𝓡)
-
-    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓨, 𝓕, 𝓡, 𝓡)
-    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓕, 𝓡, 𝓡)
+    AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
     CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit",dbr, 𝓡, 𝓣)
     InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
     OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
-    FixedCost = create_daa(in_data, "Par_FixedCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
+
     CapitalCost = create_daa(in_data, "Par_CapitalCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
+    FixedCost = create_daa(in_data, "Par_FixedCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
     VariableCost = create_daa(in_data, "Par_VariableCost",dbr, 𝓡, 𝓣, 𝓜, 𝓨; inherit_base_world=true)
-    ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡, 𝓣, 𝓨)
-    AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
-    #CapacityFactor = create_daa(in_data, "Par_CapacityFactor",dbr, 𝓡, 𝓣, 𝓛, 𝓨)
+
     EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio",dbr, 𝓡, 𝓣, 𝓔, 𝓜, 𝓨; inherit_base_world=true)
+    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty",dbr, 𝓡, 𝓔, 𝓨)
+    EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech",dbr, 𝓡, 𝓣, 𝓔, 𝓨; inherit_base_world=true)
+
+    #CapacityFactor = create_daa(in_data, "Par_CapacityFactor",dbr, 𝓡, 𝓣, 𝓛, 𝓨)
+
+    ReserveMargin = create_daa(in_data,"Par_ReserveMargin",dbr, 𝓡, 𝓨; copy_world=true)
+    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel",dbr, 𝓡, 𝓕, 𝓨; copy_world=true)
+    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology",dbr, 𝓡, 𝓣, 𝓨;copy_world=true)
+
+    CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage",dbr, 0.01, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
+    MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
+
+
+    # delete world region from region set
+    deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
+
+
+    RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction",dbr, 𝓡, 𝓣, 𝓕, 𝓨)
+    SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand",dbr, 𝓡, 𝓕, 𝓨)
+
+    AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit",dbr, 𝓔, 𝓨)
+    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission",dbr, 𝓡, 𝓔, 𝓨)
+    AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit",dbr, 𝓔, 𝓢𝓮, 𝓨)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel",dbr, 𝓕, 𝓔)
-    OperationalLife = create_daa(in_data, "Par_OperationalLife",dbr, 𝓡, 𝓣;inherit_base_world=true)
+    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit",dbr, 𝓡, 𝓔, 𝓨)
+
+    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓨, 𝓕, 𝓡, 𝓡)
+    Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓕, 𝓡, 𝓨, 𝓡)
+    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓕, 𝓡, 𝓡)
+    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓕, 𝓡, 𝓡)
+    TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
+
+    ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡, 𝓣, 𝓨)
+
     TotalAnnualMaxCapacity = create_daa(in_data, "Par_TotalAnnualMaxCapacity",dbr, 𝓡, 𝓣, 𝓨)
     TotalAnnualMinCapacity = create_daa(in_data, "Par_TotalAnnualMinCapacity",dbr, 𝓡, 𝓣, 𝓨)
-    TotalTechnologyModelPeriodActivityUpperLimit = create_daa_init(in_data, "Par_ModelPeriodActivityMaxLimit",dbr, 999999, 𝓡, 𝓣)
-
     TotalTechnologyAnnualActivityUpperLimit = create_daa(in_data, "Par_TotalAnnualMaxActivity",dbr, 𝓡, 𝓣, 𝓨)
     TotalTechnologyAnnualActivityLowerLimit = create_daa(in_data, "Par_TotalAnnualMinActivity",dbr, 𝓡, 𝓣, 𝓨)
-    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology",dbr, 𝓡, 𝓣, 𝓨;copy_world=true)
+    TotalTechnologyModelPeriodActivityUpperLimit = create_daa_init(in_data, "Par_ModelPeriodActivityMaxLimit",dbr, 999999, 𝓡, 𝓣)
+
+    OperationalLife = create_daa(in_data, "Par_OperationalLife",dbr, 𝓡, 𝓣;inherit_base_world=true)
+
     RegionalCCSLimit = create_daa(in_data, "Par_RegionalCCSLimit",dbr, 𝓡)
+
+    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
+    ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
+    StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
     TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
     TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, 𝓨, 𝓜, Subsets.StorageDummies, 𝓢)
-    StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
-    StorageMaxChargeRate = create_daa(in_data, "Par_StorageMaxChargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true) #TODO check if shoud be copy world, only values for DE
-    StorageMaxDischargeRate = create_daa(in_data, "Par_StorageMaxDischargeRate",dbr, 𝓡, 𝓢; inherit_base_world=true)
-    MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
-    OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
-    CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage",dbr, 0.01, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
-    ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
+
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
-    TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
-    RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction",dbr, 𝓡, 𝓣, 𝓕, 𝓨)
-    TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
     TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
-    AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit",dbr, 𝓔, 𝓢𝓮, 𝓨)
+    TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
+    TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
+    TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
+
 
     RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
     Demand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
@@ -145,15 +162,12 @@ function genesysmod_dataload(Switch)
     CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
 
     SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
-    TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
 
     #
     # ####### Including Subsets #############
     #
 
     #Subsets = make_subsets(Sets)
-
-    deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
 
     #
     # ####### Assigning TradeRoutes depending on initialized Regions and Year #############
@@ -248,7 +262,7 @@ function genesysmod_dataload(Switch)
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     TagDispatchableTechnology,
     RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
-    StorageLevelStart,StorageMaxChargeRate,StorageMaxDischargeRate,MinStorageCharge,
+    StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
     TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
     TagTechnologyToSector,AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,

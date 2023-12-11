@@ -67,10 +67,6 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     of capacity.\n
 - **`StorageLevelStart ::JuMP.Containers.DenseAxisArray`** Level of storage at the beginning
     of first modelled year, in units of activity.\n
-- **`StorageMaxChargeRate ::JuMP.Containers.DenseAxisArray`** Maximum charging rate for the 
-    storage, in units of activity per year.\n
-- **`StorageMaxDischargeRate ::JuMP.Containers.DenseAxisArray`** Maximum discharging rate for
-    the storage, in units of activity per year.\n
 - **`MinStorageCharge ::JuMP.Containers.DenseAxisArray`** Sets a lower bound to the amount
     of energy stored, as a fraction of the maximum, with a number ranging between 0 and 1.
     The storage facility cannot be emptied below this level.\n
@@ -220,8 +216,6 @@ struct Parameters <: InputClass
     FixedCost ::JuMP.Containers.DenseAxisArray
 
     StorageLevelStart ::JuMP.Containers.DenseAxisArray
-    StorageMaxChargeRate ::JuMP.Containers.DenseAxisArray
-    StorageMaxDischargeRate ::JuMP.Containers.DenseAxisArray
     MinStorageCharge ::JuMP.Containers.DenseAxisArray
     OperationalLifeStorage ::JuMP.Containers.DenseAxisArray
     CapitalCostStorage ::JuMP.Containers.DenseAxisArray

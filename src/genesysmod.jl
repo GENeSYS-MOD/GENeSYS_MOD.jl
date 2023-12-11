@@ -179,20 +179,19 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     optimize!(model)
 
-    VarPar = genesysmod_variable_parameter(model, Sets, Params)
-
     elapsed = (Dates.now() - starttime)#24#3600;
 
     #
     # ####### Creating Result Files #############
     #
-    if termination_status(model) == MOI.INFEASIBLE
-        println("Model Infeasible! Computing IIS")
+    if termination_status(model) == MOI.INFEASIBLE || termination_status(model) == MOI.INFEASIBLE_OR_UNBOUNDED
+        println("Termination status:", termination_status(model), ". Computing IIS")
         compute_conflict!(model)
         println("Saving IIS to file")
         print_iis(model)
 
     elseif termination_status(model) == MOI.OPTIMAL
+        VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch,
              Settings, elapsed,"dispatch")
@@ -201,7 +200,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
         end
     else
-        println(termination_status(model))
+        println("Termination status:", termination_status(model), ".")
     end
 
     return model, Dict("Sets" => Sets, "Subsets" => Subsets, "Params" => Params,
