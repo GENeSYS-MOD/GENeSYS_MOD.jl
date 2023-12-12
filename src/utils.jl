@@ -332,3 +332,111 @@ function print_iis(model;filename="iis")
         end
     end
 end
+
+"""
+Extension of split function to take lists of substrings and keep delimiters
+
+"""
+function split_by_substrings(text::AbstractString, substrings::Vector{<:AbstractString}; keepdelim=true)
+    result = [text]
+    delimiters = []
+    for substr in substrings
+        new_result = []
+        for part in result
+            pieces = split(part, substr, keepempty=true)
+            for i in eachindex(pieces)
+                push!(new_result,pieces[i])
+                if i != length(pieces) && keepdelim == true
+                    push!(new_result,substr)
+                end
+            end
+        end
+        result = new_result
+        #result = [piece for part in result for piece in split(part, substr)]
+    end
+    return result
+end
+
+"""
+Helper function to simplify the iis file and make the analysis easier.
+
+The function simplify the iis by finding the equation of type x = 0 and reoplacing x in the other equations instead of doing that by hand.
+The round_numerics and digits optional parameters can also be used to reduce the length of equation by rounding numbers.
+It allows a faster analysis of iis files.
+"""
+function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=true,digits=3)
+    constraints = String[]
+    
+    # Read the file
+    open(file_path) do file
+        for line in eachline(file)
+            # Extract equations or constraints
+            push!(constraints, line)
+        end
+    end
+
+    constraints_to_simplify = []
+    simplified_constraints = []
+    null_constraint_vars = []
+
+    for con in constraints
+        sides=split(con,"==")
+
+        if length(sides) == 2
+            lhs=sides[1]
+            rhs=sides[2]
+            lhs_els = split(lhs,['+','-'])
+            if parse(Float64,rhs) == 0 && length(lhs_els) == 1 
+                push!(null_constraint_vars,lhs_els[1])
+            else
+                push!(constraints_to_simplify,con)
+            end
+        else
+            push!(constraints_to_simplify,con)
+        end
+    end
+
+    for con in constraints_to_simplify
+        pieces = split_by_substrings(con,["==",">=","<="]) 
+        lhs = pieces[1]
+        sign = pieces[2] 
+        rhs = pieces[3]
+        els=split(lhs,[' '])
+        for var in null_constraint_vars
+            var=strip(var) # remove leading and trailing whitespace
+            if any(occursin(var, string) for string in els)
+                for idx in findall(occursin(var, string) for string in els)
+                    if idx == 1
+                        deleteat!(els,idx)
+                    else
+                        i=0
+                        while !(els[idx-i] == "+" || els[idx-i] == "-" || els[idx-i] == ":") && (idx-i != 0)
+                            deleteat!(els,idx-i)
+                            i+=1
+                        end
+                        if (idx-i != 0) && (els[idx-i] == "+" || els[idx-i] == "-")
+                            deleteat!(els,idx-i)
+                        end
+                    end
+                end
+            end
+        end
+
+        if round_numerics == true
+            for i in eachindex(els)
+                if tryparse(Float64,els[i]) !== nothing
+                    els[i]= "$(round(parse(Float64,els[i]);digits=digits))"
+                end
+            end
+        end
+
+        new_con=join(els)*sign*rhs
+        push!(simplified_constraints,new_con)
+    end
+
+    open("$(output_filename).txt", "w") do file
+        for r in simplified_constraints
+            write(file, string(r)*"\n")
+        end
+    end
+end
