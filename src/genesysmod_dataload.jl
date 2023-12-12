@@ -92,10 +92,6 @@ function genesysmod_dataload(Switch)
     MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
 
 
-    # delete world region from region set
-    deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
-
-
     RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction",dbr, 𝓡, 𝓣, 𝓕, 𝓨)
     SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand",dbr, 𝓡, 𝓕, 𝓨)
 
@@ -162,6 +158,9 @@ function genesysmod_dataload(Switch)
     CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡), length(𝓡)), 𝓨, 𝓕, 𝓡 , 𝓡)
 
     SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
+
+    # delete world region from region set
+    deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
 
     #
     # ####### Including Subsets #############
