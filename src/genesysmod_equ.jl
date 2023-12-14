@@ -66,6 +66,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     LoopSetInput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.InputActivityRatio[r,:,f,:,y]) if Params.InputActivityRatio[r,x[1],f,x[2],y] > 0]
   end end end
 
+
   function CanFuelBeUsedByModeByTech(y, f, r,t,m)
     temp = Params.InputActivityRatio[r,t,f,m,y]*
     Params.TotalAnnualMaxCapacity[r,t,y] * 
@@ -282,9 +283,12 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
           @constraint(model, sum(model[:RateOfActivity][y,l,t,m,r] for m ∈ 𝓜) == model[:TotalCapacityAnnual][y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[t] * Params.AvailabilityFactor[r,t,y] - model[:DispatchDummy][r,l,t,y] * Params.TagDispatchableTechnology[t] - model[:CurtailedCapacity][r,l,t,y] * Params.CapacityToActivityUnit[t],
           base_name="CA3b_RateOfTotalActivity_$(r)_$(l)_$(t)_$(y)")
       end
-      @constraint(model, model[:CurtailedCapacity][r,l,t,y] <= model[:TotalCapacityAnnual][y,t,r], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
     end end end end
   end
+
+  for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for l ∈ 𝓛
+    @constraint(model, model[:CurtailedCapacity][r,l,t,y] <= model[:TotalCapacityAnnual][y,t,r], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
+  end end end end
   print("Cstr: Cap Adequacy A3 : ",Dates.now()-start,"\n")
 
    
@@ -370,7 +374,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
       for l ∈ 𝓛
-        @constraint(model, (model[:Import][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",r,rr]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
+        @constraint(model, (model[:Import][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
       end
     end
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
@@ -664,14 +668,13 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   ############### Reserve Margin Constraint ############## NTS: Should change demand for production
   
   if Switch.switch_dispatch == 0 
-
     for r ∈ 𝓡 for y ∈ 𝓨 for l ∈ 𝓛
       @constraint(model,
-      sum((model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] *Params.ReserveMarginTagTechnology[r,t,y] * Params.ReserveMarginTagFuel[r,f,y]) for f ∈ 𝓕 for (t,m) ∈ LoopSetOutput[(r,f,y)]) == model[:TotalActivityInReserveMargin][r,y,l],
+      sum(sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ 𝓜 if Params.OutputActivityRatio[r,t,f,m,y] != 0) * Params.YearSplit[l,y] *Params.ReserveMarginTagTechnology[r,t,y] * Params.ReserveMarginTagFuel[r,f,y] for t ∈ 𝓣 for f ∈ 𝓕) == model[:TotalActivityInReserveMargin][r,y,l],
       base_name="RM1_ReserveMargin_TechologiesIncluded_In_Activity_Units_$(y)_$(l)_$(r)")
       
       @constraint(model,
-      sum((sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)]) * Params.YearSplit[l,y] *Params.ReserveMarginTagFuel[r,f,y]) for f ∈ 𝓕) == model[:DemandNeedingReserveMargin][y,l,r],
+      sum(sum(model[:RateOfActivity][y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for t ∈ 𝓣 for m ∈ 𝓜 if Params.OutputActivityRatio[r,t,f,m,y] != 0) * Params.YearSplit[l,y] *Params.ReserveMarginTagFuel[r,f,y] for f ∈ 𝓕) == model[:DemandNeedingReserveMargin][y,l,r],
       base_name="RM2_ReserveMargin_FuelsIncluded_$(y)_$(l)_$(r)")
 
       if Params.ReserveMargin[r,y] > 0
