@@ -168,11 +168,11 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ vcat(Subsets.Transformation,Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
+            for t ∈ vcat(Subsets.Transformation, Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
                 JuMP.fix(model[:NewCapacity][Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Subsets.Biomass,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF"])
+            for t ∈ vcat(Subsets.Biomass,Subsets.CHPs,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])
                 if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
                     JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
                 end

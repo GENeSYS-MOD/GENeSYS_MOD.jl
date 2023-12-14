@@ -72,6 +72,7 @@ function genesysmod_dataload(Switch)
     AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
     CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit",dbr, 𝓣)
     InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
+
     OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
 
     CapitalCost = create_daa(in_data, "Par_CapitalCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
@@ -84,14 +85,15 @@ function genesysmod_dataload(Switch)
 
     #CapacityFactor = create_daa(in_data, "Par_CapacityFactor",dbr, 𝓡, 𝓣, 𝓛, 𝓨)
 
-    ReserveMargin = create_daa(in_data,"Par_ReserveMargin",dbr, 𝓡, 𝓨; copy_world=true)
-    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel",dbr, 𝓡, 𝓕, 𝓨; copy_world=true)
-    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology",dbr, 𝓡, 𝓣, 𝓨;copy_world=true)
+    ReserveMargin = create_daa(in_data,"Par_ReserveMargin",dbr, 𝓡, 𝓨; inherit_base_world=true)
+    ReserveMarginTagFuel = create_daa(in_data, "Par_ReserveMarginTagFuel",dbr, 𝓡, 𝓕, 𝓨; inherit_base_world=true)
+    ReserveMarginTagTechnology = create_daa(in_data, "Par_ReserveMarginTagTechnology",dbr, 𝓡, 𝓣, 𝓨;inherit_base_world=true)
+
 
     CapitalCostStorage = create_daa_init(in_data, "Par_CapitalCostStorage",dbr, 0.01, 𝓡, 𝓢, 𝓨;inherit_base_world=true)
     MinStorageCharge = create_daa(in_data, "Par_MinStorageCharge",dbr, 𝓡, 𝓢, 𝓨; copy_world=true)
 
-
+    
     # delete world region from region set
     deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
 
