@@ -118,33 +118,23 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
                     Params.TotalAnnualMaxCapacity[r,t,y] = 999999
                 end
             end
-    end end
+        end 
+    end
+
 
     for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
+        for t ∈ intersect(Subsets.ImportTechnology, Sets.Technology)
+            Params.OperationalLife[r,t] = 1
+            Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 999999
             for y ∈ Sets.Year
                 Params.AvailabilityFactor[r,t,y] = 1
-    end end end
-
-    for r ∈ Sets.Region_full
-        for t ∈ Sets.Technology
-            if t ∈ Subsets.ImportTechnology
                 for l ∈ Sets.Timeslice
-                    for y ∈ Sets.Year
-                        Params.CapacityFactor[r,t,l,y] = 1
-                end end
-    end end end
-
-    for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
-                Params.OperationalLife[r,t] = 1    
+                    Params.CapacityFactor[r,t,l,y] = 1
+                end
+            end
         end
     end
 
-    for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
-            Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 999999
-    end end
 
     #
     # ####### Bounds for storage technologies #############
