@@ -1,64 +1,56 @@
-#= import Pkg;
-Pkg.activate(@__DIR__)
-Pkg.instantiate() =#
-include("init.jl")
+import Pkg
+cd("/cluster/home/danare/git/GENeSYS_MOD-main/dev")
+Pkg.activate(".")
+Pkg.develop(path="../GENeSYS_MOD.jl")
+Pkg.add("Revise")
 using GENeSYS_MOD
 using JuMP
 using Dates
-using CPLEX
 using Gurobi
 using Ipopt
 using CSV
 using Revise
-using DataFrames
 start = Dates.now()
 
-start_year=2018
-switch_only_load_gdx=0
-switch_test_data_load=0
-solver=CPLEX.Optimizer
-#solver=Gurobi.Optimizer
+
+year=2018
+solver=Gurobi.Optimizer
 DNLPsolver= Ipopt.Optimizer
 model_region="minimal"
 data_base_region="DE"
-#data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new"
-data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new_few_zones_dispatch"
-hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022"
-threads=20
+data_file="Data_Europe_GradualDevelopment_NNS0_v7_13Dec23NewOffshoreZones"
+hourly_data_file = "Hourly_Data_Europe_v13_kl_13_12_2023_windDataWP1"
+threads=6
 emissionPathway="MinimalExample"
 emissionScenario="globalLimit"
 socialdiscountrate=0.05
-inputdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Inputdata")
-resultdir = joinpath(pkgdir(GENeSYS_MOD),"..","..","Results")
-switch_infeasibility_tech = 1
+inputdir = joinpath("/cluster/home/danare/git/GENeSYS_MOD-main/dev","data", "Meshed", "WP1")
+resultdir = joinpath("/cluster/home/danare/git/GENeSYS_MOD-main/dev","results")
+switch_infeasibility_tech = 0
 switch_investLimit=1
 switch_ccs=1
 switch_ramping=0
 switch_weighted_emissions=1
 switch_intertemporal=0
-switch_short_term_storage=1
-switch_base_year_bounds = 1
-switch_peaking_capacity = 1
-set_peaking_slack = 1.0
-set_peaking_minrun_share = 0.15
-set_peaking_res_cf = 0.5
+switch_base_year_bounds = 0
+switch_peaking_capacity = 0
+set_peaking_slack = 0
+set_peaking_minrun_share = 0
+set_peaking_res_cf = 0
 set_peaking_startyear = 2025
 switch_peaking_with_storages = 0
 switch_peaking_with_trade = 0
-switch_peaking_minrun = 1
+switch_peaking_minrun = 0
 switch_employment_calculation = 0
 switch_endogenous_employment = 0
 employment_data_file = ""
-switch_dispatch = 1
-#elmod_nthhour = 0
+switch_dispatch = 0
 elmod_nthhour = 0
-elmod_starthour = 1
+elmod_starthour = 8
 elmod_dunkelflaute= 0
-elmod_skipdays = 0
-elmod_skiphours = 1
-#elmod_skipdays = 0
-#elmod_skiphours = 0
-switch_raw_results = 1
+elmod_skipdays = 30
+elmod_skiphours = 4
+switch_raw_results = 0
 switch_processed_results = 0
 write_reduced_timeserie = 0
 
@@ -73,15 +65,13 @@ elseif elmod_nthhour == 0
     elmod_nthhour = elmod_skipdays*24 + elmod_skiphours
 end
 
-Switch = GENeSYS_MOD.Switch(start_year,
-    switch_only_load_gdx,
-    switch_test_data_load,
+Switch = GENeSYS_MOD.Switch(year,
     solver,
     DNLPsolver,
     model_region,
     data_base_region,
     data_file,
-    timeseries_data_file,
+    hourly_data_file,
     threads,
     emissionPathway,
     emissionScenario,
@@ -94,7 +84,6 @@ Switch = GENeSYS_MOD.Switch(start_year,
     switch_ramping,
     switch_weighted_emissions,
     switch_intertemporal,
-    switch_short_term_storage,
     switch_base_year_bounds,
     switch_peaking_capacity,
     set_peaking_slack,
@@ -108,7 +97,6 @@ Switch = GENeSYS_MOD.Switch(start_year,
     switch_endogenous_employment,
     employment_data_file,
     switch_dispatch,
-    hourly_data_file,
     elmod_nthhour,
     elmod_starthour,
     elmod_dunkelflaute,
@@ -117,132 +105,86 @@ Switch = GENeSYS_MOD.Switch(start_year,
     switch_raw_results,
     switch_processed_results,
     write_reduced_timeserie)
-    starttime= Dates.now()
-        
+
+print("Julia Init : ",Dates.now()-start,"\n")
 model= JuMP.Model()
-    
-#
-# ####### Load data from provided excel files and declarations #############
-#
-println(Dates.now()-starttime)
+print("Model Init : ",Dates.now()-start,"\n")
 Sets, Subsets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
- 
-println(Dates.now()-starttime)
-GENeSYS_MOD.genesysmod_dec(model,Sets,Subsets,Params,Switch)
-println(Dates.now()-starttime)
-#
-# ####### Settings for model run (Years, Regions, etc) #############
-#
-
-Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdiscountrate)
-println(Dates.now()-starttime)
-#
-# ####### apply general model bounds #############
-#
-
-GENeSYS_MOD.genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
-println(Dates.now()-starttime)
-#
-# ####### Including Equations #############
-#
-
+print("Dataload Init : ",Dates.now()-start,"\n")
+GENeSYS_MOD.genesysmod_dec(model,Sets,Subsets,Params,Switch);
+print("Variable Declaration : ",Dates.now()-start,"\n")
+Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdiscountrate);
+print("Settings : ",Dates.now()-start,"\n")
+GENeSYS_MOD.genesysmod_bounds(model,Sets, Subsets,Params,Settings,Switch);
+print("Bounds : ",Dates.now()-start,"\n")
+#Maps = GENeSYS_MOD.make_mapping(Sets,Params)
+#print("Mapping : ",Dates.now()-start,"\n")
+#GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch, Maps)
 GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
-println(Dates.now()-starttime)
-#
-# ####### Fix Investment Variables #############
-#
-# read investment results for relevant variables
-#in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * "" * ".csv"))
-in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
-in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-#= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
-
-# make constraints fixing investments
-for y ∈ Sets.Year for r ∈ Sets.Region_full
-    for t ∈ setdiff(Sets.Technology, Subsets.DummyTechnology)
-        @constraint(model, model[:TotalCapacityAnnual][y,t,r] == tmp_TotalCapacityAnnual[y,t,r],
-        base_name="Fix_Investments_$(y)_$(t)_$(r)")
-    end
-    if Switch.switch_infeasibility_tech == 1
-        for t ∈ Subsets.DummyTechnology
-            @constraint(model, model[:TotalCapacityAnnual][y,t,r] == 99999,
-            base_name="Fix_Investments_$(y)_$(t)_$(r)")
-        end
-    end
-end end
-for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-    @constraint(model, model[:TotalTradeCapacity][y,f,r,rr] == tmp_TotalTradeCapacity[y,f,r,rr],
-    base_name="Fix_TradeConnection_$(y)_$(f)_$(r)_$(rr)")
-end end end end
-#
-# ####### CPLEX Options #############
-#
-println(Dates.now()-starttime)
-
+print("Constraints : ",Dates.now()-start,"\n")
 set_optimizer(model, solver)
-
-if string(solver) == "Gurobi.Optimizer"
+if solver == Gurobi.Optimizer
     set_optimizer_attribute(model, "Threads", threads)
-    #set_optimizer_attribute(model, "Names", "no")
     set_optimizer_attribute(model, "Method", 2)
     set_optimizer_attribute(model, "BarHomogeneous", 1)
-    set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
-elseif string(solver) == "CPLEX.Optimizer"
-    set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
-    set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
-    set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
-    #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
+    set_optimizer_attribute(model, "ResultFile", "Solution_julia.lp")
 end
 
-
-file = open("cplex.opt","w")
-write(file,"threads $threads ")
-write(file,"parallelmode -1 ")
-write(file,"lpmethod 4 ")
-#names no
-#solutiontype 2
-write(file,"quality yes ")
-write(file,"barobjrng 1e+075 ")
-write(file,"tilim 1000000 ")
-close(file)
-
-file = open("gurobi.opt","w")
-write(file,"threads $threads ")
-write(file,"method 2 ")
-write(file,"names no ")
-write(file,"barhomogeneous 1 ")
-write(file,"timelimit 1000000 ")
-close(file)
-
-file = open("osigurobi.opt","w")
-write(file,"threads $threads ")
-write(file,"method 2 ")
-write(file,"names no ")
-write(file,"barhomogeneous 1 ")
-write(file,"timelimit 1000000 ")
-close(file)
-
-println("model_region = $model_region")
-println("data_base_region = $data_base_region")
-println("data_file = $data_file")
-println("solver = $solver")
 optimize!(model)
+solution_summary(model)
+elapsed = (Dates.now() - start)
 
-VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
+println(termination_status(model))
+if termination_status(model) == MOI.INFEASIBLE_OR_UNBOUNDED
+    JuMP.compute_conflict!(model)
+    list_of_conflicting_constraints = ConstraintRef[]
+    for (F, S) in list_of_constraint_types(model)
+        for con in all_constraints(model, F, S)
+            if get_attribute(con, MOI.ConstraintConflictStatus()) == MOI.IN_CONFLICT
+                push!(list_of_conflicting_constraints, con)
+            end
+        end
+    end
+    
+    open("/cluster/home/danare/git/GENeSYS_MOD-main/dev/results/iis.txt", "w") do file
+        for r in list_of_conflicting_constraints
+            println(r)
+            write(file, string(r)*"\n")
+        end
+    end
+    # write model to file
+    write_to_file(model, "my_model.lp")
+    f = open("model.lp", "w")
+    print(f, model)
+    close(f)
 
-elapsed = (Dates.now() - starttime)#24#3600;
+elseif termination_status(model) == MOI.OPTIMAL
+    print("After Solve : ",Dates.now()-start,"\n")
+    VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
+    print("VarPar : ",Dates.now()-start,"\n")
+    if switch_processed_results == 1
+        GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch,
+         Settings, elapsed,"dispatch")
+    end
 
-println(Dates.now()-starttime)
+    # write solution to txt file
+    dt = Dates.format(Dates.now(), "yyyymmdd")
 
-#
-# ####### Creating Result Files #############
-#
-if switch_processed_results == 1
-    GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch, Settings, elapsed,"dispatch")
+    file = open(normpath(joinpath(dirname(@__FILE__),"..","..", "dev", "results", "v7h2$dt.txt")), "w")
+    # Write variable names and values to the file
+    for v in all_variables(model)
+        if value.(v) > 0
+            val = value.(v)
+            str = string(v)
+            println(file, "$str = $val")
+        end
+    end
+    println(length(all_variables(model)))
+    
+    if switch_raw_results == 1
+        GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
+    end
+else
+    println(termination_status(model))
 end
-if switch_raw_results == 1
-    GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
-end
+print("Total : ",Dates.now()-start,"\n")
