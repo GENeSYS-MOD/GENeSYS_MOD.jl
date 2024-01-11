@@ -76,23 +76,23 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
 
     hourly_data = XLSX.readxlsx(joinpath(Switch.inputdir, Switch.hourly_data_file * ".xlsx"))
 
-    CountryData_Load = DataFrame(XLSX.gettable(hourly_data["LOAD"]))
-    CountryData_PV_Avg = DataFrame(XLSX.gettable(hourly_data["PV_AVG"]))
-    CountryData_PV_Inf = DataFrame(XLSX.gettable(hourly_data["PV_INF"]))
-    CountryData_PV_Opt = DataFrame(XLSX.gettable(hourly_data["PV_OPT"]))
-    CountryData_PV_tracking = DataFrame(XLSX.gettable(hourly_data["PV_TRA"]))
-    CountryData_Wind_Onshore_Avg = DataFrame(XLSX.gettable(hourly_data["WIND_ONSHORE_AVG"]))
-    CountryData_Wind_Onshore_Inf = DataFrame(XLSX.gettable(hourly_data["WIND_ONSHORE_INF"]))
-    CountryData_Wind_Onshore_Opt = DataFrame(XLSX.gettable(hourly_data["WIND_ONSHORE_OPT"]))
-    CountryData_Wind_Offshore = DataFrame(XLSX.gettable(hourly_data["WIND_OFFSHORE"]))
-    CountryData_Wind_Offshore_Shallow = DataFrame(XLSX.gettable(hourly_data["WIND_OFFSHORE_SHALLOW"]))
-    CountryData_Wind_Offshore_Deep = DataFrame(XLSX.gettable(hourly_data["WIND_OFFSHORE_DEEP"]))
-    CountryData_Mobility_Psng = DataFrame(XLSX.gettable(hourly_data["MOBILITY_PSNG"]))
-    CountryData_Heat_Low = DataFrame(XLSX.gettable(hourly_data["HEAT_LOW"]))
-    CountryData_Heat_High = DataFrame(XLSX.gettable(hourly_data["HEAT_HIGH"]))
-    CountryData_HeatPump_AirSource = DataFrame(XLSX.gettable(hourly_data["HP_AIRSOURCE"]))
-    CountryData_HeatPump_GroundSource = DataFrame(XLSX.gettable(hourly_data["HP_GROUNDSOURCE"]))
-    CountryData_Hydro_RoR = DataFrame(XLSX.gettable(hourly_data["HYDRO_ROR"]))
+    CountryData_Load = DataFrame(XLSX.gettable(hourly_data["TS_LOAD"]))
+    CountryData_PV_Avg = DataFrame(XLSX.gettable(hourly_data["TS_PV_AVG"]))
+    CountryData_PV_Inf = DataFrame(XLSX.gettable(hourly_data["TS_PV_INF"]))
+    CountryData_PV_Opt = DataFrame(XLSX.gettable(hourly_data["TS_PV_OPT"]))
+    CountryData_PV_tracking = DataFrame(XLSX.gettable(hourly_data["TS_PV_TRA"]))
+    CountryData_Wind_Onshore_Avg = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_AVG"]))
+    CountryData_Wind_Onshore_Inf = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_INF"]))
+    CountryData_Wind_Onshore_Opt = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_OPT"]))
+    CountryData_Wind_Offshore = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE"]))
+    CountryData_Wind_Offshore_Shallow = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE_SHALLOW"]))
+    CountryData_Wind_Offshore_Deep = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE_DEEP"]))
+    CountryData_Mobility_Psng = DataFrame(XLSX.gettable(hourly_data["TS_MOBILITY_PSNG"]))
+    CountryData_Heat_Low = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_LOW"]))
+    CountryData_Heat_High = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_HIGH"]))
+    CountryData_HeatPump_AirSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_AIRSOURCE"]))
+    CountryData_HeatPump_GroundSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_GROUNDSOURCE"]))
+    CountryData_Hydro_RoR = DataFrame(XLSX.gettable(hourly_data["TS_HYDRO_ROR"]))
 
     CountryData["LOAD"] = CountryData_Load
     CountryData["PV_AVG"] = CountryData_PV_Avg
@@ -113,7 +113,7 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
     CountryData["HYDRO_ROR"] = CountryData_Hydro_RoR
 
     for cde ∈ Country_Data_Entries
-        select!(CountryData[cde], Not([:TIMESLICE,:HOUR]))
+        select!(CountryData[cde], Not([:HOUR]))
     end
 
     Dunkelflaute = Dict(x => mapcols(col -> col*0.0, CountryData[x]) for x ∈ Country_Data_Entries)

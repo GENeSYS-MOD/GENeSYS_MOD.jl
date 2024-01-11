@@ -61,7 +61,7 @@ If inherit_base_world is 1, missing data will be fetched from the base region if
 and again from the world region if necessary.
 """
 function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
-    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
         zeros(length.(els)...), els...)
@@ -90,17 +90,17 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;i
             A[x...] = A["World", x[2:end]...]
         end
     end
-    if tab_name == "Par_CapacityToActivityUnit"
-        for x in Base.Iterators.product(els...)
-            if A[base_region, x[2:end]...] != 0.0
-                A[x...] = A[base_region, x[2:end]...]
-            elseif A["World", x[2:end]...] != 0.0
-                A[x...] = A["World", x[2:end]...]
-            else
-                A[x...] = 0.0
-            end
-        end
-    end
+    #if tab_name == "Par_CapacityToActivityUnit"
+        #for x in Base.Iterators.product(els...)
+            #if A[base_region, x[2:end]...] != 0.0
+            #    A[x...] = A[base_region, x[2:end]...]
+            #elseif A["World", x[2:end]...] != 0.0
+            #    A[x...] = A["World", x[2:end]...]
+            #else
+            #    A[x...] = 0.0
+            #end
+        #end
+    #end
     if tab_name == "Par_EmissionsPenalty"
         for x in Base.Iterators.product(els...)
             if A[base_region, x[2:end]...] != 0.0
@@ -133,7 +133,7 @@ end
 Create dense axis array initialized at a given value. 
 """
 function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
-    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=5))
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
         ones(length.(els)...)*init_value, els...)
@@ -162,17 +162,17 @@ function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els..
             A[x...] = A["World", x[2:end]...]
         end
     end
-    if tab_name == "Par_CapacityToActivityUnit"
-        for x in Base.Iterators.product(els...)
-            if A[base_region, x[2:end]...] != init_value
-                A[x...] = A[base_region, x[2:end]...]
-            elseif A["World", x[2:end]...] != init_value
-                A[x...] = A["World", x[2:end]...]
-            else
-                A[x...] = init_value
-            end
-        end
-    end
+    #if tab_name == "Par_CapacityToActivityUnit"
+        #for x in Base.Iterators.product(els...)
+            #if A[base_region, x[2:end]...] != init_value
+            #    A[x...] = A[base_region, x[2:end]...]
+            #elseif A["World", x[2:end]...] != init_value
+            #    A[x...] = A["World", x[2:end]...]
+            #else
+            #    A[x...] = init_value
+            #end
+        #end
+    #end
     if tab_name == "Par_EmissionsPenalty"
         for x in Base.Iterators.product(els...)
             if A[base_region, x[2:end]...] != init_value
