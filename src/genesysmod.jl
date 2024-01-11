@@ -178,7 +178,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     println("solver = $solver")
 
     optimize!(model)
-    error("stop")
+
     elapsed = (Dates.now() - starttime)#24#3600;
 
     #
