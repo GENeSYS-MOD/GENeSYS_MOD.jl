@@ -177,6 +177,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     println("data_file = $data_file")
     println("solver = $solver")
 
+    write_to_file(model, "julia_MPS.mps")
+
     optimize!(model)
 
     elapsed = (Dates.now() - starttime)#24#3600;

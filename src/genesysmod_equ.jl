@@ -48,7 +48,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   + sum(model[:DiscountedAnnualTotalTradeCosts][y,r] for y ∈ 𝓨 for r ∈ 𝓡)
   + sum(model[:DiscountedNewTradeCapacityCosts][y,f,r,rr] for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡 for rr ∈ 𝓡)
   + sum(model[:DiscountedAnnualCurtailmentCost][y,f,r] for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡)
-  + sum(model[:BaseYearOvershoot][r,t,"Power",y]*999 for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣)
+  + sum(model[:BaseYearOvershoot][r,t,f,y]*999 for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for f ∈ 𝓕)
   - sum(model[:DiscountedSalvageValueTransmission][y,r] for y ∈ 𝓨 for r ∈ 𝓡))
   print("Cstr: Cost : ",Dates.now()-start,"\n")
   
@@ -286,7 +286,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   end
 
   for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for l ∈ 𝓛
-    @constraint(model, model[:CurtailedCapacity][r,l,t,y] <= model[:TotalCapacityAnnual][y,t,r], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
+    @constraint(model, model[:TotalCapacityAnnual][y,t,r] >= model[:CurtailedCapacity][r,l,t,y], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
   end end end end
   print("Cstr: Cap Adequacy A3 : ",Dates.now()-start,"\n")
 
@@ -403,7 +403,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
       end
     end
 
-    if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] > 0
+    if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0
       JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
     end
 
@@ -883,7 +883,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     end
     if (Settings.DepreciationMethod[r]==1 && ((𝓨[i]+Params.OperationalLifeStorage[s]-1) > 𝓨[end] && Settings.GeneralDiscountRate[r]>0))
       @constraint(model,
-      model[:CapitalInvestmentStorage][s,𝓨[i],r]*(1-((1+Settings.GeneralDiscountRate[r])^(𝓨[end] - 𝓨[i]+1)-1)/((1+Settings.GeneralDiscountRate[r])^Params.OperationalLifeStorage[s]-1)) == model[:SalvageValueStorage][s,𝓨[i],r],
+      model[:CapitalInvestmentStorage][s,𝓨[i],r]*(1-(((1+Settings.GeneralDiscountRate[r])^(𝓨[end] - 𝓨[i]+1)-1)/((1+Settings.GeneralDiscountRate[r])^Params.OperationalLifeStorage[s]-1))) == model[:SalvageValueStorage][s,𝓨[i],r],
       base_name="SI3c_SalvageValueStorageAtEndOfPeriod3_$(s)_$(𝓨[i])_$(r)")
     end
     @constraint(model,
