@@ -181,6 +181,17 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     end
 
 
+    ### Offshore Wind nodes
+
+    for r ∈ intersect(Subsets.OffshoreNodes, Sets.Region_full)
+        for t ∈ Sets.Technology
+            if (t ∉ Subsets.Offshore)  && (t ∉ ["X_Electrolysis", "D_Gas_H2", "S_Gas_H2"])
+                Params.TotalAnnualMaxCapacity[r,t,:] .= 0
+            end
+        end
+    end
+
+
     ### ReserveMargin initialization 
 
     for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year

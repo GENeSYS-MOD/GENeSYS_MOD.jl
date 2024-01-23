@@ -655,7 +655,7 @@ function make_subsets(Sets)
     PhaseOutSet = ["P_Coal_Hardcoal",
     "P_Coal_Lignite",
     #"P_Gas",
-    #"P_Nuclear",
+    "P_Nuclear",
     "P_Oil",
     "HLR_Gas_Boiler",
     #"HLR_Gas_CHP",
@@ -863,12 +863,36 @@ function make_subsets(Sets)
     "Infeasibility_Mob_Passenger",
     "Infeasibility_Mob_Freight"
     ]
+
+
+    OffshoreNodes = [
+    "OFFBE",
+    "OFFGBMid",
+    "OFFGBScot",
+    "OFFGBSor",
+    "OFFDK1",
+    "OFFDK2",
+    "OFFDE",
+    "OFFNL1",
+    "OFFNL2",
+    "OFFSE3",
+    "NONordvestC",
+    "NONordvestA",
+    "NOVestA",
+    "NOVestB",
+    "NOVestE",
+    "NOVestF",
+    "NOSorB",
+    "NOSorC",
+    "NOSorF",
+    "NOSoennaA"]
+    
     
     Subsets=SubsetsIni(Solar,Wind,Renewables, CCS, Transformation,RenewableTransformation,FossilFuelGeneration,
     FossilFuels,FossilPower,CHPs,RenewableTransport,Transport,Passenger,Freight,TransportFuels,
     ImportTechnology,Heat,PowerSupply,PowerBiomass,Coal,Lignite,Gas,StorageDummies,SectorCoupling,
     HeatFuels,ModalGroups,PhaseInSet,PhaseOutSet,HeatSlowRamper,HeatQuickRamper,Hydro,Geothermal,Onshore,
-    Offshore,SolarUtility,Oil,HeatLowRes,HeatLowInd,HeatMedInd,HeatHighInd,Biomass,Households,Companies,HydrogenTechnologies,DummyTechnology)
+    Offshore,SolarUtility,Oil,HeatLowRes,HeatLowInd,HeatMedInd,HeatHighInd,Biomass,Households,Companies,HydrogenTechnologies,DummyTechnology, OffshoreNodes)
 
     return Subsets
 end
