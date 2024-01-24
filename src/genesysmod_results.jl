@@ -155,8 +155,8 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     PeakCapacityByTechnology = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
     for y ∈ Sets.Year for t ∈ Sets.Technology for r ∈ Sets.Region_full
         for l ∈ Sets.Timeslice
-            if Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[r,t]*Params.CapacityFactor[r,t,l,y] != 0
-                CapacityUsedByTechnologyEachTS[y,l,t,r] = value(VarPar.RateOfProductionByTechnology[y,l,t,"Power",r]) * Params.YearSplit[l,y]/(Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[r,t]*Params.CapacityFactor[r,t,l,y])
+            if Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[t]*Params.CapacityFactor[r,t,l,y] != 0
+                CapacityUsedByTechnologyEachTS[y,l,t,r] = value(VarPar.RateOfProductionByTechnology[y,l,t,"Power",r]) * Params.YearSplit[l,y]/(Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[t]*Params.CapacityFactor[r,t,l,y])
             end
         end
         if sum(CapacityUsedByTechnologyEachTS[y,:,t,r]) != 0
@@ -233,7 +233,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     ### parameter z_maxgenerationperyear(r_full,t,y_full)
     z_maxgenerationperyear = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Year)
     for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year
-        z_maxgenerationperyear[r,t,y] = Params.CapacityToActivityUnit[r,t]*maximum(Params.AvailabilityFactor[r,t,:])*sum(Params.CapacityFactor[r,t,:,y]/length(Sets.Timeslice))
+        z_maxgenerationperyear[r,t,y] = Params.CapacityToActivityUnit[t]*maximum(Params.AvailabilityFactor[r,t,:])*sum(Params.CapacityFactor[r,t,:,y]/length(Sets.Timeslice))
     end end end
 
     ### parameter output_technology_costs_detailed
@@ -259,8 +259,8 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
                 if z_maxgenerationperyear[r,t,y] > 0
                     vc_wo_fc[r,t,y,f] = sum(Params.VariableCost[r,t,m,y] for m ∈ Sets.Mode_of_operation if Params.InputActivityRatio[r,t,f,m,y]>0)
                     vc_w_fc[r,t,y,f] = sum(Params.VariableCost[r,t,m,y] + Params.InputActivityRatio[r,t,f,m,y]*resourcecosts[r,f,y] for m ∈ Sets.Mode_of_operation if Params.InputActivityRatio[r,t,f,m,y]>0)
-                    lc_em[r,t,y,f] = Params.EmissionsPenalty[r,"CO2",y]*sum(Params.InputActivityRatio[r,t,f,m,y]*Params.EmissionContentPerFuel[f,"CO2"]*Params.EmissionActivityRatio[r,t,"CO2",m,y] for m ∈ Sets.Mode_of_operation if Params.InputActivityRatio[r,t,f,m,y]>0)
-                    lc_cap[r,t,y,f] = Params.CapitalCost[r,t,y]/(z_maxgenerationperyear[r,t,y]*Params.OperationalLife[r,t])
+                    lc_em[r,t,y,f] = Params.EmissionsPenalty[r,"CO2",y]*sum(Params.InputActivityRatio[r,t,f,m,y]*Params.EmissionContentPerFuel[f,"CO2"]*Params.EmissionActivityRatio[r,t,m,"CO2",y] for m ∈ Sets.Mode_of_operation if Params.InputActivityRatio[r,t,f,m,y]>0)
+                    lc_cap[r,t,y,f] = Params.CapitalCost[r,t,y]/(z_maxgenerationperyear[r,t,y]*Params.OperationalLife[t])
                     lc_gen[r,t,y,f] = sum(Params.VariableCost[r,t,m,y] + Params.InputActivityRatio[r,t,f,m,y]*resourcecosts[r,f,y] for m ∈ Sets.Mode_of_operation if Params.InputActivityRatio[r,t,f,m,y]>0)
                     lc_tot_w_em[r,t,y,f] = lc_cap[r,t,y,f] + lc_gen[r,t,y,f] + lc_em[r,t,y,f]
                     lc_tot_wo_em[r,t,y,f] = lc_cap[r,t,y,f] + lc_gen[r,t,y,f]
@@ -375,7 +375,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
             if z_maxgenerationperyear[r,t,y] > 0
                 vc_wo_fc[r,t,y] = Params.VariableCost[r,t,1,y]
                 vc_w_fc[r,t,y] = Params.VariableCost[r,t,1,y]
-                lc_cap[r,t,y] = Params.CapitalCost[r,t,y]/(z_maxgenerationperyear[r,t,y]*Params.OperationalLife[r,t])
+                lc_cap[r,t,y] = Params.CapitalCost[r,t,y]/(z_maxgenerationperyear[r,t,y]*Params.OperationalLife[t])
                 lc_gen[r,t,y] = Params.VariableCost[r,t,1,y]
                 lc_tot_w_em[r,t,y] = lc_cap[r,t,y] + lc_gen[r,t,y]
                 lc_tot_wo_em[r,t,y] = lc_cap[r,t,y] + lc_gen[r,t,y]
@@ -493,7 +493,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Region_full, Sets.Region_full)
     for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-        tmp[y,r,rr] = Params.TradeCapacityGrowthCosts["Power",r,rr]*Params.TradeRoute[y,"Power",r,rr]
+        tmp[y,r,rr] = Params.TradeCapacityGrowthCosts[r,rr,"Power"]*Params.TradeRoute[r,rr,"Power",y]
     end end end
     df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Region, :Region2])
     df_tmp[!,:Type] .= "Transmission Expansion Costs in MEUR/GW"
@@ -501,7 +501,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     append!(output_trade_capacity, df_tmp)
 
     r2 = (length(Sets.Region_full) > 1 ? 2 : 1)
-    df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts["Power",Sets.Region_full[1],Sets.Region_full[r2]]))
+    df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],"Power"]))
     select!(df_tmp,colnames)
     append!(output_trade_capacity, df_tmp)
 

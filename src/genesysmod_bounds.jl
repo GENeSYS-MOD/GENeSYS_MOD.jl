@@ -95,14 +95,14 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        Params.CapacityToActivityUnit[:,Subsets.DummyTechnology] .= 31.56
+        Params.CapacityToActivityUnit[Subsets.DummyTechnology] .= 31.56
         Params.TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
         Params.FixedCost[:,Subsets.DummyTechnology,:] .= 999
         Params.CapitalCost[:,Subsets.DummyTechnology,:] .= 999
         Params.VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
         Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
         Params.CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
-        Params.OperationalLife[:,Subsets.DummyTechnology] .= 1 
+        Params.OperationalLife[Subsets.DummyTechnology] .= 1 
         Params.EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
     end
 
@@ -124,16 +124,15 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
 
     for r ∈ Sets.Region_full
         for t ∈ intersect(Subsets.ImportTechnology, Sets.Technology)
-            Params.OperationalLife[r,t] = 1
+            Params.OperationalLife[t] = 1
             Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 999999
             for y ∈ Sets.Year
                 Params.AvailabilityFactor[r,t,y] = 1
                 for l ∈ Sets.Timeslice
-                    Params.CapacityFactor[r,t,l,y] = 1
-                end
-            end
-        end
-    end
+                    for y ∈ Sets.Year
+                        Params.CapacityFactor[r,t,l,y] = 1
+                end end
+    end end end
 
 
     #
@@ -158,11 +157,11 @@ function genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ vcat(Subsets.Transformation,Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
+            for t ∈ vcat(Subsets.Transformation, Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
                 JuMP.fix(model[:NewCapacity][Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Subsets.Biomass,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF"])
+            for t ∈ vcat(Subsets.Biomass,Subsets.CHPs,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])
                 if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
                     JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
                 end

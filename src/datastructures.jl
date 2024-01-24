@@ -319,7 +319,8 @@ Model settings necessary for running the model
     Value between 0 and 1. Used only if switch_base_year_bounds is set to 1.\n
 - **`PhaseIn ::Dict`** TODO.\n
 - **`PhaseOut ::Dict`** TODO.\n
-
+- **`StorageLevelYearStartUpperLimit ::Float64`** TODO.\n
+- **`StorageLevelYearStartLowerLimit ::Float64`** TODO.\n
 """
 struct Settings <: InputClass
     DepreciationMethod ::JuMP.Containers.DenseAxisArray
@@ -335,6 +336,8 @@ struct Settings <: InputClass
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
     PhaseIn ::Dict
     PhaseOut ::Dict
+    StorageLevelYearStartUpperLimit ::Float64
+    StorageLevelYearStartLowerLimit ::Float64
 end 
 
 """
