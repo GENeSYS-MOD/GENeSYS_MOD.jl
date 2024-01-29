@@ -374,12 +374,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
       for l ∈ 𝓛
-        @constraint(model, (model[:Import][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
-      end
-    end
-    if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
-      for l ∈ 𝓛
-        @constraint(model, (model[:Export][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",r,rr]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesExport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
+        @constraint(model, (model[:Import][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",r,rr]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
       end
       @constraint(model, model[:NewTradeCapacity][𝓨[i],"Power",r,rr]*Params.TradeCapacityGrowthCosts[r,rr,"Power"]*Params.TradeRoute[r,rr,"Power",𝓨[i]] == model[:NewTradeCapacityCosts][𝓨[i],"Power",r,rr], base_name="TrC4_NewTradeCapacityCosts_$(𝓨[i])_Power_$(r)_$(rr)")
       @constraint(model, model[:NewTradeCapacityCosts][𝓨[i],"Power",r,rr]/((1+Settings.GeneralDiscountRate[r])^(𝓨[i]-Switch.StartYear+0.5)) == model[:DiscountedNewTradeCapacityCosts][𝓨[i],"Power",r,rr], base_name="TrC5_DiscountedNewTradeCapacityCosts_$(𝓨[i])_Power_$(r)_$(rr)")
@@ -474,7 +469,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
   start=Dates.now()
   for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
     @constraint(model, Params.CapitalCost[r,t,y] * model[:NewCapacity][y,t,r] == model[:CapitalInvestment][y,t,r], base_name="CC1_UndiscountedCapitalInvestment_$(y)_$(t)_$(r)")
-    @constraint(model, model[:CapitalInvestment][y,t,r]/((1+Settings.TechnologyDiscountRate[r,t])^(y-Switch.StartYear)) == model[:DiscountedCapitalInvestment][y,t,r], base_name="CC2_DiscountingCapitalInvestment_$(y)_$(t)_$(r)")
+    @constraint(model, model[:CapitalInvestment][y,t,r]/((1+Settings.TechnologyDiscountRate[r,t])^(y-Switch.StartYear)) == model[:DiscountedCapitalInvestment][y,t,r], base_name="CC2_DiscountedCapitalInvestment_$(y)_$(t)_$(r)")
   end end end
   print("Cstr: Cap. Cost. : ",Dates.now()-start,"\n")
   
@@ -588,7 +583,7 @@ function genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
     end
 
     if (Params.FixedCost[r,t,y] > 0) & (CanBuildTechnology[y,t,r] > 0)
-      @constraint(model, sum(model[:NewCapacity][yy,t,r]*Params.FixedCost[r,t,yy] for yy ∈ 𝓨 if (y-yy < Params.OperationalLife[t]) && (y-yy >= 0)) == model[:AnnualFixedOperatingCost][y,t,r], base_name="OC2_OperatingCostsFixedAnnual_$(y)_$(t)_$(r)")
+      @constraint(model, sum(model[:NewCapacity][yy,t,r]*Params.FixedCost[r,t,yy] for yy ∈ 𝓨 if (y-yy < Params.OperationalLife[t]) && (y-yy >= 0))+Params.ResidualCapacity[r,t,y]*Params.FixedCost[r,t,y] == model[:AnnualFixedOperatingCost][y,t,r], base_name="OC2_OperatingCostsFixedAnnual_$(y)_$(t)_$(r)")
     else
       JuMP.fix(model[:AnnualFixedOperatingCost][y,t,r],0; force=true)
     end
