@@ -60,33 +60,20 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
 
     ############### Activity Variables #############
 
-    RateOfActivity = def_daa(𝓨,𝓛,𝓣,𝓜,𝓡)
-    TotalAnnualTechnologyActivityByMode = def_daa(𝓨,𝓣,𝓜,𝓡)
-    ProductionByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
-    UseByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
-
-    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
-        for m ∈ Maps.Tech_MO[t]
-            TotalAnnualTechnologyActivityByMode[y,t,m,r] = @variable(model, lower_bound = 0, base_name= "TotalAnnualTechnologyActivityByMode[$y,$t,$m,$r]")
-        end
-        for l ∈ 𝓛
-            for m ∈ Maps.Tech_MO[t]
-                RateOfActivity[y,l,t,m,r] = @variable(model, lower_bound = 0, base_name= "RateOfActivity[$y,$l,$t,$m,$r]")
-            end
-        end
-        for f ∈ Maps.Tech_Fuel[t]
-            ProductionByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "ProductionByTechnologyAnnual[$y,$t,$f,$r]")
-            UseByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "UseByTechnologyAnnual[$y,$t,$f,$r]")
-        end 
-    end end end
-
-    TotalTechnologyAnnualActivity = @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
-                
-    TotalActivityPerYear = @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
-    CurtailedEnergyAnnual = @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
-    CurtailedCapacity = @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
-    CurtailedEnergy = @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
-    DispatchDummy = @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0, container=JuMP.Containers.DenseAxisArray)
+    @variable(model, RateOfActivity[𝓨,𝓛,𝓣,𝓜,𝓡] >= 0)
+    @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
+    
+    @variable(model, TotalAnnualTechnologyActivityByMode[𝓨,𝓣,𝓜,𝓡] >= 0)
+    
+    @variable(model, ProductionByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
+    
+    @variable(model, UseByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
+    
+    @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
+    @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
+    @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
+    @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
+    @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
 
     
     ############### Costing Variables #############
@@ -226,7 +213,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
             BaseYearOvershoot[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$r,$t,$f,$y]")
         end
     end end end
-    @variable(model, BaseYearOvershoot[𝓡,𝓣,𝓕,𝓨] >= 0) 
+    DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     
     Vars = GENeSYS_MOD.Variables(NewCapacity,AccumulatedNewCapacity,TotalCapacityAnnual,
     RateOfActivity,TotalAnnualTechnologyActivityByMode,ProductionByTechnologyAnnual,
@@ -246,7 +233,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
     DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
-    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot)
+    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot, DiscountedSalvageValueTransmission)
     return Vars
 end
 

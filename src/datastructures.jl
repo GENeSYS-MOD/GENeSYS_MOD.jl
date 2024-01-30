@@ -67,10 +67,6 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     of capacity.\n
 - **`StorageLevelStart ::JuMP.Containers.DenseAxisArray`** Level of storage at the beginning
     of first modelled year, in units of activity.\n
-- **`StorageMaxChargeRate ::JuMP.Containers.DenseAxisArray`** Maximum charging rate for the 
-    storage, in units of activity per year.\n
-- **`StorageMaxDischargeRate ::JuMP.Containers.DenseAxisArray`** Maximum discharging rate for
-    the storage, in units of activity per year.\n
 - **`MinStorageCharge ::JuMP.Containers.DenseAxisArray`** Sets a lower bound to the amount
     of energy stored, as a fraction of the maximum, with a number ranging between 0 and 1.
     The storage facility cannot be emptied below this level.\n
@@ -220,8 +216,6 @@ struct Parameters <: InputClass
     FixedCost ::JuMP.Containers.DenseAxisArray
 
     StorageLevelStart ::JuMP.Containers.DenseAxisArray
-    StorageMaxChargeRate ::JuMP.Containers.DenseAxisArray
-    StorageMaxDischargeRate ::JuMP.Containers.DenseAxisArray
     MinStorageCharge ::JuMP.Containers.DenseAxisArray
     OperationalLifeStorage ::JuMP.Containers.DenseAxisArray
     CapitalCostStorage ::JuMP.Containers.DenseAxisArray
@@ -408,7 +402,8 @@ Model settings necessary for running the model
     Value between 0 and 1. Used only if switch_base_year_bounds is set to 1.\n
 - **`PhaseIn ::Dict`** TODO.\n
 - **`PhaseOut ::Dict`** TODO.\n
-
+- **`StorageLevelYearStartUpperLimit ::Float64`** TODO.\n
+- **`StorageLevelYearStartLowerLimit ::Float64`** TODO.\n
 """
 struct Settings <: InputClass
     DepreciationMethod ::JuMP.Containers.DenseAxisArray
@@ -424,6 +419,8 @@ struct Settings <: InputClass
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
     PhaseIn ::Dict
     PhaseOut ::Dict
+    StorageLevelYearStartUpperLimit ::Float64
+    StorageLevelYearStartLowerLimit ::Float64
 end 
 
 """
@@ -720,6 +717,8 @@ struct Variable_Parameters <: InputClass
     Use ::JuMP.Containers.DenseAxisArray
     ProductionAnnual ::JuMP.Containers.DenseAxisArray
     UseAnnual ::JuMP.Containers.DenseAxisArray
+    CurtailedEnergy ::JuMP.Containers.DenseAxisArray
+    ModelPeriodCostByRegion ::JuMP.Containers.DenseAxisArray 
 end
 
 """
