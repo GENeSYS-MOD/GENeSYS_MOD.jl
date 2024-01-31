@@ -22,7 +22,7 @@
 Internal function used in the run pårocess to compute results. 
 It also runs the functions for processing emissions and levelized costs.
 """
-function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Settings, elapsed, extr_str)
+function genesysmod_results(model,Sets, Params, VarPar, Switch, Settings, elapsed, extr_str)
     start=Dates.now()
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
@@ -36,13 +36,13 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
         z_fuelcosts["Hardcoal",y,r] = Params.VariableCost[r,"Z_Import_Hardcoal",1,y]
         z_fuelcosts["Lignite",y,r] = Params.VariableCost[r,"R_Coal_Lignite",1,y]
         z_fuelcosts["Nuclear",y,r] = Params.VariableCost[r,"R_Nuclear",1,y]
-        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Subsets.Biomass)/length(Subsets.Biomass) 
+        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Params.TagFuelToSubsets["Biomass"])/length(Params.TagFuelToSubsets["Biomass"]) 
         z_fuelcosts["Gas_Natural",y,r] = Params.VariableCost[r,"Z_Import_Gas",1,y]
         z_fuelcosts["Oil",y,r] = Params.VariableCost[r,"Z_Import_Oil",1,y]
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
     end end
 
-    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Subsets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     print("Levelized Cost : ",Dates.now()-start,"\n")
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]
@@ -570,7 +570,7 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     append!(output_other, df_tmp)
 
     for f ∈ Sets.Fuel
-        if f ∈ Subsets.Transport
+        if f ∈ Params.TagFuelToSubsets["Transport"]
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:];dim_names=[:Region, :Dim2, :Year])
         else
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:]/3.6;dim_names=[:Region, :Dim2, :Year])
@@ -773,9 +773,9 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
             eg[y,f,r] = sum((sum((Params.InputActivityRatio[r,t,f,m,y] != 0 ? value(VarPar.RateOfProductionByTechnologyByMode[y,l,t,m,"Power",r]) : 0) * Params.YearSplit[l,y] for l ∈ Sets.Timeslice)) for t ∈ Sets.Technology for m ∈ Sets.Mode_of_operation if Params.TagTechnologyToSector[t,"Storages"] == 0)/3.6
             eg_p[y,f,r] = eg[y,f,r]/div
         end
-        eg_s[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Solar) /3.6
-        eg_w[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Wind) /3.6
-        eg_h[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Hydro) /3.6
+        eg_s[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Solar"]) /3.6
+        eg_w[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Wind"]) /3.6
+        eg_h[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Hydro"]) /3.6
         eg_s_p[y,r] = eg_s[y,r]/div
         eg_w_p[y,r] = eg_w[y,r]/div
         eg_h_p[y,r] = eg_h[y,r]/div
@@ -849,8 +849,8 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
-            if sum(Params.OutputActivityRatio[r,t,f,m,y] for t ∈ Subsets.ImportTechnology for m ∈ Sets.Mode_of_operation) != 0
-                ispe[y,f,r] = (sum(value(model[:ProductionByTechnologyAnnual][y,t,f,r]) for t ∈ Subsets.ImportTechnology)/3.6)/sum(pe[y,:,r])
+            if sum(Params.OutputActivityRatio[r,t,f,m,y] for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"] for m ∈ Sets.Mode_of_operation) != 0
+                ispe[y,f,r] = (sum(value(model[:ProductionByTechnologyAnnual][y,t,f,r]) for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"])/3.6)/sum(pe[y,:,r])
             end
         end
     end end

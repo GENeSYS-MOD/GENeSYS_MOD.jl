@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to modify batches of input data.
 """
-function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
+function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     #
     # ####### Default Values #############
@@ -30,7 +30,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
      "Heat_High_Industrial"]
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
-        for t ∈ intersect(Sets.Technology,Subsets.Renewables)
+        for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
             Params.RETagTechnology[r,t,y] = 1
         end
         for t ∈ intersect(Sets.Fuel,sub)
@@ -58,7 +58,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     end end  =#
 
     for r ∈ Sets.Region_full
-        for t ∈ setdiff(Subsets.FossilFuelGeneration,["R_Nuclear"])
+        for t ∈ setdiff(Params.TagTechnologyToSubsets["FossilFuelGeneration"],["R_Nuclear"])
             if Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] == 999999
                 Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 0
             end
@@ -84,8 +84,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     #
 
     if Switch.switch_infeasibility_tech == 1
-        Params.TagTechnologyToSector[Subsets.DummyTechnology,"Infeasibility"] .= 1
-        Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 0
+        Params.TagTechnologyToSector[Params.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
+        Params.AvailabilityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
         Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
         Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
@@ -95,15 +95,15 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        Params.CapacityToActivityUnit[Subsets.DummyTechnology] .= 31.56
-        Params.TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
-        Params.FixedCost[:,Subsets.DummyTechnology,:] .= 999
-        Params.CapitalCost[:,Subsets.DummyTechnology,:] .= 999
-        Params.VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
-        Params.AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
-        Params.CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
-        Params.OperationalLife[Subsets.DummyTechnology] .= 1 
-        Params.EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
+        Params.CapacityToActivityUnit[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
+        Params.TotalAnnualMaxCapacity[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
+        Params.FixedCost[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
+        Params.CapitalCost[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
+        Params.VariableCost[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
+        Params.AvailabilityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 1
+        Params.CapacityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
+        Params.OperationalLife[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        Params.EmissionActivityRatio[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
     end
 
     #
@@ -112,8 +112,8 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
 
     for r ∈ Sets.Region_full
         for t ∈ Sets.Technology
-            if t ∈ vcat(Subsets.Transformation,Subsets.FossilPower,Subsets.FossilFuelGeneration,
-                Subsets.CHPs,Subsets.Transport,Subsets.ImportTechnology,Subsets.Biomass,"P_Biomass")
+            if t ∈ vcat(Params.TagTechnologyToSubsets["Transformation"],Params.TagTechnologyToSubsets["FossilPower"],Params.TagTechnologyToSubsets["FossilFuelGeneration"],
+                Params.TagTechnologyToSubsets["CHP"],Params.TagTechnologyToSubsets["Transport"],Params.TagTechnologyToSubsets["ImportTechnology"],Params.TagTechnologyToSubsets["Biomass"],"P_Biomass")
                 for y ∈ Sets.Year
                     Params.TotalAnnualMaxCapacity[r,t,y] = 999999
                 end
@@ -121,14 +121,14 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     end end
 
     for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
+        for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"]
             for y ∈ Sets.Year
                 Params.AvailabilityFactor[r,t,y] = 1
     end end end
 
     for r ∈ Sets.Region_full
         for t ∈ Sets.Technology
-            if t ∈ Subsets.ImportTechnology
+            if t ∈ Params.TagTechnologyToSubsets["ImportTechnology"]
                 for l ∈ Sets.Timeslice
                     for y ∈ Sets.Year
                         Params.CapacityFactor[r,t,l,y] = 1
@@ -136,13 +136,13 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     end end end
 
     for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
+        for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"]
                 Params.OperationalLife[t] = 1    
         end
     end
 
     for r ∈ Sets.Region_full
-        for t ∈ Subsets.ImportTechnology
+        for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"]
             Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 999999
     end end
 
@@ -168,10 +168,10 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ vcat(Subsets.Transformation,Subsets.PowerSupply, Subsets.SectorCoupling, Subsets.StorageDummies)
+            for t ∈ vcat(Params.TagTechnologyToSubsets["Transformation"],Params.TagTechnologyToSubsets["PowerSupply"], Params.TagTechnologyToSubsets["SectorCoupling"], Params.TagTechnologyToSubsets["StorageDummies"])
                 JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Subsets.Biomass,Subsets.CHPs,["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+            for t ∈ vcat(Params.TagTechnologyToSubsets["Biomass"],Params.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
                 "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])
                 if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
                     JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
@@ -202,18 +202,18 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
 
     ### Adds (negligible) variable costs to transport technologies, since they only had fuel costs before
     ### This is to combat strange "curtailment" effects of some transportation technologies
-    for r ∈ Sets.Region_full for t ∈ Subsets.Transport
+    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Transport"]
         Params.VariableCost[r,t,:,:] .= 0.09
     end end
 
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(Subsets.Solar, Subsets.Wind, ["RES_Hydro_Small"])
+    subs = vcat(Params.TagTechnologyToSubsets["Solar"], Params.TagTechnologyToSubsets["Wind"], ["RES_Hydro_Small"])
     Params.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
     Params.CurtailmentCostFactor == 0.1
 
-    for r ∈ Sets.Region_full for t ∈ Subsets.Solar
+    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Solar"]
     Params.AvailabilityFactor[r,t,:] .= 1
     end end
 
@@ -228,7 +228,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
     #
 
     if Switch.switch_ccs == 1
-        for r ∈ Sets.Region_full for t ∈ Subsets.CCS
+        for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["CCS"]
             Params.AvailabilityFactor[r,t,:] .= 0
             Params.TotalAnnualMaxCapacity[r,t,:] .= 99999
             Params.TotalTechnologyAnnualActivityUpperLimit[r,t,:] .= 99999
@@ -236,11 +236,11 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
 
         for y ∈ Sets.Year for r ∈ Sets.Region_full 
             if (y > 2020) && (Params.RegionalCCSLimit[r] > 0)
-                for t ∈ Subsets.CCS
+                for t ∈ Params.TagTechnologyToSubsets["CCS"]
                     Params.AvailabilityFactor[r,t,y] = 0.95
                 end
             else 
-                for t ∈ Subsets.CCS
+                for t ∈ Params.TagTechnologyToSubsets["CCS"]
                     Params.TotalAnnualMaxCapacity[r,t,y] = 0
                     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] = 0
                     for f ∈ Maps.Tech_Fuel[t]
@@ -256,7 +256,7 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
         Params.EmissionActivityRatio[Sets.Region_full,["X_DAC_HT","X_DAC_LT"],:,:,:] .= -1
 
     else
-        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ Subsets.CCS
+        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["CCS"]
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
             for f ∈ Sets.Fuel
@@ -278,32 +278,32 @@ function genesysmod_bounds(model,Sets,Subsets,Params, Vars,Settings,Switch,Maps)
             Params.RampingDownFactor[r,"P_Nuclear",y] = 0.01
             Params.ProductionChangeCost[r,"RES_Hydro_Large",y] = 50/3.6
             Params.ProductionChangeCost[r,"P_Nuclear",y] = 200/3.6
-            for t ∈ Subsets.PowerBiomass
+            for t ∈ Params.TagTechnologyToSubsets["PowerBiomass"]
                 Params.RampingUpFactor[r,t,y] = 0.04
                 Params.RampingDownFactor[r,t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
-            for t ∈ Subsets.FossilPower
+            for t ∈ Params.TagTechnologyToSubsets["FossilPower"]
                 Params.RampingUpFactor[r,t,y] = 0.04
                 Params.RampingDownFactor[r,t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
-            for t ∈ Subsets.Coal
+            for t ∈ Params.TagTechnologyToSubsets["Coal"]
                 Params.RampingUpFactor[r,t,y] = 0.02
                 Params.RampingDownFactor[r,t,y] = 0.02
                 Params.ProductionChangeCost[r,t,y] = 50/3.6
             end
-            for t ∈ Subsets.Gas
+            for t ∈ Params.TagTechnologyToSubsets["Gas"]
                 Params.RampingUpFactor[r,t,y] = 0.2
                 Params.RampingDownFactor[r,t,y] = 0.2
                 Params.ProductionChangeCost[r,t,y] = 20/3.6
             end
-            for t ∈ Subsets.HeatSlowRamper
+            for t ∈ Params.TagTechnologyToSubsets["HeatSlowRamper"]
                 Params.RampingUpFactor[r,t,y] = 0.1
                 Params.RampingDownFactor[r,t,y] = 0.1
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
-            for t ∈ Subsets.HeatQuickRamper
+            for t ∈ Params.TagTechnologyToSubsets["HeatQuickRamper"]
                 Params.RampingUpFactor[r,t,y] = 0
                 Params.RampingDownFactor[r,t,y] = 0
                 Params.ProductionChangeCost[r,t,y] = 0

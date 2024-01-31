@@ -113,6 +113,33 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;i
     return A
 end
 
+function read_subsets(in_data::XLSX.XLSXFile, tab_name) 
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
+
+    A=Dict()
+    for sub in unique(df.Subset)
+        A[sub]=[x for x in df[df.Subset .== sub .&& df.Value .== 1,1]]
+    end
+    return A
+end
+
+function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims) 
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
+
+    # Initialize all combinations to zero:
+    A = JuMP.Containers.DenseAxisArray(
+        zeros(length.([unique(df[:,x]) for x in 1:cdims])...), [unique(df[:,x]) for x in 1:cdims]...)
+    # Fill in values from Excel
+    for r in eachrow(df)
+        try
+            A[r[1:end-1]...] = r.Value 
+        catch err
+            @debug err
+        end
+    end
+    return A
+end
+
 function create_daa(in_data::DataFrame, tab_name, base_region="DE", els...) # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = in_data
     # Initialize all combinations to zero:

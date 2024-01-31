@@ -35,7 +35,7 @@ end
 """
 Internal function used in the run process to define the model variables.
 """
-function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
+function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
@@ -171,7 +171,14 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
     AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
     DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
 
-    
+    ######### Peaking #############
+    if Switch.switch_peaking_capacity == 1
+        PeakingDemand = @variable(model, PeakingDemand[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray)
+        PeakingCapacity = @variable(model, PeakingCapacity[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray)
+    else
+        PeakingDemand=nothing
+        PeakingCapacity=nothing
+    end
 
     ######### Transportation #############
 
@@ -179,8 +186,8 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
     #TrajectoryLowerLimit(𝓨) 
     #TrajectoryUpperLimit(𝓨) 
 
-    DemandSplitByModalType = @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨], container=JuMP.Containers.DenseAxisArray) 
-    ProductionSplitByModalType = @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Subsets.TransportFuels,𝓨], container=JuMP.Containers.DenseAxisArray) 
+    DemandSplitByModalType = @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.TagFuelToSubsets["TransportFuels"],𝓨], container=JuMP.Containers.DenseAxisArray) 
+    ProductionSplitByModalType = @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.TagFuelToSubsets["TransportFuels"],𝓨], container=JuMP.Containers.DenseAxisArray) 
 
     if Switch.switch_ramping == 1
 
@@ -210,7 +217,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
     BaseYearOvershoot = def_daa(𝓡,𝓣,𝓕,𝓨)
     for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
         for f ∈ Maps.Tech_Fuel[t]
-            BaseYearOvershoot[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$r,$t,$f,$y]")
+            BaseYearOvershoot[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "BaseYearOvershoot[$r,$t,$f,$y]")
         end
     end end end
     DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
@@ -233,7 +240,7 @@ function genesysmod_dec(model,Sets, Subsets, Params,Switch, Maps)
     DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
-    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot, DiscountedSalvageValueTransmission)
+    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity)
     return Vars
 end
 

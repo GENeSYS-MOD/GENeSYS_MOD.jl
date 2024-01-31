@@ -57,7 +57,7 @@ end
 """
 
 """
-function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
+function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
 
     switch_dunkelflaute = Switch.elmod_dunkelflaute
 
@@ -398,10 +398,10 @@ function timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
     end end end
     
     for y ∈ Sets.Year
-        for t ∈ Subsets.Solar
+        for t ∈ TagTechnologyToSubsets["Solar"]
             CapacityFactor[:,t,:,y] .= 0
         end
-        for t ∈ Subsets.Wind
+        for t ∈ TagTechnologyToSubsets["Wind"]
             CapacityFactor[:,t,:,y] .= 0
         end
         for r ∈ Sets.Region_full 

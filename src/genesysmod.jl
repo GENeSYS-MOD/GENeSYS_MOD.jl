@@ -105,21 +105,21 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Load data from provided excel files and declarations #############
     #
 
-    Sets, Subsets, Params, Emp_Sets = genesysmod_dataload(Switch)
+    Sets, Params, Emp_Sets = genesysmod_dataload(Switch)
     Maps = make_mapping(Sets,Params)
-    genesysmod_dec(model,Sets,Subsets,Params,Switch,Maps)
+    genesysmod_dec(model,Sets,Params,Switch,Maps)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
     #
 
-    Settings=genesysmod_settings(Sets, Subsets, Params, Switch.socialdiscountrate)
+    Settings=genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
 
     #end
     #
     # ####### apply general model bounds #############
     #
 
-    genesysmod_bounds(model,Sets,Subsets,Params,Vars,Settings,Switch,Maps)
+    genesysmod_bounds(model,Sets,Params,Vars,Settings,Switch,Maps)
 
     # create tech, fuel and mode of operation mapping
     
@@ -127,7 +127,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Including Equations #############
     #
 
-    genesysmod_equ(model,Sets,Subsets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
+    genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
     #
     # ####### CPLEX Options #############
     #
@@ -202,7 +202,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch,
+            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Switch,
              Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
@@ -212,6 +212,6 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         println("Termination status:", termination_status(model), ".")
     end
 
-    return model, Dict("Sets" => Sets, "Subsets" => Subsets, "Params" => Params,
+    return model, Dict("Sets" => Sets, "Params" => Params,
      "Switch" => Switch)
 end

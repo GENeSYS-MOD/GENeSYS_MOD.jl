@@ -51,8 +51,10 @@ function genesysmod_dataload(Switch)
     Sets=GENeSYS_MOD.Sets(Timeslice_full,Emission,Technology,Fuel,
         Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
 
-    Subsets = make_subsets(Sets)
-    
+    tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
+    DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
+    TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
+    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
     
     # Step 2: Read parameters from regional file  -> now includes World values
     StartYear = Switch.StartYear
@@ -124,8 +126,8 @@ function genesysmod_dataload(Switch)
     OperationalLifeStorage = create_daa(in_data, "Par_OperationalLifeStorage",dbr, 𝓢)
     ResidualStorageCapacity = create_daa(in_data, "Par_ResidualStorageCapacity",dbr, 𝓡, 𝓢, 𝓨)
     StorageLevelStart = create_daa(in_data, "Par_StorageLevelStart",dbr, 𝓡, 𝓢)
-    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, Subsets.StorageDummies, 𝓢, 𝓜, 𝓨)
-    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, Subsets.StorageDummies, 𝓢, 𝓜, 𝓨)
+    TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, TagTechnologyToSubsets["StorageDummies"], 𝓢, 𝓜, 𝓨)
+    TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, TagTechnologyToSubsets["StorageDummies"], 𝓢, 𝓜, 𝓨)
 
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
     TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
@@ -181,9 +183,9 @@ function genesysmod_dataload(Switch)
             for f ∈ 𝓕
                 TradeRoute[r,rr,f,y] = Readin_TradeRoute2015[r,rr,f]
                 TradeLossBetweenRegions[r,rr,f,y] = TradeLossFactor[f,y]*TradeRoute[r,rr,f,y]
-            end
-            TradeCapacity[r,rr,"Power",y] = Readin_PowerTradeCapacity[r,rr,"Power",y]
+                TradeCapacity[r,rr,f,y] = Readin_PowerTradeCapacity[r,rr,f,y]
         end end
+            end
     end
 
     for r ∈ 𝓡 for rr ∈ 𝓡 for y ∈ 𝓨[2:end]
@@ -249,7 +251,7 @@ function genesysmod_dataload(Switch)
     # ####### Load from hourly Data #############
     #
     
-    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, Subsets, Switch, SpecifiedAnnualDemand)
+    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
         RateOfDemand[y,l,f,r] = SpecifiedAnnualDemand[r,f,y]*SpecifiedDemandProfile[r,f,l,y] / YearSplit[l,y]
@@ -264,8 +266,8 @@ function genesysmod_dataload(Switch)
     #
 
     if Switch.switch_infeasibility_tech == 1
-        TagTechnologyToSector[Subsets.DummyTechnology,"Infeasibility"] .= 1
-        AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 0
+        TagTechnologyToSector[TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
+        AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
         OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
@@ -275,15 +277,15 @@ function genesysmod_dataload(Switch)
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        CapacityToActivityUnit[:,Subsets.DummyTechnology] .= 31.56
-        TotalAnnualMaxCapacity[:,Subsets.DummyTechnology,:] .= 999999
-        FixedCost[:,Subsets.DummyTechnology,:] .= 999
-        CapitalCost[:,Subsets.DummyTechnology,:] .= 999
-        VariableCost[:,Subsets.DummyTechnology,:,:] .= 999
-        AvailabilityFactor[:,Subsets.DummyTechnology,:] .= 1
-        CapacityFactor[:,Subsets.DummyTechnology,:,:] .= 1 
-        OperationalLife[:,Subsets.DummyTechnology] .= 1 
-        EmissionActivityRatio[:,Subsets.DummyTechnology,:,:,:] .= 0
+        CapacityToActivityUnit[:,TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
+        TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
+        FixedCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
+        CapitalCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
+        VariableCost[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
+        AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 1
+        CapacityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
+        OperationalLife[:,TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        EmissionActivityRatio[:,TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
     end
 
     Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,
@@ -309,7 +311,25 @@ function genesysmod_dataload(Switch)
     ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,
-    TagDemandFuelToSector,TagElectricTechnology)
+    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets)
 
-    return Sets, Subsets, Params, Emp_Sets
+    return Sets, Params, Emp_Sets
+end
+
+"""
+make_mapping(Sets,Params)
+
+Creates a mapping of the allowed combinations of technology and fuel (and revers) and mode of operations.
+"""
+function make_mapping(Sets,Params)
+    Map_Tech_Fuel = Dict(t=>[f for f ∈ Sets.Fuel if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
+    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for t ∈ Sets.Technology)
+
+   Map_Tech_MO = Dict(t=>[m for m ∈ Sets.Mode_of_operation if (any(Params.OutputActivityRatio[:,t,:,m,:].>0)
+    || any(Params.InputActivityRatio[:,t,:,m,:].>0))] for t ∈ Sets.Technology)
+
+   Map_Fuel_Tech = Dict(f=>[t for t ∈ Sets.Technology if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
+    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for f ∈ Sets.Fuel)
+
+    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
 end

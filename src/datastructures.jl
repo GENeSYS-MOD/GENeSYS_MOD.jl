@@ -295,6 +295,9 @@ struct Parameters <: InputClass
     
     TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray
     TagElectricTechnology ::JuMP.Containers.DenseAxisArray
+
+    TagTechnologyToSubsets ::Dict{String,Array}
+    TagFuelToSubsets ::Dict{String,Array}
 end
 
 struct Variables
@@ -378,6 +381,11 @@ struct Variables
 
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
     BaseYearOvershoot ::JuMP.Containers.DenseAxisArray
+
+    DiscountedSalvageValueTransmission ::JuMP.Containers.DenseAxisArray
+
+    PeakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+    PeakingCapacity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 end
 
 """
