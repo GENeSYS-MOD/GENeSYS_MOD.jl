@@ -680,6 +680,7 @@ struct Switch <: InputClass
     switch_ccs ::Int16
     switch_ramping ::Int16
     switch_weighted_emissions ::Int16
+    set_symmetric_transmission ::Float16
     switch_intertemporal ::Int16
     switch_base_year_bounds ::Int16
     switch_peaking_capacity ::Int16

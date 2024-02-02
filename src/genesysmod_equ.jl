@@ -400,29 +400,56 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       end
     end
 
+    ### Trade Capacities for H2 and Natural Gas, when initially no capacities existed, so that the model has the ability to build additional capacities
+
+    if Params.TradeRoute[r,rr,"Gas_Natural",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]] > 0
+      @constraint(model, (Params.TradeCapacity[r,"Gas_Natural",𝓨[i],rr] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
+      base_name="TrC4a_NewTradeCapacityLimitNatGas_$(𝓨[i])_Gas_Natural_$(r)_$(rr)")
+    end
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0
+      @constraint(model, (Params.TradeCapacity[r,"H2",𝓨[i],rr] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
+      base_name="TrC5a_NewTradeCapacityLimitH2_$(𝓨[i])_H2_$(r)_$(rr)")
+    end
+    for f ∈ 𝓕
+      if Params.TradeRoute[r,rr,f,𝓨[i]] == 0
+        JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
+      end
+      if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != "Power"
+        @constraint(model, sum(Vars.Import[𝓨[i],l,f,rr,r] for l ∈ 𝓛) <= Vars.TotalTradeCapacity[𝓨[i],f,r,rr],
+        base_name="TrC7_TradeCapacityLimitNonPower$(𝓨[i])_$(f)_$(r)_$(rr)")
+      end
+    end
+
+    if Switch.set_symmetric_transmission > 0
+      if Params.TradeRoute[r,rr,"Power",y] > 0
+        @constraint(model, Vars.NewTradeCapacity[y,"Power",r,rr] >= Vars.NewTradeCapacity[y,"Power",rr,r] * Switch.set_symmetric_transmission,
+        base_name="TrC6_SymmetricalTransmissionExpansion$(𝓨[i])_$(r)_$(rr)")
+      end
+    end
+
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0
       JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
 
-    for f ∈ 𝓕
+#=     for f ∈ 𝓕
       if f != "Power" 
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
       end
       if Params.TradeRoute[r,rr,f,𝓨[i]] == 0 || f != "Power"
         JuMP.fix(Vars.DiscountedNewTradeCapacityCosts[𝓨[i],f,r,rr],0; force=true)
       end
-    end
-  end end end
+    end =#
+  end end end 
 
   ############### Trading Costs #############
 
   for y ∈ 𝓨 for r ∈ 𝓡
     if sum(Params.TradeRoute[r,rr,f,y] for f ∈ 𝓕 for rr ∈ 𝓡) > 0
-      @constraint(model, sum(Vars.Import[y,l,f,r,rr] * Params.TradeCosts[f,r,rr] for f ∈ 𝓕 for rr ∈ 𝓡 for l ∈ 𝓛 if Params.TradeRoute[r,rr,f,y] > 0) == Vars.AnnualTotalTradeCosts[y,r], base_name="Tc1_TradeCosts_$(y)_$(r)")
+      @constraint(model, sum(Vars.Import[y,l,f,r,rr] * Params.TradeCosts[f,r,rr] for f ∈ 𝓕 for rr ∈ 𝓡 for l ∈ 𝓛 if Params.TradeRoute[r,rr,f,y] > 0) == Vars.AnnualTotalTradeCosts[y,r], base_name="TC1_AnnualTradeCosts_$(y)_$(r)")
     else
       JuMP.fix(Vars.AnnualTotalTradeCosts[y,r], 0; force=true)
     end
-    @constraint(model, Vars.AnnualTotalTradeCosts[y,r]/((1+Settings.GeneralDiscountRate[r])^(y-Switch.StartYear+0.5)) == Vars.DiscountedAnnualTotalTradeCosts[y,r], base_name="Tc3_DiscountedAnnualTradeCosts_$(y)_$(r)")
+    @constraint(model, Vars.AnnualTotalTradeCosts[y,r]/((1+Settings.GeneralDiscountRate[r])^(y-Switch.StartYear+0.5)) == Vars.DiscountedAnnualTotalTradeCosts[y,r], base_name="TC2_DiscountedAnnualTradeCosts_$(y)_$(r)")
   end end 
   
   ############### Accounting Technology Production/Use #############

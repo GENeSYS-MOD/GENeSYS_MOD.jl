@@ -29,7 +29,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit", 
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\", 
     switch_infeasibility_tech = 0, switch_investLimit=1, switch_ccs=0,
-    switch_ramping=0,switch_weighted_emissions=1,switch_intertemporal=0,
+    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
     switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_startyear = 2025, 
     switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 0,
@@ -75,6 +75,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_ccs,
     switch_ramping,
     switch_weighted_emissions,
+    set_symmetric_transmission,
     switch_intertemporal,
     switch_base_year_bounds,
     switch_peaking_capacity,
@@ -107,7 +108,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     Sets, Params, Emp_Sets = genesysmod_dataload(Switch)
     Maps = make_mapping(Sets,Params)
-    genesysmod_dec(model,Sets,Params,Switch,Maps)
+    Vars=genesysmod_dec(model,Sets,Params,Switch,Maps)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
     #

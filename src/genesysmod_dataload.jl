@@ -185,6 +185,7 @@ function genesysmod_dataload(Switch)
                 TradeLossBetweenRegions[r,rr,f,y] = TradeLossFactor[f,y]*TradeRoute[r,rr,f,y]
                 TradeCapacity[r,rr,f,y] = Readin_PowerTradeCapacity[r,rr,f,y]
             end
+        end end
     end
 
     for r ∈ 𝓡 for rr ∈ 𝓡 for y ∈ 𝓨[2:end]
