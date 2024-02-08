@@ -113,7 +113,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Switch, Settings, elapse
         end
     end
     for f ∈ [f_ for f_ ∈ Sets.Fuel if Params.TagDemandFuelToSector[f_,"Transportation"] >0]
-        df_tmp= df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0)]
+        df_tmp= df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]
         df_tmp[:,:Value]= (-1) * df_tmp[:,:Value]
         df_tmp[!,:Sector] .= "Demand"
         df_tmp[!,:Technology] .= "Demand"
