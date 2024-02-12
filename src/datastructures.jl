@@ -733,8 +733,8 @@ end
 """
 Structure containing the mappings of sets combinations
 """
-struct Maps <: InputClass
-    Tech_Fuel ::Dict
-    Tech_MO ::Dict
-    Fuel_Tech ::Dict
-end
+# struct Maps <: InputClass
+#     Tech_Fuel ::Dict
+#     Tech_MO ::Dict
+#     Fuel_Tech ::Dict
+# end
