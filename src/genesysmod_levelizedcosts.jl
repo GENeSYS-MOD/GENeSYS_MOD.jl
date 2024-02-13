@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to compute results related to levelized costs.
 """
-function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+function genesysmod_levelizedcosts(model,Sets, Params, Vars, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     TierTwo = [
     "X_Methanation",
     "X_SMR"]
@@ -96,7 +96,7 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Switch, Settings,
     end end end end end
     TechnologyEmissions = value.(model[:AnnualTechnologyEmission])
     AnnualSectorEmissions = value.(model[:AnnualSectoralEmissions])
-    TechnologyEmissionsByMode = value.(model[:AnnualTechnologyEmissionByMode])
+    TechnologyEmissionsByMode = value.(Vars.AnnualTechnologyEmissionByMode)
 
     CarbonPrice = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Emission),length(Sets.Year)), Sets.Region_full, Sets.Emission, Sets.Year)
     for r ∈ Sets.Region_full for y ∈ Sets.Year for e ∈ Sets.Emission
@@ -112,7 +112,7 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Switch, Settings,
         end
     end end end
 
-    SectorEmissions, EmissionIntensity = genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
+    SectorEmissions, EmissionIntensity = genesysmod_emissionintensity(model, Sets, Params, Vars, VarPar, TierFive, LoopSetOutput, LoopSetInput)
 
     for y ∈ Sets.Year for r ∈ Sets.Region_full for e ∈ Sets.Emission
         for f ∈ Sets.Fuel 
