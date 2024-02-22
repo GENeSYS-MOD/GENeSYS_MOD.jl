@@ -200,7 +200,7 @@ function genesysmod_dataload(Switch)
     if Switch.switch_ramping == 1
         RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor",dbr, 𝓣,𝓨)
         RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor",dbr,𝓣,𝓨)
-        ProductionChangeCost = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
+        ProductionChangeCost = create_daa(in_data, "Par_ProductionChangeCost",dbr,𝓡,𝓣,𝓨)
         MinActiveProductionPerTimeslice = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓣), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓣, 𝓡)
     else
         RampingUpFactor = nothing

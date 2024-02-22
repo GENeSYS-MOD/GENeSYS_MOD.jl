@@ -272,42 +272,42 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #$ontext
     if Switch.switch_ramping == 1
         for r ∈ Sets.Region_full for y ∈ Sets.Year
-            Params.RampingUpFactor[r,"RES_Hydro_Large",y] = 0.25
-            Params.RampingUpFactor[r,"P_Nuclear",y] = 0.01
-            Params.RampingDownFactor[r,"RES_Hydro_Large",y] = 0.25
-            Params.RampingDownFactor[r,"P_Nuclear",y] = 0.01
+#=             Params.RampingUpFactor["RES_Hydro_Large",y] = 0.25
+            Params.RampingUpFactor["P_Nuclear",y] = 0.01
+            Params.RampingDownFactor["RES_Hydro_Large",y] = 0.25
+            Params.RampingDownFactor["P_Nuclear",y] = 0.01
             Params.ProductionChangeCost[r,"RES_Hydro_Large",y] = 50/3.6
             Params.ProductionChangeCost[r,"P_Nuclear",y] = 200/3.6
             for t ∈ Params.TagTechnologyToSubsets["PowerBiomass"]
-                Params.RampingUpFactor[r,t,y] = 0.04
-                Params.RampingDownFactor[r,t,y] = 0.04
+                Params.RampingUpFactor[t,y] = 0.04
+                Params.RampingDownFactor[t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["FossilPower"]
-                Params.RampingUpFactor[r,t,y] = 0.04
-                Params.RampingDownFactor[r,t,y] = 0.04
+                Params.RampingUpFactor[t,y] = 0.04
+                Params.RampingDownFactor[t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["Coal"]
-                Params.RampingUpFactor[r,t,y] = 0.02
-                Params.RampingDownFactor[r,t,y] = 0.02
+                Params.RampingUpFactor[t,y] = 0.02
+                Params.RampingDownFactor[t,y] = 0.02
                 Params.ProductionChangeCost[r,t,y] = 50/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["Gas"]
-                Params.RampingUpFactor[r,t,y] = 0.2
-                Params.RampingDownFactor[r,t,y] = 0.2
+                Params.RampingUpFactor[t,y] = 0.2
+                Params.RampingDownFactor[t,y] = 0.2
                 Params.ProductionChangeCost[r,t,y] = 20/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["HeatSlowRamper"]
-                Params.RampingUpFactor[r,t,y] = 0.1
-                Params.RampingDownFactor[r,t,y] = 0.1
+                Params.RampingUpFactor[t,y] = 0.1
+                Params.RampingDownFactor[t,y] = 0.1
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["HeatQuickRamper"]
-                Params.RampingUpFactor[r,t,y] = 0
-                Params.RampingDownFactor[r,t,y] = 0
+                Params.RampingUpFactor[t,y] = 0
+                Params.RampingDownFactor[t,y] = 0
                 Params.ProductionChangeCost[r,t,y] = 0
-            end
+            end =#
             for l ∈ Sets.Timeslice
                 Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Large",r] = 0.1
                 Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Small",r] = 0.05

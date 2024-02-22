@@ -386,6 +386,9 @@ struct Variables
 
     PeakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     PeakingCapacity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+
+    AnnualProductionChangeCost ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+    DiscountedAnnualProductionChangeCost ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 end
 
 """

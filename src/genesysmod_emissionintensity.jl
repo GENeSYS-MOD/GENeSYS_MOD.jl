@@ -20,7 +20,7 @@
 """
 Internal function used in the run to compute sectoral emissions and emission intensity of fuels.
 """
-function genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
+function genesysmod_emissionintensity(model, Sets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
     𝓨 = Sets.Year

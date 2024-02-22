@@ -205,6 +205,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     else
         ProductionUpChangeInTimeslice=nothing
         ProductionDownChangeInTimeslice=nothing
+        AnnualProductionChangeCost=nothing
+        DiscountedAnnualProductionChangeCost=nothing
     end
 
     if Switch.switch_intertemporal == 1
@@ -240,7 +242,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
-    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity)
+    RateOfTotalActivity,BaseYearSlack,BaseYearOvershoot, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
+    AnnualProductionChangeCost,DiscountedAnnualProductionChangeCost)
     return Vars
 end
 
