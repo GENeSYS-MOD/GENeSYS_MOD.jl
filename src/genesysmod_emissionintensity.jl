@@ -20,7 +20,7 @@
 """
 Internal function used in the run to compute sectoral emissions and emission intensity of fuels.
 """
-function genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
+function genesysmod_emissionintensity(model, Sets, Params, Vars, VarPar, TierFive, LoopSetOutput, LoopSetInput)
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
     𝓨 = Sets.Year
@@ -33,11 +33,11 @@ function genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, Tier
     #output_emissionintensity;
 
     for y ∈ 𝓨 for r ∈ 𝓡 for e ∈ 𝓔
-        SectorEmissions[y,r,"Power",e] =  sum(value(model[:AnnualTechnologyEmissionByMode][y,t,e,m,r])*
+        SectorEmissions[y,r,"Power",e] =  sum(value(Vars.AnnualTechnologyEmissionByMode[y,t,e,m,r])*
             Params.OutputActivityRatio[r,t,"Power",m,y] for (t,m) ∈ LoopSetOutput[(r,"Power",y)])
 
         for f ∈ TierFive
-            SectorEmissions[y,r,f,e] = sum(value(model[:AnnualTechnologyEmissionByMode][y,t,e,m,r])*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)])
+            SectorEmissions[y,r,f,e] = sum(value(Vars.AnnualTechnologyEmissionByMode[y,t,e,m,r])*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)])
 
             EmissionIntensity[y,r,f,e] = SectorEmissions[y,r,f,e]/VarPar.ProductionAnnual[y,f,r]
         end

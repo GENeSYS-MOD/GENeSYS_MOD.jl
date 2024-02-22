@@ -22,7 +22,7 @@
 Internal function used in the run pårocess to compute results. 
 It also runs the functions for processing emissions and levelized costs.
 """
-function genesysmod_results(model,Sets, Params, VarPar, Switch, Settings, elapsed, extr_str)
+function genesysmod_results(model,Sets, Params, Vars, VarPar, Switch, Settings, elapsed, extr_str)
     start=Dates.now()
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
@@ -36,13 +36,13 @@ function genesysmod_results(model,Sets, Params, VarPar, Switch, Settings, elapse
         z_fuelcosts["Hardcoal",y,r] = Params.VariableCost[r,"Z_Import_Hardcoal",1,y]
         z_fuelcosts["Lignite",y,r] = Params.VariableCost[r,"R_Coal_Lignite",1,y]
         z_fuelcosts["Nuclear",y,r] = Params.VariableCost[r,"R_Nuclear",1,y]
-        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Params.TagFuelToSubsets["Biomass"])/length(Params.TagFuelToSubsets["Biomass"]) 
+        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,t,1,y] for t ∈ Params.TagTechnologyToSubsets["Biomass"])/length(Params.TagTechnologyToSubsets["Biomass"])
         z_fuelcosts["Gas_Natural",y,r] = Params.VariableCost[r,"Z_Import_Gas",1,y]
         z_fuelcosts["Oil",y,r] = Params.VariableCost[r,"Z_Import_Oil",1,y]
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
     end end
 
-    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, Vars, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     print("Levelized Cost : ",Dates.now()-start,"\n")
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]
@@ -570,7 +570,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Switch, Settings, elapse
     append!(output_other, df_tmp)
 
     for f ∈ Sets.Fuel
-        if f ∈ Params.TagFuelToSubsets["Transport"]
+        if f ∈ Params.TagFuelToSubsets["TransportFuels"]
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:];dim_names=[:Region, :Dim2, :Year])
         else
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:]/3.6;dim_names=[:Region, :Dim2, :Year])
