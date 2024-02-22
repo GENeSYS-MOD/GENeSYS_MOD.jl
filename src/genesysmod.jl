@@ -122,7 +122,9 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     genesysmod_bounds(model,Sets,Params,Vars,Settings,Switch)
 
-    # create tech, fuel and mode of operation mapping
+    # apply scenario specific functionalities
+
+    genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     
     #
     # ####### Including Equations #############
@@ -181,7 +183,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     println("data_file = $data_file")
     println("solver = $solver")
 
-    write_to_file(model, "julia_MPS.mps")
+    #write_to_file(model, "julia_MPS.mps")
 
     optimize!(model)
 

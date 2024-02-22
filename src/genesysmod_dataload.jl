@@ -129,11 +129,15 @@ function genesysmod_dataload(Switch)
     TechnologyToStorage = create_daa(in_data, "Par_TechnologyToStorage",dbr, TagTechnologyToSubsets["StorageDummies"], 𝓢, 𝓜, 𝓨)
     TechnologyFromStorage = create_daa(in_data, "Par_TechnologyFromStorage",dbr, TagTechnologyToSubsets["StorageDummies"], 𝓢, 𝓜, 𝓨)
 
-    ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel",dbr, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
+    ModalSplitByFuelAndModalType = create_daa_init(in_data, "Par_ModalSplitByFuel",dbr, 0, 𝓡, 𝓕, 𝓨, 𝓜𝓽)
     TagDemandFuelToSector = create_daa(in_data, "Par_TagDemandFuelToSector",dbr, 𝓕, 𝓢𝓮)
     TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
     TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
     TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
+
+    ImportFromNeighbours = create_daa(in_data, "Par_ImportFromNeighbours",dbr, 𝓡, 𝓕, 𝓨)
+    ExportToNeighbours = create_daa(in_data, "Par_ExportToNeighbours",dbr, 𝓡, 𝓕, 𝓨)
+
 
 
     RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
@@ -277,14 +281,14 @@ function genesysmod_dataload(Switch)
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        CapacityToActivityUnit[:,TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
+        CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         FixedCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         CapitalCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         VariableCost[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
         AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 1
         CapacityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-        OperationalLife[:,TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        OperationalLife[TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         EmissionActivityRatio[:,TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
     end
 
@@ -311,7 +315,8 @@ function genesysmod_dataload(Switch)
     ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,
-    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets)
+    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets,
+    ImportFromNeighbours, ExportToNeighbours)
 
     return Sets, Params, Emp_Sets
 end

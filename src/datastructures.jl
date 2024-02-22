@@ -188,7 +188,9 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     original timeseries. Used for the peaking constraints.\n
 - **`TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray`** Tag to link fuels to sectors.\n
 - **`TagElectricTechnology ::JuMP.Containers.DenseAxisArray`** Indicate if a technology is
-    considered to be "direct electrification".\n 
+    considered to be "direct electrification".\n
+- **`ImportFromNeighbours ::JuMP.Containers.DenseAxisArray`** Total imports from a neighbouring country for a technology in a year.\n
+- **`ExportToNeighbours ::JuMP.Containers.DenseAxisArray`** Total exports to a neighbouring country for a technology in a year.\n 
 """
 struct Parameters <: InputClass
     StartYear ::Int64
@@ -298,6 +300,9 @@ struct Parameters <: InputClass
 
     TagTechnologyToSubsets ::Dict{String,Array}
     TagFuelToSubsets ::Dict{String,Array}
+
+    ImportFromNeighbours ::JuMP.Containers.DenseAxisArray
+    ExportToNeighbours ::JuMP.Containers.DenseAxisArray
 end
 
 struct Variables

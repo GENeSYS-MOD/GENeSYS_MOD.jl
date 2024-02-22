@@ -32,9 +32,12 @@ function genesysmod_results_raw(model, Switch,extr_str)
     Threads.@threads for v in vars
         if v ∉ [:cost, :z]
             @debug "Saving " v
+            daa = model[v]
+            # rows_to_keep = daa[:,y] .!= 0
+            # daa = daa[rows_to_keep,:]
             fn = joinpath(Switch.resultdir, string(v) * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
-            CSV.write(fn, JuMP.Containers.rowtable(value, model[v])) 
+            CSV.write(fn, JuMP.Containers.rowtable(value, daa)) 
         end
     end
 end
