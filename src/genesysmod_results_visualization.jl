@@ -25,7 +25,8 @@ It also runs the functions for processing emissions and levelized costs.
 
 using CSV
 using DataFrames
-using PlotlyJS
+using Plots
+using StatsPlots
     
 # Read the CSV file into a DataFrame
 dfp = CSV.read("/Users/dozeumhaj/Nextcloud/Projekte/LOTR/Results/output_annual_production_MiddleEarth_Gondor_globalLimit_364_dispatch.csv", DataFrame)
@@ -34,6 +35,8 @@ dfp = CSV.read("/Users/dozeumhaj/Nextcloud/Projekte/LOTR/Results/output_annual_p
 rename!(dfp, Symbol.(map(x -> strip(string(x)), names(dfp))))  # Convert column names to strings, strip whitespace, and convert back to symbols
 dfp[!, :Value_twh] = dfp.Value / 3.6  # create TWh column
 # Check the first few rows of the DataFrame to ensure data integrity
+
+
 first(dfp, 5)
 #group technologies
 df=dfp
@@ -131,7 +134,7 @@ function group_technologies(df)
         "HLI_Lignite" => "Demand [Industry]",
         "HLI_Solar_Thermal" => "Demand [Industry]",
         "Power_Demand_IHS_Industrial" => "Demand [Industry]",
-        "X_Fuel_Cell" => "Demand [Industry]"
+        "X_Fuel_Cell" => "H2"
     )
 
     for key in keys(replacements)
@@ -155,12 +158,6 @@ dfp_elec = combine(groupby(filter(row -> row.Fuel == "Power" && row.Type == "Pro
 
 show(dfp_elec, allrows=true, allcols=true)
 
-#dfp_elec = combine(groupby(filter(row -> row.Technology_grouped != "Demand", dfp), [:Year, :Fuel, :Type, :Technology_grouped]), :Value_twh => sum)
-#show(dfp_elec, allrows=true, allcols=true)
-
-# Filter rows for electricity dispatch figure
-#dfp_disp = combine(groupby(dfp, [:Year, :Fuel, :Type, :Technology_grouped]), :Value_twh => sum)
-#dfp_disp = filter(row -> row[:Fuel] == "Power" && (row[:Category] in ["Power", "Industry", "Transformation", "Consuming"]) && (row[:Type] in ["Production", "Use"]) && row[:Year] == 2050, dfp)
 
 tech_colors = Dict(
     "Solar PV" => "#ffeb3b",
@@ -177,133 +174,43 @@ tech_colors = Dict(
     "Demand [Buildings]" => "#c3b4b2",
     "Demand [Industry]" => "#a39794",
     "Demand [Transport]" => "#a39794",
-    "Gas" => "#e54213"
+    "Gas" => "#e54213",
+    "H2" => "#26c6da"
 )
 
 
-# Create an empty plot
-elec_fig = Plot()
+###############################################
+# Group by year and technology group
+grouped_df = combine(groupby(dfp_elec, [:Year, :Technology_grouped]), :Value_twh_sum => sum)
 
-# Set the layout for the plot
-layout!(elec_fig, Layout(title="Electricity Generation"))
+# Extract unique years and technology groups
+unique_years = unique(grouped_df.Year)
+unique_technology_groups = unique(grouped_df.Technology_grouped)
 
-# Add traces to the plot
-for i in 1:length(dfp_elec.Technology_grouped)
-    push!(elec_fig, 
-        bar(
-            x = dfp_elec.Year,
-            y = dfp_elec.Value_twh_sum,
-            marker_color = tech_colors[dfp_elec.Technology_grouped[i]],
-            name = dfp_elec.Technology_grouped[i]
-        )
-    )
-end
-
-# Show the plot
-display(elec_fig)
+# Create filtered color dictionary
+filtered_tech_colors = Dict(group => tech_colors[group] for group in unique_technology_groups)
 
 
+# Convert years to strings for plotting
+grouped_df.Year = string.(grouped_df.Year)
 
-# Plot Electricity Generation
-elec_fig = plot(
-    x = dfp_elec.Year,
-    y = dfp_elec[!, Symbol("Value_twh_sum")],
-    marker_color = [tech_colors[tech] for tech in dfp_elec.Technology_grouped],
-    name = dfp_elec.Technology_grouped,
-    layout = Layout(
-        title = "Electricity Generation"
-    ),
-    kind = "bar"
+
+# Create the grouped bar plot
+bar_plot = groupedbar(
+    grouped_df.Year,
+    grouped_df.Value_twh_sum_sum,
+    group = grouped_df.Technology_grouped,
+    bar_position = :stack,
+    bar_width = 0.6,
+    xlabel = "Year",
+    ylabel = "TWh",
+    title = "Power Production [TWh]",
+    size = (1200, 800),
+    legend = :topleft,
+    color = [filtered_tech_colors[group] for group in grouped_df.Technology_grouped]
 )
 
-# Plot Electricity Generation
-elec_fig = plot(
-    layout = Layout(
-        title = "Electricity Generation"
-    )
-)
-
-for tech in unique(dfp_elec.Technology_grouped)
-    dfp_tech = filter(row -> row[:Technology_grouped] == tech, dfp_elec)
-    push!(elec_fig, bar(
-        x = dfp_tech.Year,
-        y = dfp_tech[!, Symbol("Value_twh_sum")],
-        marker_color = tech_colors[tech],
-        name = tech
-    ))
-end
-
-# Plot Dispatch
-disp_fig = plot(
-    layout = Layout(
-        title = "Electricity Dispatch"
-    )
-)
-
-push!(disp_fig, bar(
-    x = dfp_disp.Timeslice,
-    y = dfp_disp[!, Symbol("Value_twh_sum")]
-))
-
-# Show plots
-display(elec_fig)
-display(disp_fig)
+# Display the plot
+bar_plot
 
 
-
-
-dfp_elec = filter(row -> row[:Fuel] == "Power" && (row[:Category] in ["Power", "Storages", "Transformation"]) && row[:Type] == "Production", dfp)
-    
-    # Create data frame for dispatch figure
-    dfp_disp = combine(groupby(dfp, [:Year, :Fuel, :Type, :Category, :Technology_grouped, :Timeslice]), :Value_twh => sum)
-    
-    dfp_disp = filter(row -> row[:Fuel] == "Power" && (row[:Category] in ["Power", "Industry", "Transformation", "Consuming"]) && (row[:Type] in ["Production", "Use"]) && row[:Year] == 2050, dfp)
-    
-    tech_colors = Dict(
-        "Solar PV" => "#ffeb3b",
-        "Wind Offshore" => "#215968",
-        "Wind Onshore" => "#518696",
-        "Biomass" => "#7cb342",
-        "Hydropower" => "#0c46a0",
-        "Ocean" => "#a0cbe8",
-        "Nuclear" => "#ae393f",
-        "Oil" => "#252623",
-        "Lignite" => "#754937",
-        "Hardcoal" => "#5e5048",
-        "Electrolysis" => "#28dddd",
-        "Demand [Buildings]" => "#c3b4b2",
-        "Demand [Industry]" => "#a39794",
-        "Gas" => "#e54213"
-    )
-    
-    # Plot Electricity Generation
-    elec_fig = plot(
-        layout = Layout(
-            title = "Electricity Generation"
-        )
-    )
-    
-    for tech in dfp_elec.Technology_grouped
-        push!(elec_fig, bar(
-            x = dfp_elec.Year,
-            y = dfp_elec[!, Symbol("Value_twh_sum")],
-            marker_color = tech_colors[tech],
-            name = tech
-        ))
-    end
-    
-    # Plot Dispatch
-    disp_fig = plot(
-        layout = Layout(
-            title = "Electricity Dispatch"
-        )
-    )
-    
-    push!(disp_fig, bar(
-        x = dfp_disp.Timeslice,
-        y = dfp_disp[!, Symbol("Value_twh_sum")]
-    ))
-    
-    # Show plots
-    display(elec_fig)
-    display(disp_fig)
