@@ -34,7 +34,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_startyear = 2025, 
     switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 0,
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
-    employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
+    employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, switch_results_visualization = 0,
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 1, switch_iis = 1)
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
@@ -210,8 +210,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
         end
         if switch_results_visualization == 1
-            GENeSYS_MOD.genesysmod_results_visualization(model, Sets, Params, Vars, VarPar, Switch,
-             Settings, elapsed,"dispatch")
+            GENeSYS_MOD.test()
         end
     else
         println("Termination status:", termination_status(model), ".")

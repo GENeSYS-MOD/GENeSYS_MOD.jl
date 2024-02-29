@@ -30,6 +30,7 @@ using Dates
 using JuMP
 using XLSX
 using CSV
+using CategoricalArrays
 
 include("datastructures.jl")
 include("utils.jl")
@@ -46,7 +47,7 @@ include("genesysmod_employment.jl")
 include("genesysmod_variable_parameter.jl")
 include("genesysmod_results_raw.jl")
 include("genesysmod_results.jl")
-#include("genesysmod_results_visualization.jl")
+include("genesysmod_results_visualization.jl")
 include("genesysmod_levelizedcosts.jl")
 include("genesysmod_emissionintensity.jl")
 include("genesysmod_simple_dispatch.jl")
