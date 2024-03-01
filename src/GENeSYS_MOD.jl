@@ -30,7 +30,6 @@ using Dates
 using JuMP
 using XLSX
 using CSV
-using CategoricalArrays
 
 include("datastructures.jl")
 include("utils.jl")

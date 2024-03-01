@@ -209,9 +209,9 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
         end
-        if switch_results_visualization == 1
-            GENeSYS_MOD.test()
-        end
+        #if switch_results_visualization == 1
+        #    GENeSYS_MOD.test(result_dir, production, capacities, emissions)
+        #end
     else
         println("Termination status:", termination_status(model), ".")
     end
