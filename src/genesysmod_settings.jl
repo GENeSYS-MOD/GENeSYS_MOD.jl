@@ -54,20 +54,20 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
 
     Trajectory2020UpperLimit = 3
     Trajectory2020LowerLimit = Float64(0.7)
-    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-        Params.GrowthRateTradeCapacity[y,"Power",r,rr]=0.1 #to remove in favor of the excel after testing
-    end end end
-    #GrowthRateTradeCapacity(y,'Power',r,rr) = 0.1;
 
     BaseYearSlack = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel)), Sets.Fuel)
     BaseYearSlack[Sets.Fuel] .= 0.03
     BaseYearSlack["Power"] = 0.03
 
-    PhaseOut = Dict(2020=>2, 2025=>2, 2030=>2, 2035=>2, 2040=>2 ,2045=>2, 2050=>2)# this is an upper limit for fossil generation based on the previous year - to remove choose large value
+    PhaseOut = Dict(2020=>3, 2025=>3, 2030=>3, 2035=>2.5, 2040=>2.5 ,2045=>2, 2050=>2)# this is an upper limit for fossil generation based on the previous year - to remove choose large value
 
-    PhaseIn = Dict(2020=>1, 2025=>0.85, 2030=>0.85, 2035=>0.85, 2040=>0.85 ,2045=>0.85, 2050=>0.85) # this is a lower bound for renewable integration based on the previous year - to remove choose 0
+    PhaseIn = Dict(2020=>1, 2025=>0.85, 2030=>0.7, 2035=>0.7, 2040=>0.7 ,2045=>0.6, 2050=>0.6) # this is a lower bound for renewable integration based on the previous year - to remove choose 0
+
+    StorageLevelYearStartUpperLimit = Float64(0.75)
+    StorageLevelYearStartLowerLimit = Float64(0.75)
+
 
     Settings=GENeSYS_MOD.Settings(DepreciationMethod,GeneralDiscountRate,TechnologyDiscountRate,SocialDiscountRate,InvestmentLimit,NewRESCapacity,
-    ProductionGrowthLimit,StorageLimitOffset,Trajectory2020UpperLimit,Trajectory2020LowerLimit, BaseYearSlack, PhaseIn, PhaseOut)
+    ProductionGrowthLimit,StorageLimitOffset,Trajectory2020UpperLimit,Trajectory2020LowerLimit, BaseYearSlack, PhaseIn, PhaseOut, StorageLevelYearStartUpperLimit, StorageLevelYearStartLowerLimit)
     return Settings
 end
