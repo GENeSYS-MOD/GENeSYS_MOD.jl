@@ -33,8 +33,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
             Params.RETagTechnology[r,t,y] = 1
         end
-        for t ∈ intersect(Sets.Fuel,sub)
-            Params.RETagFuel[r,t,y] = 1
+        for f ∈ intersect(Sets.Fuel,sub)
+            Params.RETagFuel[r,f,y] = 1
         end
     end end
 
@@ -168,11 +168,11 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ vcat(Params.TagTechnologyToSubsets["Transformation"],Params.TagTechnologyToSubsets["PowerSupply"], Params.TagTechnologyToSubsets["SectorCoupling"], Params.TagTechnologyToSubsets["StorageDummies"])
+            for t ∈ intersect(Sets.Technology, vcat(Params.TagTechnologyToSubsets["Transformation"],Params.TagTechnologyToSubsets["PowerSupply"], Params.TagTechnologyToSubsets["SectorCoupling"], Params.TagTechnologyToSubsets["StorageDummies"]))
                 JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Params.TagTechnologyToSubsets["Biomass"],Params.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])
+            for t ∈ intersect(Sets.Technology, vcat(Params.TagTechnologyToSubsets["Biomass"],Params.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"]))
                 if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
                     JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                 end
