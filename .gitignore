@@ -1,2 +1,6 @@
 docs/build/
 test/script.jl
+.vscode/
+example/
+results/
+test/ts.jl
