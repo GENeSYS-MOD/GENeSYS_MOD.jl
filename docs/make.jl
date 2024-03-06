@@ -4,7 +4,7 @@ using Documenter, GENeSYS_MOD
 #makedocs(sitename="GENeSYS-MOD")
 
 # Copy the NEWS.md file
-news = "src/manual/NEWS.md"
+news = "docs/src/manual/NEWS.md"
 if isfile(news)
     rm(news)
 end
