@@ -11,6 +11,8 @@ end
 cp("NEWS.md", news)
 #cp(joinpath(@__DIR__,"..","NEWS.md"), joinpath(@__DIR__,"src/manual/NEWS.md"), force=true)
 
+DocMeta.setdocmeta!(GENeSYS_MOD, :DocTestSetup, :(using GENeSYS_MOD); recursive=true)
+
 makedocs(
     sitename = "GENeSYS_MOD.jl",
     format = Documenter.HTML(;
