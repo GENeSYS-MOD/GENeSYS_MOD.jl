@@ -1,3 +1,6 @@
 docs/build/
 test/script.jl
 debug_scripts
+example/
+results/
+test/ts.jl
