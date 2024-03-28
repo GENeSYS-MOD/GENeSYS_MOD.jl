@@ -37,21 +37,4 @@ function genesysmod_results_raw(model, Switch,extr_str)
             CSV.write(fn, JuMP.Containers.rowtable(value, model[v])) 
         end
     end
-    function genesysmod_getduals(model,Switch,extr_str)
-        df=DataFrames.DataFrame(names=[],values=[])
-        for (F, S) in list_of_constraint_types(model)
-            for con in all_constraints(model, F, S)
-                if dual(con) != 0
-                    push!(df,(name(con),dual(con)))
-                end
-            end
-        end
-        fn = joinpath(Switch.resultdir, "Duals" * "_" * Switch.model_region * "_"
-                 * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
-        CSV.write(fn, df)
-    end
 end
-
-
-
-
