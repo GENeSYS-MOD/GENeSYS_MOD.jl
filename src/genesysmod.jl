@@ -186,7 +186,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     #
     # ####### Creating Result Files #############
     #
-    if termination_status(model) == MOI.INFEASIBLE || termination_status(model) == MOI.INFEASIBLE_OR_UNBOUNDED
+    if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
             println("Termination status:", termination_status(model), ". Computing IIS")
             compute_conflict!(model)
@@ -200,10 +200,21 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch,
-             Settings, elapsed,"dispatch")
+             Settings, elapsed,"")
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"")
+        end
+        if string(solver) == "CPLEX.Optimizer"
+            file = open(joinpath(resultdir, "cplex.sol"), "w")
+            # Write variable names and values to the file
+            for v in all_variables(model)
+                if value.(v) > 0
+                    val = value.(v)
+                    str = string(v)
+                    println(file, "$str = $val")
+                end
+            end
         end
     else
         println("Termination status:", termination_status(model), ".")
