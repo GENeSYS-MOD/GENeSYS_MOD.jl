@@ -93,7 +93,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     println(Dates.now()-starttime)
     Sets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
     println(Dates.now()-starttime)
-    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch)
+    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
@@ -105,13 +105,13 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     # ####### apply general model bounds #############
     #
 
-    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params,Settings,Switch)
+    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Including Equations #############
     #
 
-    GENeSYS_MOD.genesysmod_equ(model,Sets,Params,Emp_Sets,Settings,Switch)
+    GENeSYS_MOD.genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     println(Dates.now()-starttime)
     #
     # ####### Fix Investment Variables #############
@@ -217,7 +217,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         println(elapsed)
 
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Switch, Settings, elapsed,"dispatch")
+            GENeSYS_MOD.genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
