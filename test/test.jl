@@ -1,6 +1,3 @@
-#= import Pkg;
-Pkg.activate(@__DIR__)
-Pkg.instantiate() =#
 using GENeSYS_MOD
 using HiGHS
 using Ipopt
