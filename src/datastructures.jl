@@ -332,6 +332,7 @@ struct Variables
     DiscountedAnnualCurtailmentCost ::JuMP.Containers.DenseAxisArray
 
     StorageLevelYearStart ::JuMP.Containers.DenseAxisArray
+    StorageLevelYearFinish ::JuMP.Containers.DenseAxisArray
     StorageLevelTSStart ::JuMP.Containers.DenseAxisArray
     AccumulatedNewStorageCapacity ::JuMP.Containers.DenseAxisArray
     NewStorageCapacity ::JuMP.Containers.DenseAxisArray
@@ -380,7 +381,8 @@ struct Variables
     RateOfTotalActivity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
-    BaseYearOvershoot ::JuMP.Containers.DenseAxisArray
+    BaseYearBounds_TooLow ::JuMP.Containers.DenseAxisArray
+    BaseYearBounds_TooHigh ::JuMP.Containers.DenseAxisArray
 
     DiscountedSalvageValueTransmission ::JuMP.Containers.DenseAxisArray
 
@@ -678,7 +680,7 @@ struct Switch <: InputClass
     socialdiscountrate ::Float64
     inputdir ::String
     resultdir ::String
-    switch_infeasibility_tech :: Int8
+    switch_infeasibility_tech ::Int8
     switch_investLimit ::Int16
     switch_ccs ::Int16
     switch_ramping ::Int16
@@ -686,10 +688,12 @@ struct Switch <: InputClass
     set_symmetric_transmission ::Float16
     switch_intertemporal ::Int16
     switch_base_year_bounds ::Int16
+    switch_base_year_bounds_debugging ::Int8
     switch_peaking_capacity ::Int16
     set_peaking_slack ::Float16
     set_peaking_minrun_share ::Float16
     set_peaking_res_cf ::Float16
+    set_peaking_min_thermal ::Float16
     set_peaking_startyear ::Int16
     switch_peaking_with_storages ::Int16
     switch_peaking_with_trade ::Int16

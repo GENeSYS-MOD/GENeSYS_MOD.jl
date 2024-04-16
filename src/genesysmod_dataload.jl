@@ -152,7 +152,7 @@ function genesysmod_dataload(Switch)
     ModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓔)), 𝓔)
     RegionalModelPeriodEmissionLimit = JuMP.Containers.DenseAxisArray(fill(999999, length(𝓔), length(𝓡)), 𝓔, 𝓡)
 
-    CurtailmentCostFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
+    CurtailmentCostFactor = JuMP.Containers.DenseAxisArray(fill(0.1,length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
     TradeRoute = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
     TradeLossFactor = JuMP.Containers.DenseAxisArray(zeros(length(𝓕), length(𝓨)), 𝓕, 𝓨)
     TradeRouteInstalledCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
@@ -200,8 +200,11 @@ function genesysmod_dataload(Switch)
     if Switch.switch_ramping == 1
         RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor",dbr, 𝓣,𝓨)
         RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor",dbr,𝓣,𝓨)
-        ProductionChangeCost = create_daa(in_data, "Par_ProductionChangeCost",dbr,𝓡,𝓣,𝓨)
+        ProductionChangeCost = create_daa(in_data, "Par_ProductionChangeCost",dbr,𝓣,𝓨)
         MinActiveProductionPerTimeslice = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓣), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓣, 𝓡)
+    
+        MinActiveProductionPerTimeslice[:,:,"Power","RES_Hydro_Large",:] .= 0.1
+        MinActiveProductionPerTimeslice[:,:,"Power","RES_Hydro_Small",:] .= 0.05
     else
         RampingUpFactor = nothing
         RampingDownFactor = nothing
@@ -253,13 +256,20 @@ function genesysmod_dataload(Switch)
     
     SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
 
-    for y ∈ 𝓨 for l ∈ 𝓛 for f ∈ 𝓕 for r ∈ 𝓡
-        RateOfDemand[y,l,f,r] = SpecifiedAnnualDemand[r,f,y]*SpecifiedDemandProfile[r,f,l,y] / YearSplit[l,y]
-        Demand[y,l,f,r] = RateOfDemand[y,l,f,r] * YearSplit[l,y]
-        if Demand[y,l,f,r] < 0.000001
-          Demand[y,l,f,r] = 0
+    for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡
+        for f ∈ 𝓕
+            RateOfDemand[y,l,f,r] = SpecifiedAnnualDemand[r,f,y]*SpecifiedDemandProfile[r,f,l,y] / YearSplit[l,y]
+            Demand[y,l,f,r] = RateOfDemand[y,l,f,r] * YearSplit[l,y]
+            if Demand[y,l,f,r] < 0.000001
+                Demand[y,l,f,r] = 0
+            end
         end
-    end end end end
+        for t ∈ 𝓣
+            if CapacityFactor[r,t,l,y] < 0.000001
+                CapacityFactor[r,t,l,y] = 0
+            end
+        end
+    end end end
 
         #
     # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############

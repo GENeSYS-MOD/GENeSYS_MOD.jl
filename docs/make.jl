@@ -1,17 +1,25 @@
-push!(LOAD_PATH,"../src/")
+#push!(LOAD_PATH,"../src/")
 using Documenter, GENeSYS_MOD
 
 #makedocs(sitename="GENeSYS-MOD")
 
 # Copy the NEWS.md file
-news = "src/manual/NEWS.md"
+news = "docs/src/manual/NEWS.md"
 if isfile(news)
     rm(news)
 end
-cp(joinpath(@__DIR__,"..","NEWS.md"), joinpath(@__DIR__,"src/manual/NEWS.md"), force=true)
+cp("NEWS.md", news)
+#cp(joinpath(@__DIR__,"..","NEWS.md"), joinpath(@__DIR__,"src/manual/NEWS.md"), force=true)
+
+DocMeta.setdocmeta!(GENeSYS_MOD, :DocTestSetup, :(using GENeSYS_MOD); recursive=true)
 
 makedocs(
     sitename = "GENeSYS_MOD.jl",
+    format = Documenter.HTML(;
+    prettyurls=get(ENV, "CI", "false") == "true",
+    edit_link="main",
+    assets=String[],
+    ),
     modules = [GENeSYS_MOD],
     pages = [
         "Home" => "index.md",
@@ -28,5 +36,5 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/dqpinel/GENeSYS_MOD.jl.git",
+    repo = "github.com/GENeSYS-MOD/GENeSYS_MOD.jl.git",
 )

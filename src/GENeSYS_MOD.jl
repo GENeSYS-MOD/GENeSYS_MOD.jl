@@ -33,7 +33,6 @@ using CSV
 
 include("datastructures.jl")
 include("utils.jl")
-#include("genesysmod_subsets.jl")
 include("genesysmod.jl")
 include("genesysmod_dec.jl")
 include("genesysmod_timeseries_reduction.jl")
