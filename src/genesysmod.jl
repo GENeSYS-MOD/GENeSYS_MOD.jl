@@ -109,7 +109,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Load data from provided excel files and declarations #############
     #
 
-    Sets, Params, Emp_Sets = genesysmod_dataload(Switch)
+    Sets, Params, Emp_Sets = genesysmod_dataload(Switch);
     Maps = make_mapping(Sets,Params)
     Vars=genesysmod_dec(model,Sets,Params,Switch,Maps)
     #
@@ -144,47 +144,33 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
         set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
+        file = open("gurobi.opt","w")
+        write(file,"threads $threads ")
+        write(file,"method 2 ")
+        #write(file,"names no ")
+        write(file,"barhomogeneous 1 ")
+        #write(file,"timelimit 1000000 ")
+        close(file)
     elseif string(solver) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
+
+        file = open("cplex.opt","w")
+        write(file,"threads $threads ")
+        write(file,"parallelmode -1 ")
+        write(file,"lpmethod 4 ")
+        #write(file,"quality yes ")
+        #write(file,"barobjrng 1e+075 ")
+        #write(file,"tilim 1000000 ")
+        close(file)
     end
-
-
-    file = open("cplex.opt","w")
-    write(file,"threads $threads ")
-    write(file,"parallelmode -1 ")
-    write(file,"lpmethod 4 ")
-    #names no
-    #solutiontype 2
-    write(file,"quality yes ")
-    write(file,"barobjrng 1e+075 ")
-    write(file,"tilim 1000000 ")
-    close(file)
-
-    file = open("gurobi.opt","w")
-    write(file,"threads $threads ")
-    write(file,"method 2 ")
-    write(file,"names no ")
-    write(file,"barhomogeneous 1 ")
-    write(file,"timelimit 1000000 ")
-    close(file)
-
-    file = open("osigurobi.opt","w")
-    write(file,"threads $threads ")
-    write(file,"method 2 ")
-    write(file,"names no ")
-    write(file,"barhomogeneous 1 ")
-    write(file,"timelimit 1000000 ")
-    close(file)
 
     println("model_region = $model_region")
     println("data_base_region = $data_base_region")
     println("data_file = $data_file")
     println("solver = $solver")
-
-    write_to_file(model, "julia_MPS.mps")
 
     optimize!(model)
 
@@ -206,8 +192,10 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Switch,
+            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
              Settings, elapsed,"dispatch")
+            # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
+            #  Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")

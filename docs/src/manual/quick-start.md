@@ -7,21 +7,21 @@
 2.	Download the latest stable version of [the Julia Programming Language (julialang.org)](https://julialang.org/downloads/).
 
 3.	Install Julia extension in Visual Studio Code:
-    a.	Click 'Extensions' buttion in Visual Studio Code on the left ribbon.
-    b.	Search for 'Julia', then install. 
+    *	Click 'Extensions' buttion in Visual Studio Code on the left ribbon.
+    *	Search for 'Julia', then install. 
 
 4.	Download an optimization solver and get a license:
-    a.	Gurobi
-        i.	Academic licensed are issued by [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/).
-        ii. Commercial License.
-    b.	[CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer)
-    c.	[HiGHS](https://highs.dev/), open source solver.
+    *	Gurobi
+        - Academic licensed are issued by [Gurobi](https://www.gurobi.com/academia/academic-program-and-licenses/).
+        - Commercial License.
+    *	[CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer)
+    *	[HiGHS](https://highs.dev/), open source solver.
 
 5.	Clone the GitHub repository for [GENeSYS_MOD.jl](https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl)
-    a.	Download git: [Git - Downloads](https://git-scm.com/)
-    b.	Navigate to the folder where you want the repo to be located.
-    c. Open Git Bash by right clicking in the chosen folder and choosing "Git Bash Here"
-    d. Type the following command in Git Bash:
+    *	Download git: [Git - Downloads](https://git-scm.com/)
+    *	Navigate to the folder where you want the repo to be located.
+    * Open Git Bash by right clicking in the chosen folder and choosing "Git Bash Here"
+    * Type the following command in Git Bash:
 
     ```
     git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl.git
@@ -29,24 +29,37 @@
     ```
 
 6.	Open GENeSYS-MOD folder in Visual Studios
-    a.	File > Open folder
+    *	File > Open folder
 
 7.	Change to Julia environment for GENeSYS_MOD.jl.
 
 8.  Open the Julia REPL by using the Alt+J+O command. The REPL(read-eval-print loop) is the interactive command line interface in Julia.
 
 9.	Install packages in Visual Studio:
-    a.	In the REPL terminal, type ']' to change to enter pkg mode
-    b. Type 'add <package>', where package is equal to:
-        i.	JuMP
-        ii.	Dates
-        iii. XLSX
-        iv. DataFrames
-        v. CSV	
-        vi. Ipopt
-        vii. <your chosen solver>
+    *	In the REPL terminal, type ']' to change to enter pkg mode
+    * Type 'add <package>', where package is equal to:
+        - JuMP
+        - Dates
+        - XLSX
+        - DataFrames
+        - CSV	
+        - Ipopt
+        - <your chosen solver>
 
 10.	Open 'test.jl' and try to run using "Julia: Execute active file in REPL".
+
+## Running a case
+
+Create a folder where you will be able to store your scripts, inputs and outputs of the model. You can then include tyhe following at the top of your script: 
+
+```julia
+Pkg.develop(path="..\\GENeSYS_MOD.jl")
+using GENeSYS_MOD
+```
+
+Where you replace the path with the relative or absolute path to the package. Note the "\\".This will allow you to use the package functions.
+
+You can then run the model by running the function `genesysmod` with the appropriate `Switch`.
 
 
 ## Using the published dataset
