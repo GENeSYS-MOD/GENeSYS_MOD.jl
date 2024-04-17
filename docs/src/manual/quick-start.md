@@ -23,10 +23,10 @@
     * Open Git Bash by right clicking in the chosen folder and choosing "Git Bash Here"
     * Type the following command in Git Bash:
 
-    ```
-    git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl.git
-    git pull
-    ```
+```
+git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl.git
+git pull
+```
 
 6.	Open GENeSYS-MOD folder in Visual Studios
     *	File > Open folder
