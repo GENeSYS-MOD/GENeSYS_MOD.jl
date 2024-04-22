@@ -67,7 +67,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     "WIND_ONSHORE_AVG", "WIND_ONSHORE_INF", "WIND_ONSHORE_OPT",
     "WIND_OFFSHORE","WIND_OFFSHORE_SHALLOW","WIND_OFFSHORE_DEEP",
     "MOBILITY_PSNG",
-    "HEAT_LOW", "HEAT_HIGH",
+    "HEAT_LOW", "COOL_LOW", "HEAT_HIGH",
     "HEAT_PUMP_AIR", "HEAT_PUMP_GROUND","HYDRO_ROR","PV_TRACKING"]
 
     Timeslice_Full = 1:8760
@@ -90,6 +90,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     CountryData_Mobility_Psng = DataFrame(XLSX.gettable(hourly_data["TS_MOBILITY_PSNG"]))
     CountryData_Heat_Low = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_LOW"]))
     CountryData_Heat_High = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_HIGH"]))
+    CountryData_Cool_Low = DataFrame(XLSX.gettable(hourly_data["TS_COOL_LOW"]))
     CountryData_HeatPump_AirSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_AIRSOURCE"]))
     CountryData_HeatPump_GroundSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_GROUNDSOURCE"]))
     CountryData_Hydro_RoR = DataFrame(XLSX.gettable(hourly_data["TS_HYDRO_ROR"]))
@@ -107,6 +108,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     CountryData["WIND_OFFSHORE_SHALLOW"] = CountryData_Wind_Offshore_Shallow
     CountryData["HEAT_LOW"] = CountryData_Heat_Low
     CountryData["HEAT_HIGH"] = CountryData_Heat_High
+    CountryData["COOL_LOW"] = CountryData_Cool_Low
     CountryData["HEAT_PUMP_AIR"] = CountryData_HeatPump_AirSource
     CountryData["HEAT_PUMP_GROUND"] = CountryData_HeatPump_GroundSource
     CountryData["MOBILITY_PSNG"] = CountryData_Mobility_Psng
@@ -190,6 +192,11 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
         CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
 
+        if sum(CountryData["COOL_LOW"][l,r] for l ∈ Timeslice) != 0 
+            AverageCapacityFactor["COOL_LOW"][1,r] = sum(CountryData["COOL_LOW"][:,r])/8760
+        end
+        CountryData["COOL_LOW"][!,r] = CountryData["COOL_LOW"][!,r] / AverageCapacityFactor["COOL_LOW"][1,r]
+
         for cde ∈ Country_Data_Entries
             if sum(CountryData[cde][l,r] for l ∈ Timeslice) != 0 
                 AverageCapacityFactor[cde][1,r] = sum(CountryData[cde][:,r])/8760
@@ -212,6 +219,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     smoothing_range["MOBILITY_PSNG"] = 3
     smoothing_range["HEAT_LOW"] = 3
     smoothing_range["HEAT_HIGH"] = 3
+    smoothing_range["COOL_LOW"] = 3
     smoothing_range["HEAT_PUMP_AIR"] = 3
     smoothing_range["HEAT_PUMP_GROUND"] = 3
     smoothing_range["HYDRO_ROR"] = 3
@@ -243,6 +251,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         smoothing_range["MOBILITY_PSNG"] = 3
         smoothing_range["HEAT_LOW"] = 3
         smoothing_range["HEAT_HIGH"] = 3
+        smoothing_range["COOL_LOW"] = 3
         smoothing_range["HEAT_PUMP_AIR"] = 3
         smoothing_range["HEAT_PUMP_GROUND"] = 3
         smoothing_range["HYDRO_ROR"] = 3
@@ -264,6 +273,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         smoothing_range["MOBILITY_PSNG"] = 3
         smoothing_range["HEAT_LOW"] = 3
         smoothing_range["HEAT_HIGH"] = 3
+        smoothing_range["COOL_LOW"] = 3
         smoothing_range["HEAT_PUMP_AIR"] = 3
         smoothing_range["HEAT_PUMP_GROUND"] = 3
         smoothing_range["HYDRO_ROR"] = 3
@@ -363,7 +373,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
 
     YearSplit = JuMP.Containers.DenseAxisArray(ones(length(Timeslice), length(Sets.Year)) * 1/length(Timeslice), Timeslice, Sets.Year)
 
-    sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
+    sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Cool_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
     capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
     "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small"]
 
@@ -383,12 +393,14 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     tmp["MOBILITY_PSNG"] = ScaledCountryData["MOBILITY_PSNG"] ./ combine(ScaledCountryData["MOBILITY_PSNG"], names(ScaledCountryData["MOBILITY_PSNG"]) .=> sum, renamecols=false)
     tmp["HEAT_LOW"] = ScaledCountryData["HEAT_LOW"] ./ combine(ScaledCountryData["HEAT_LOW"], names(ScaledCountryData["HEAT_LOW"]) .=> sum, renamecols=false)
     tmp["HEAT_HIGH"] = ScaledCountryData["HEAT_HIGH"] ./ combine(ScaledCountryData["HEAT_HIGH"], names(ScaledCountryData["HEAT_HIGH"]) .=> sum, renamecols=false)
+    tmp["COOL_LOW"] = ScaledCountryData["COOL_LOW"] ./ combine(ScaledCountryData["COOL_LOW"], names(ScaledCountryData["COOL_LOW"]) .=> sum, renamecols=false)
 
     for r ∈ Sets.Region_full 
         SpecifiedDemandProfile[r,"Mobility_Passenger",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
         SpecifiedDemandProfile[r,"Mobility_Freight",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Residential",:,Sets.Year[1]] = tmp["HEAT_LOW"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
+        SpecifiedDemandProfile[r,"Cool_Low_Residential",:,Sets.Year[1]] = tmp["Cool_LOW"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Medium_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_High_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
     end
