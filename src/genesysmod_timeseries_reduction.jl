@@ -373,7 +373,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
 
     YearSplit = JuMP.Containers.DenseAxisArray(ones(length(Timeslice), length(Sets.Year)) * 1/length(Timeslice), Timeslice, Sets.Year)
 
-    sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Cool_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
+    sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Cool_Low_Building","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
     capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
     "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small"]
 
@@ -389,6 +389,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
     end
 
+    print(SpecifiedAnnualDemand[:,"Heat_Low_Residential",:])
+
     tmp=Dict()
     tmp["MOBILITY_PSNG"] = ScaledCountryData["MOBILITY_PSNG"] ./ combine(ScaledCountryData["MOBILITY_PSNG"], names(ScaledCountryData["MOBILITY_PSNG"]) .=> sum, renamecols=false)
     tmp["HEAT_LOW"] = ScaledCountryData["HEAT_LOW"] ./ combine(ScaledCountryData["HEAT_LOW"], names(ScaledCountryData["HEAT_LOW"]) .=> sum, renamecols=false)
@@ -400,7 +402,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         SpecifiedDemandProfile[r,"Mobility_Freight",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Residential",:,Sets.Year[1]] = tmp["HEAT_LOW"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Cool_Low_Residential",:,Sets.Year[1]] = tmp["Cool_LOW"][Timeslice,r]
+        SpecifiedDemandProfile[r,"Cool_Low_Building",:,Sets.Year[1]] = tmp["COOL_LOW"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Medium_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_High_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
     end
