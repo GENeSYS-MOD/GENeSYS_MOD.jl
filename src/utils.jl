@@ -46,7 +46,9 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
 
     var_val  = value.(var)
 
-    df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind)])
+    df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind) if var_val[(ind[i]...,)...] !=0])
+    # for the old version of results
+    # df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind)])
 
     return df
 end
@@ -108,6 +110,33 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;i
             else
                 A[x...] = 0.0
             end
+        end
+    end
+    return A
+end
+
+function read_subsets(in_data::XLSX.XLSXFile, tab_name) 
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
+
+    A=Dict()
+    for sub in unique(df.Subset)
+        A[sub]=[x for x in df[df.Subset .== sub .&& df.Value .== 1,1]]
+    end
+    return A
+end
+
+function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims) 
+    df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
+
+    # Initialize all combinations to zero:
+    A = JuMP.Containers.DenseAxisArray(
+        zeros(length.([unique(df[:,x]) for x in 1:cdims])...), [unique(df[:,x]) for x in 1:cdims]...)
+    # Fill in values from Excel
+    for r in eachrow(df)
+        try
+            A[r[1:end-1]...] = r.Value 
+        catch err
+            @debug err
         end
     end
     return A

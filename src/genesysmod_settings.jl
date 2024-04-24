@@ -21,7 +21,7 @@
 """
 Internal function used in the run process to set run settings such as dicount rates.
 """
-function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
+function genesysmod_settings(Sets, Params, socialdiscountrate)
 
     DepreciationMethod=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full)), Sets.Region_full)
     GeneralDiscountRate=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full)), Sets.Region_full)
@@ -30,20 +30,20 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
     for r ∈ Sets.Region_full
         DepreciationMethod[r] = 1
         GeneralDiscountRate[r] = Float64(0.05)
-        for t ∈ Subsets.Companies
+        for t ∈ setdiff(Sets.Technology,Params.TagTechnologyToSubsets["Households"])
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
-        for t ∈ Subsets.Households
+        for t ∈ Params.TagTechnologyToSubsets["Households"]
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
         SocialDiscountRate[r] = socialdiscountrate
     end
 
-    InvestmentLimit = Float64(1.8)  #Freedom for investment choices to spread across periods. A value of 1 would mean equal share for each period.
+    InvestmentLimit = Float64(1.9)  #Freedom for investment choices to spread across periods. A value of 1 would mean equal share for each period.
     NewRESCapacity = Float64(0.1)
     ProductionGrowthLimit=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel)), Sets.Year, Sets.Fuel)
     for y ∈ Sets.Year for f ∈ Sets.Fuel
-        if f ∈ vcat(["Power"],Subsets.HeatFuels,Subsets.TransportFuels)
+        if f ∈ vcat(["Power"],Params.TagFuelToSubsets["HeatFuels"],Params.TagFuelToSubsets["TransportFuels"])
             ProductionGrowthLimit[y,f] = Float64(0.05)
         end
         if f == "Air"
@@ -56,12 +56,12 @@ function genesysmod_settings(Sets, Subsets, Params, socialdiscountrate)
     Trajectory2020LowerLimit = Float64(0.7)
 
     BaseYearSlack = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel)), Sets.Fuel)
-    BaseYearSlack[Sets.Fuel] .= 0.03
-    BaseYearSlack["Power"] = 0.03
+    BaseYearSlack[Sets.Fuel] .= 0.035
+    BaseYearSlack["Power"] = 0.035
 
     PhaseOut = Dict(2020=>3, 2025=>3, 2030=>3, 2035=>2.5, 2040=>2.5 ,2045=>2, 2050=>2)# this is an upper limit for fossil generation based on the previous year - to remove choose large value
 
-    PhaseIn = Dict(2020=>1, 2025=>0.85, 2030=>0.7, 2035=>0.7, 2040=>0.7 ,2045=>0.6, 2050=>0.6) # this is a lower bound for renewable integration based on the previous year - to remove choose 0
+    PhaseIn = Dict(2020=>1, 2025=>0.8, 2030=>0.7, 2035=>0.7, 2040=>0.7 ,2045=>0.6, 2050=>0.5) # this is a lower bound for renewable integration based on the previous year - to remove choose 0
 
     StorageLevelYearStartUpperLimit = Float64(0.75)
     StorageLevelYearStartLowerLimit = Float64(0.75)

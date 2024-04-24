@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to compute results related to levelized costs.
 """
-function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
     TierTwo = [
     "X_Methanation",
     "X_SMR"]
@@ -96,7 +96,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
     end end end end end
     TechnologyEmissions = value.(model[:AnnualTechnologyEmission])
     AnnualSectorEmissions = value.(model[:AnnualSectoralEmissions])
-    TechnologyEmissionsByMode = value.(model[:AnnualTechnologyEmissionByMode])
+    # TechnologyEmissionsByMode = value.(Vars.AnnualTechnologyEmissionByMode)
 
     CarbonPrice = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Emission),length(Sets.Year)), Sets.Region_full, Sets.Emission, Sets.Year)
     for r ∈ Sets.Region_full for y ∈ Sets.Year for e ∈ Sets.Emission
@@ -112,7 +112,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
         end
     end end end
 
-    SectorEmissions, EmissionIntensity = genesysmod_emissionintensity(model, Sets, Subsets, Params, VarPar, TierFive, LoopSetOutput, LoopSetInput)
+    SectorEmissions, EmissionIntensity = genesysmod_emissionintensity(model, Sets, Params, VarPar, Vars, TierFive, LoopSetOutput, LoopSetInput)
 
     for y ∈ Sets.Year for r ∈ Sets.Region_full for e ∈ Sets.Emission
         for f ∈ Sets.Fuel 
@@ -243,7 +243,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
                     fuelcosts[r,t,f,m,y] = sum(Params.InputActivityRatio[r,t,fff,m,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/Params.OutputActivityRatio[r,t,f,m,y]
                 end
             end
-            for t ∈ Subsets.StorageDummies
+            for t ∈ Params.TagTechnologyToSubsets["StorageDummies"]
                 if Params.OutputActivityRatio[r,t,f,2,y] > 0
                     fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[t,s,1,y]^2 for s ∈ Sets.Storage))
                 end
@@ -344,7 +344,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
                     fuelcosts[r,t,f,m,y] = sum(Params.InputActivityRatio[r,t,fff,m,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/Params.OutputActivityRatio[r,t,f,m,y]
                 end
             end
-            for t ∈ Subsets.StorageDummies
+            for t ∈ Params.TagTechnologyToSubsets["StorageDummies"]
                 if Params.OutputActivityRatio[r,t,f,2,y] > 0
                     fuelcosts[r,t,f,1,y] = sum(Params.InputActivityRatio[r,t,fff,1,y]*resourcecosts[r,fff,y] for fff ∈ Sets.Fuel)/(Params.OutputActivityRatio[r,t,f,2,y]*sum(Params.TechnologyToStorage[t,s,1,y]^2 for s ∈ Sets.Storage))
                 end
@@ -411,7 +411,7 @@ function genesysmod_levelizedcosts(model,Sets,Subsets, Params, VarPar, Switch, S
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year 
         for t ∈ Sets.Technology for m ∈ Sets.Mode_of_operation
-            for f ∈ setdiff(Sets.Fuel,Subsets.Transport)
+            for f ∈ setdiff(Sets.Fuel,Params.TagTechnologyToSubsets["Transport"])
                 capitalcosts[r,t,f,m,y] = capitalcosts[r,t,f,m,y]*3.6
                 omcosts[r,t,f,m,y] = omcosts[r,t,f,m,y]*3.6
                 discountedfuelcosts[r,t,f,m,y] = discountedfuelcosts[r,t,f,m,y]*3.6

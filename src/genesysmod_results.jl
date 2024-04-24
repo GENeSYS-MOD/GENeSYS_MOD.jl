@@ -22,28 +22,37 @@
 Internal function used in the run pårocess to compute results. 
 It also runs the functions for processing emissions and levelized costs.
 """
-function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Settings, elapsed, extr_str)
-    start=Dates.now()
+function merge_df(df, dict_col_value, final_df, colnames)
+    for (col, value) in dict_col_value
+        df[!,col] .= value
+    end
+    if !isempty(df)
+        select!(df,colnames)
+        append!(final_df, df)
+    end
+end
+
+function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed, extr_str)
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
     for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full
       LoopSetOutput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.OutputActivityRatio[r,:,f,:,y]) if Params.OutputActivityRatio[r,x[1],f,x[2],y] > 0]
       LoopSetInput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.InputActivityRatio[r,:,f,:,y]) if Params.InputActivityRatio[r,x[1],f,x[2],y] > 0]
     end end end
-    
+
     z_fuelcosts = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel),length(Sets.Year),length(Sets.Region_full)), Sets.Fuel, Sets.Year, Sets.Region_full)
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         z_fuelcosts["Hardcoal",y,r] = Params.VariableCost[r,"Z_Import_Hardcoal",1,y]
         z_fuelcosts["Lignite",y,r] = Params.VariableCost[r,"R_Coal_Lignite",1,y]
         z_fuelcosts["Nuclear",y,r] = Params.VariableCost[r,"R_Nuclear",1,y]
-        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Subsets.Biomass)/length(Subsets.Biomass) 
+        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Params.TagTechnologyToSubsets["Biomass"])/length(Params.TagTechnologyToSubsets["Biomass"]) 
         z_fuelcosts["Gas_Natural",y,r] = Params.VariableCost[r,"Z_Import_Gas",1,y]
         z_fuelcosts["Oil",y,r] = Params.VariableCost[r,"Z_Import_Oil",1,y]
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
     end end
 
-    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Subsets, Params, VarPar, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
-    print("Levelized Cost : ",Dates.now()-start,"\n")
+    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]
     output_energy_balance = DataFrame([name => [] for name in colnames])
@@ -56,64 +65,80 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
         tmp[y,l,:,:,:,:] = tmp[y,l,:,:,:,:] * Params.YearSplit[l,y]
     end end
 
+    df_energy_balance = convert_jump_container_to_df(tmp;dim_names=[:Year, :Timeslice, :Technology, :Mode_of_operation, :Fuel, :Region])
+    df_energy_balance[!,:Type] .= "Production"
+    df_energy_balance[!,:Unit] .= "PJ"
+    df_energy_balance[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
     for se ∈ setdiff(Sets.Sector,"Transportation")
+       
         tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,se] >0]
+        
         if tmp_techs != []
-            df_tmp = convert_jump_container_to_df(tmp[:,:,tmp_techs,:,:,:];dim_names=[:Year, :Timeslice, :Technology, :Mode_of_operation, :Fuel, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "Production"
-            df_tmp[!,:Unit] .= "PJ"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_energy_balance, df_tmp)
-            append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            subset_df = df_energy_balance[in.(df_energy_balance.Technology, Ref(tmp_techs)),:]
+            subset_df[!,:Sector] .= se
+            if !isempty(subset_df)
+                select!(subset_df,colnames)
+                append!(output_energy_balance, subset_df)
+                append!(output_energy_balance_annual, combine(groupby(subset_df, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            end
         end
     end
+
     tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,"Transportation"] >0]
     df_tmp = convert_jump_container_to_df(tmp[:,:,tmp_techs,:,:,:];dim_names=[:Year, :Timeslice, :Technology, :Mode_of_operation, :Fuel, :Region])
-    df_tmp[!,:Sector] .= "Transportation"
-    df_tmp[!,:Type] .= "Production"
-    df_tmp[!,:Unit] .= "billion km"
-    df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-    select!(df_tmp,colnames)
-    append!(output_energy_balance, df_tmp)
+    dict_col_value = Dict(:Sector=>"Transportation", :Type=>"Production", :Unit=>"billion km",
+                            :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)")
+
+    merge_df(df_tmp, dict_col_value, output_energy_balance, colnames)
     append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
 
     tmp = VarPar.RateOfUseByTechnologyByMode
     for y ∈ Sets.Year for l ∈ Sets.Timeslice
         tmp[y,l,:,:,:,:] = (-1) * tmp[y,l,:,:,:,:] * Params.YearSplit[l,y]
     end end
+
+    dict_col_value = Dict(:Sector=>"Transportation", :Type=>"Use", :Unit=>"PJ",
+    :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)")
+
     for se ∈ Sets.Sector
         tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,se] >0]
         if tmp_techs != []
             df_tmp = convert_jump_container_to_df(tmp[:,:,tmp_techs,:,:,:];dim_names=[:Year, :Timeslice, :Technology, :Mode_of_operation, :Fuel, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "Use"
-            df_tmp[!,:Unit] .= "PJ"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_energy_balance, df_tmp)
-            append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            setindex!(dict_col_value, se, :Sector)
+            merge_df(df_tmp, dict_col_value, output_energy_balance, colnames)
+            if !isempty(df_tmp)
+                append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            end
         end
     end
+
+    dict_col_value = Dict(:Sector=>"Demand", :Type=>"Use", :Unit=>"PJ",
+    :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"Demand", :Mode_of_operation=>1)
+
     df_dem= convert_jump_container_to_df(Params.Demand[:,:,:,:];dim_names=[:Year, :Timeslice, :Fuel, :Region])
     for se ∈ setdiff(Sets.Sector,"Transportation")
         for f ∈ [f_ for f_ ∈ Sets.Fuel if Params.TagDemandFuelToSector[f_,se] >0]
-            df_tmp = df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]
+            df_tmp = df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]            
             df_tmp[:,:Value]= (-1) * df_tmp[:,:Value]
-            df_tmp[!,:Sector] .= "Demand"
-            df_tmp[!,:Technology] .= "Demand"
-            df_tmp[!,:Mode_of_operation] .= 1
-            df_tmp[!,:Type] .= "Use"
-            df_tmp[!,:Unit] .= "PJ"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_energy_balance, df_tmp)
-            append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            
+            merge_df(df_tmp, dict_col_value, output_energy_balance, colnames)
+            # df_tmp[!,:Sector] .= "Demand"
+            # df_tmp[!,:Technology] .= "Demand"
+            # df_tmp[!,:Mode_of_operation] .= 1
+            # df_tmp[!,:Type] .= "Use"
+            # df_tmp[!,:Unit] .= "PJ"
+            # df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+            # select!(df_tmp,colnames)
+            # append!(output_energy_balance, df_tmp)
+            if !isempty(df_tmp)
+                append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+            end
         end
     end
+
     for f ∈ [f_ for f_ ∈ Sets.Fuel if Params.TagDemandFuelToSector[f_,"Transportation"] >0]
-        df_tmp= df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0)]
+        df_tmp= df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]
         df_tmp[:,:Value]= (-1) * df_tmp[:,:Value]
         df_tmp[!,:Sector] .= "Demand"
         df_tmp[!,:Technology] .= "Demand"
@@ -128,27 +153,21 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     df_imp= convert_jump_container_to_df(value.(model[:Import]);dim_names=[:Year, :Timeslice, :Fuel, :Region, :Region2])
     df_tmp = combine(groupby(df_imp, [:Year, :Timeslice, :Fuel, :Region]), :Value => sum; renamecols=false)
-    df_tmp[!,:Sector] .= "Trade"
-    df_tmp[!,:Technology] .= "Trade"
-    df_tmp[!,:Mode_of_operation] .= 1
-    df_tmp[!,:Type] .= "Import"
-    df_tmp[!,:Unit] .= "PJ"
-    df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-    select!(df_tmp,colnames)
-    append!(output_energy_balance, df_tmp)
-    append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+    
+    dict_col_value = Dict(:Sector=>"Trade", :Type=>"Import", :Unit=>"PJ",
+    :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"Trade", :Mode_of_operation=>1)
+    merge_df(df_tmp, dict_col_value, output_energy_balance, colnames)
+    if !isempty(df_tmp)
+        append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+    end
 
     df_exp= convert_jump_container_to_df(-(1) * value.(model[:Export]);dim_names=[:Year, :Timeslice, :Fuel, :Region, :Region2])
     df_tmp = combine(groupby(df_exp, [:Year, :Timeslice, :Fuel, :Region]), :Value => sum; renamecols=false)
-    df_tmp[!,:Sector] .= "Trade"
-    df_tmp[!,:Technology] .= "Trade"
-    df_tmp[!,:Mode_of_operation] .= 1
-    df_tmp[!,:Type] .= "Export"
-    df_tmp[!,:Unit] .= "PJ"
-    df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-    select!(df_tmp,colnames)
-    append!(output_energy_balance, df_tmp)
-    append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+    setindex!(dict_col_value, "Export", :Type)
+    merge_df(df_tmp, dict_col_value, output_energy_balance, colnames)
+    if !isempty(df_tmp)
+        append!(output_energy_balance_annual, combine(groupby(df_tmp, [:Region, :Sector, :Technology, :Fuel, :Type, :Unit, :PathwayScenario, :Year]), :Value=> sum; renamecols=false))
+    end
 
     ### parameter CapacityUsedByTechnologyEachTS, PeakCapacityByTechnology
     CapacityUsedByTechnologyEachTS = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Timeslice),length(Sets.Technology),length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Region_full)
@@ -163,41 +182,46 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
             PeakCapacityByTechnology[r,t,y] = maximum(CapacityUsedByTechnologyEachTS[y,:,t,r])
         end
     end end end
-
+    
     ### parameter output_capacity(*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Type, :PathwayScenario, :Year, :Value]
     output_capacity = DataFrame([name => [] for name ∈ colnames])
 
+    df_peak_capacity = convert_jump_container_to_df(PeakCapacityByTechnology;dim_names=[:Region, :Technology, :Year])
+    df_peak_capacity[!,:Type] .= "PeakCapacity"
+    df_peak_capacity[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
+    df_new_capacity = convert_jump_container_to_df((value.(model[:NewCapacity]));dim_names=[:Year, :Technology, :Region])
+    df_new_capacity[!,:Type] .= "NewCapacity"
+    df_new_capacity[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
+    df_residual_capacity = convert_jump_container_to_df(Params.ResidualCapacity;dim_names=[:Region, :Technology, :Year])
+    df_residual_capacity[!,:Type] .= "ResidualCapacity"
+    df_residual_capacity[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
+    df_total_capacity = convert_jump_container_to_df(value.(model[:TotalCapacityAnnual][:,tmp_techs,:]);dim_names=[:Year, :Technology, :Region])
+    df_total_capacity[!,:Type] .= "TotalCapacity"
+    df_total_capacity[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
+    dict_col_value = Dict()
     for se ∈ Sets.Sector
         tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.TagTechnologyToSector[t_,se] != 0]
         if tmp_techs != []
-            df_tmp = convert_jump_container_to_df(PeakCapacityByTechnology[:,tmp_techs,:];dim_names=[:Region, :Technology, :Year])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "PeakCapacity"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_capacity, df_tmp)
+            subset_peak_capacity = df_peak_capacity[in.(df_peak_capacity.Technology, Ref(tmp_techs)),:]
+            subset_peak_capacity[!,:Sector] .= se
+            merge_df(subset_peak_capacity, dict_col_value, output_capacity, colnames)
 
-            df_tmp = convert_jump_container_to_df(value.(model[:NewCapacity][:,tmp_techs,:]);dim_names=[:Year, :Technology, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "NewCapacity"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_capacity, df_tmp)
+            subset_new_capacity = df_new_capacity[in.(df_new_capacity.Technology, Ref(tmp_techs)),:]
+            subset_new_capacity[!,:Sector] .= se
+            merge_df(subset_new_capacity, dict_col_value, output_capacity, colnames)
 
-            df_tmp = convert_jump_container_to_df(Params.ResidualCapacity[:,tmp_techs,:];dim_names=[:Region, :Technology, :Year])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "ResidualCapacity"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_capacity, df_tmp)
+            subset_residual_capacity = df_residual_capacity[in.(df_residual_capacity.Technology, Ref(tmp_techs)),:]
+            subset_residual_capacity[!,:Sector] .= se
+            merge_df(subset_residual_capacity, dict_col_value, output_capacity, colnames)
 
-            df_tmp = convert_jump_container_to_df(value.(model[:TotalCapacityAnnual][:,tmp_techs,:]);dim_names=[:Year, :Technology, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "TotalCapacity"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_capacity, df_tmp)
+            subset_total_capacity = df_total_capacity[in.(df_total_capacity.Technology, Ref(tmp_techs)),:]
+            subset_total_capacity[!,:Sector] .= se
+            merge_df(subset_total_capacity, dict_col_value, output_capacity, colnames)           
         end
     end
 
@@ -205,24 +229,22 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     colnames = [:Region, :Sector, :Emission, :Technology, :Type, :PathwayScenario, :Year, :Value]
     output_emissions = DataFrame([name => [] for name in colnames])
 
+    df_technology_emission = convert_jump_container_to_df(value.(model[:AnnualTechnologyEmission]);dim_names=[:Year, :Technology, :Emission, :Region])
+    df_technology_emission[!,:Type] .= "Emissions"
+    df_technology_emission[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
+
     for se ∈ Sets.Sector 
         tmp_techs = [t_ for t_ in Sets.Technology if Params.TagTechnologyToSector[t_,se] != 0]
         if tmp_techs != []
-            df_tmp = convert_jump_container_to_df(value.(model[:AnnualTechnologyEmission][:,tmp_techs,:,:]);dim_names=[:Year, :Technology, :Emission, :Region])
-            df_tmp[!,:Sector] .= se
-            df_tmp[!,:Type] .= "Emissions"
-            df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-            select!(df_tmp,colnames)
-            append!(output_emissions, df_tmp)
+            subset_df = df_technology_emission[in.(df_technology_emission.Technology, Ref(tmp_techs)),:]
+            subset_df[!,:Sector] .= se
+            merge_df(subset_df, dict_col_value, output_emissions, colnames)
         end
     end
     df_tmp = convert_jump_container_to_df(Params.AnnualExogenousEmission;dim_names=[:Region, :Emission, :Year])
-    df_tmp[!,:Sector] .= "ExogenousEmissions"
-    df_tmp[!,:Technology] .= "ExogenousEmissions"
-    df_tmp[!,:Type] .= "ExogenousEmissions"
-    df_tmp[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
-    select!(df_tmp,colnames)
-    append!(output_emissions, df_tmp)
+    dict_col_value = Dict(:Sector=>"ExogenousEmissions", :Type=>"ExogenousEmissions",
+                            :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"ExogenousEmissions")
+    merge_df(df_tmp, dict_col_value, output_emissions, colnames) 
 
     ### parameter output_model(*,*,*,*)
     colnames = [:Type, :PathwayScenario, :Pathway, :Scenario, :Value]
@@ -272,90 +294,65 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
         end
     end end end
 
+    dict_col_value = Dict(:Type=>"Capital Costs", :Unit=>"MEUR/GW")
+
     df_tmp = convert_jump_container_to_df(cc;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Capital Costs"
-    df_tmp[!,:Unit] .= "MEUR/GW"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+    
+    setindex!(dict_col_value, "Fixed Costs", :Type)
     df_tmp = convert_jump_container_to_df(fc;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Fixed Costs"
-    df_tmp[!,:Unit] .= "MEUR/GW"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
+    setindex!(dict_col_value, "Variable Costs [excl. Fuel Costs]", :Type)
+    setindex!(dict_col_value, "MEUR/PJ", :Unit)
     df_tmp = convert_jump_container_to_df(vc_wo_fc;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Variable Costs [excl. Fuel Costs]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
-    df_tmp = convert_jump_container_to_df(vc_w_fc;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Variable Costs [incl. Fuel Costs]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_em;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Emissions]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_cap;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Capex]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_gen;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Generation]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_tot_w_em;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_tot_wo_em;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Total w/o Emissions]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_tot_w_em*3.6;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Unit] .= "EUR/MWh"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(lc_tot_wo_em*3.6;dim_names=[:Region, :Technology, :Year, :Fuel])
-    df_tmp[!,:Type] .= "Levelized Costs [Total w/o Emissions]"
-    df_tmp[!,:Unit] .= "EUR/MWh"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
-    df_tmp = convert_jump_container_to_df(Params.EmissionsPenalty[:,["CO2"],:];dim_names=[:Region, :Fuel, :Year])
-    df_tmp[!,:Technology] .= "Carbon"
-    df_tmp[!,:Type] .= "Carbon Price"
-    df_tmp[!,:Unit] .= "EUR/t CO2"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
+    setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
     df_tmp = convert_jump_container_to_df(lc_tot_st;dim_names=[:Region, :Technology, :Fuel, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+    
 
+    setindex!(dict_col_value, "Variable Costs [incl. Fuel Costs]", :Type)
+    df_tmp = convert_jump_container_to_df(vc_w_fc;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Emissions]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_em;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Capex]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_cap;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Generation]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_gen;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_tot_w_em;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Total w/o Emissions]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_tot_wo_em;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
+    setindex!(dict_col_value, "EUR/MWh", :Unit)
+    df_tmp = convert_jump_container_to_df(lc_tot_w_em*3.6;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Total w/o Emissions]", :Type)
+    df_tmp = convert_jump_container_to_df(lc_tot_wo_em*3.6;dim_names=[:Region, :Technology, :Year, :Fuel])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
     df_tmp = convert_jump_container_to_df(lc_tot_st*3.6;dim_names=[:Region, :Technology, :Fuel, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Unit] .= "EUR/MWh"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    dict_col_value = Dict(:Type=>"Carbon Price", :Unit=>"EUR/t CO2", :Technology=>"Carbon")
+    df_tmp = convert_jump_container_to_df(Params.EmissionsPenalty[:,["CO2"],:];dim_names=[:Region, :Fuel, :Year])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
     ## For Renewables, since they don"t have an input fuel
 
@@ -383,75 +380,48 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
         end
     end end end
 
+    dict_col_value = Dict(:Type=>"Capital Costs", :Fuel=>"None", :Unit=>"MEUR/GW")
+
     df_tmp = convert_jump_container_to_df(cc;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Capital Costs"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/GW"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
+    setindex!(dict_col_value, "Fixed Costs", :Type)
     df_tmp = convert_jump_container_to_df(fc;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Fixed Costs"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/GW"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
+    setindex!(dict_col_value, "Variable Costs [excl. Fuel Costs]", :Type)
+    setindex!(dict_col_value, "MEUR/PJ", :Unit)
     df_tmp = convert_jump_container_to_df(vc_wo_fc;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Variable Costs [excl. Fuel Costs]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
+    setindex!(dict_col_value, "Variable Costs [incl. Fuel Costs]", :Type)
     df_tmp = convert_jump_container_to_df(vc_w_fc;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Variable Costs [incl. Fuel Costs]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
+    setindex!(dict_col_value, "Levelized Costs [Capex]", :Type)
     df_tmp = convert_jump_container_to_df(lc_cap;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Capex]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+    
+    setindex!(dict_col_value, "Levelized Costs [Generation]", :Type)
     df_tmp = convert_jump_container_to_df(lc_gen;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Generation]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
-    df_tmp = convert_jump_container_to_df(lc_tot_w_em;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
-
+    setindex!(dict_col_value, "Levelized Costs [Total w/o Emissions]", :Type)
     df_tmp = convert_jump_container_to_df(lc_tot_wo_em;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total w/o Emissions]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "MEUR/PJ"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
-    df_tmp = convert_jump_container_to_df(lc_tot_w_em*3.6;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "EUR/MWh"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    df_tmp[!,:Value] .= df_tmp[!,:Value]*3.6
+    setindex!(dict_col_value, "EUR/MWh", :Unit)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
-    df_tmp = convert_jump_container_to_df(lc_tot_wo_em*3.6;dim_names=[:Region, :Technology, :Year])
-    df_tmp[!,:Type] .= "Levelized Costs [Total w/o Emissions]"
-    df_tmp[!,:Fuel] .= "None"
-    df_tmp[!,:Unit] .= "EUR/MWh"
-    select!(df_tmp,colnames)
-    append!(output_technology_costs_detailed, df_tmp)
+    setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
+    setindex!(dict_col_value, "MEUR/PJ", :Unit)
+    df_tmp = convert_jump_container_to_df(lc_tot_w_em;dim_names=[:Region, :Technology, :Year])
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
+
+    df_tmp[!,:Value] .= df_tmp[!,:Value]*3.6
+    setindex!(dict_col_value, "EUR/MWh", :Unit)
+    merge_df(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
 
     ### parameter output_exogenous_costs
     colnames = [:Region, :Technology, :Type, :Year, :Value]
@@ -478,8 +448,10 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     df_tmp = convert_jump_container_to_df(Params.EmissionsPenalty[:,["CO2"],:];dim_names=[:Region, :Technology, :Year])
     df_tmp[!,:Type] .= "Carbon Price"
-    select!(df_tmp,colnames)
-    append!(output_exogenous_costs, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_exogenous_costs, df_tmp)
+    end
 
     ### parameter output_trade_capacity
 
@@ -488,8 +460,10 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     df_tmp = convert_jump_container_to_df(value.(model[:TotalTradeCapacity][:,["Power"],:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Power Transmissions Capacity"
-    select!(df_tmp,colnames)
-    append!(output_trade_capacity, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_trade_capacity, df_tmp)
+    end
 
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Region_full, Sets.Region_full)
     for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
@@ -497,13 +471,17 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     end end end
     df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Region, :Region2])
     df_tmp[!,:Type] .= "Transmission Expansion Costs in MEUR/GW"
-    select!(df_tmp,colnames)
-    append!(output_trade_capacity, df_tmp)
+    if !isempty(df_tmp)
+         select!(df_tmp,colnames)
+        append!(output_trade_capacity, df_tmp)
+    end
 
     r2 = (length(Sets.Region_full) > 1 ? 2 : 1)
     df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],"Power"]))
-    select!(df_tmp,colnames)
-    append!(output_trade_capacity, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_trade_capacity, df_tmp)
+    end
 
     ### parameters SelfSufficiencyRate,ElectrificationRate,output_other
     SelfSufficiencyRate = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Year)), Sets.Region_full, Sets.Year)
@@ -554,31 +532,39 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     df_tmp[!,:Type] .= "SelfSufficiencyRate"
     df_tmp[!,:Dim1] .= "X"
     df_tmp[!,:Dim2] .= "X"
-    select!(df_tmp,colnames)
-    append!(output_other, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_other, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(ElectrificationRate[:,:];dim_names=[:Dim1, :Year])
     df_tmp[!,:Type] .= "ElectrificationRate"
     df_tmp[!,:Region] .= "Total"
     df_tmp[!,:Dim2] .= "X"
-    select!(df_tmp,colnames)
-    append!(output_other, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_other, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(value.(model[:UseByTechnologyAnnual][:,:,:,:])/3.6;dim_names=[:Year, :Dim1, :Dim2, :Region])
     df_tmp[!,:Type] .= "FinalEnergyConsumption"
-    select!(df_tmp,colnames)
-    append!(output_other, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_other, df_tmp)
+    end
 
     for f ∈ Sets.Fuel
-        if f ∈ Subsets.Transport
+        if f ∈ Params.TagTechnologyToSubsets["Transport"]
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:];dim_names=[:Region, :Dim2, :Year])
         else
             df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,[f],:]/3.6;dim_names=[:Region, :Dim2, :Year])
         end
-        df_tmp[!,:Type] .= "FinalEnergyConsumption"
-        df_tmp[!,:Dim1] .= "InputDemand"
-        select!(df_tmp,colnames)
-        append!(output_other, df_tmp)
+        if !isempty(df_tmp)
+            df_tmp[!,:Type] .= "FinalEnergyConsumption"
+            df_tmp[!,:Dim1] .= "InputDemand"
+            select!(df_tmp,colnames)
+            append!(output_other, df_tmp)
+        end
     end
 
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full)), Sets.Year, Sets.Region_full)
@@ -593,16 +579,20 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     df_tmp[!,:Type] .= "ElectricityShareOfFinalEnergy"
     df_tmp[!,:Dim1] .= "X"
     df_tmp[!,:Dim2] .= "X"
-    select!(df_tmp,colnames)
-    append!(output_other, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_other, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(tmp2./tmp3;dim_names=[:Year])
     df_tmp[!,:Type] .= "ElectricityShareOfFinalEnergy"
     df_tmp[!,:Region] .= "Total"
     df_tmp[!,:Dim1] .= "X"
     df_tmp[!,:Dim2] .= "X"
-    select!(df_tmp,colnames)
-    append!(output_other, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_other, df_tmp)
+    end
 
     ### parameter output_energydemandstatistics
     colnames = [:Type, :Sector, :Region, :Fuel, :Year, :Value]
@@ -624,8 +614,10 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     df_tmp = convert_jump_container_to_df(Params.SpecifiedAnnualDemand[:,["Power"],:]/3.6;dim_names=[:Region, :Fuel, :Year])
     df_tmp[!,:Type] .= "Final Energy Demand [TWh]"
     df_tmp[!,:Sector] .= "Exogenous"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     ## Final Energy per sector regional aggregates
 
@@ -769,13 +761,15 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         div= sum( (Params.TagTechnologyToSector[t,"Storages"]!=0 ? value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) : 0 ) for t ∈ Sets.Technology)/3.6
+
         for f ∈ Sets.Fuel
             eg[y,f,r] = sum((sum((Params.InputActivityRatio[r,t,f,m,y] != 0 ? value(VarPar.RateOfProductionByTechnologyByMode[y,l,t,m,"Power",r]) : 0) * Params.YearSplit[l,y] for l ∈ Sets.Timeslice)) for t ∈ Sets.Technology for m ∈ Sets.Mode_of_operation if Params.TagTechnologyToSector[t,"Storages"] == 0)/3.6
             eg_p[y,f,r] = eg[y,f,r]/div
         end
-        eg_s[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Solar) /3.6
-        eg_w[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Wind) /3.6
-        eg_h[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Subsets.Hydro) /3.6
+
+        eg_s[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Solar"]) /3.6
+        eg_w[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Wind"]) /3.6
+        eg_h[y,r] = sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ Params.TagTechnologyToSubsets["Hydro"]) /3.6
         eg_s_p[y,r] = eg_s[y,r]/div
         eg_w_p[y,r] = eg_w[y,r]/div
         eg_h_p[y,r] = eg_h[y,r]/div
@@ -792,22 +786,28 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     df_tmp[!,:Type] .= "Electricity Generation [TWh]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Solar"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_w;dim_names=[:Year, :Region])
     df_tmp[!,:Type] .= "Electricity Generation [TWh]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Wind"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_h;dim_names=[:Year, :Region])
     df_tmp[!,:Type] .= "Electricity Generation [TWh]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Hydro"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_p;dim_names=[:Year, :Fuel, :Region])
     df_tmp[!,:Type] .= "Electricity Mix [%]"
@@ -819,29 +819,37 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     df_tmp[!,:Type] .= "Electricity Mix [%]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Solar"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_w_p;dim_names=[:Year, :Region])
     df_tmp[!,:Type] .= "Electricity Mix [%]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Wind"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_h_p;dim_names=[:Year, :Region])
     df_tmp[!,:Type] .= "Electricity Mix [%]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Hydro"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     df_tmp = convert_jump_container_to_df(eg_o_p;dim_names=[:Year, :Region])
     df_tmp[!,:Type] .= "Electricity Mix [%]"
     df_tmp[!,:Sector] .= "Power"
     df_tmp[!,:Fuel] .= "Other"
-    select!(df_tmp,colnames)
-    append!(output_energydemandstatistics, df_tmp)
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_energydemandstatistics, df_tmp)
+    end
 
     ## Imports as Share of Primary Energy
 
@@ -849,8 +857,8 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
 
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
-            if sum(Params.OutputActivityRatio[r,t,f,m,y] for t ∈ Subsets.ImportTechnology for m ∈ Sets.Mode_of_operation) != 0
-                ispe[y,f,r] = (sum(value(model[:ProductionByTechnologyAnnual][y,t,f,r]) for t ∈ Subsets.ImportTechnology)/3.6)/sum(pe[y,:,r])
+            if sum(Params.OutputActivityRatio[r,t,f,m,y] for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"] for m ∈ Sets.Mode_of_operation) != 0
+                ispe[y,f,r] = (sum(value(model[:ProductionByTechnologyAnnual][y,t,f,r]) for t ∈ Params.TagTechnologyToSubsets["ImportTechnology"])/3.6)/sum(pe[y,:,r])
             end
         end
     end end
@@ -877,8 +885,6 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     select!(df_tmp2,colnames)
     append!(output_energydemandstatistics, df_tmp2)
 
-    
-
     ####
     #### Excel Output Sheet Definition and Export of GDX
     ####
@@ -893,5 +899,4 @@ function genesysmod_results(model,Sets, Subsets, Params, VarPar, Switch, Setting
     CSV.write(joinpath(Switch.resultdir,"output_exogenous_costs_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_exogenous_costs[output_exogenous_costs.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir,"output_trade_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade_capacity[output_trade_capacity.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir,"output_energydemandstatistics_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energydemandstatistics[output_energydemandstatistics.Value .!= 0, :])
-    print("end of results : ",Dates.now()-start,"\n")
 end

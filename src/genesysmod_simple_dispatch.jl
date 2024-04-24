@@ -91,27 +91,27 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     # ####### Load data from provided excel files and declarations #############
     #
     println(Dates.now()-starttime)
-    Sets, Subsets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
+    Sets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
     println(Dates.now()-starttime)
-    GENeSYS_MOD.genesysmod_dec(model,Sets,Subsets,Params,Switch)
+    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
     #
 
-    Settings=GENeSYS_MOD.genesysmod_settings(Sets, Subsets, Params, Switch.socialdiscountrate)
+    Settings=GENeSYS_MOD.genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
     println(Dates.now()-starttime)
     #
     # ####### apply general model bounds #############
     #
 
-    GENeSYS_MOD.genesysmod_bounds(model,Sets,Subsets,Params,Settings,Switch)
+    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Including Equations #############
     #
 
-    GENeSYS_MOD.genesysmod_equ(model,Sets,Subsets,Params,Emp_Sets,Settings,Switch)
+    GENeSYS_MOD.genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     println(Dates.now()-starttime)
     #
     # ####### Fix Investment Variables #############
@@ -127,12 +127,12 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
     # make constraints fixing investments
     for y ∈ Sets.Year for r ∈ Sets.Region_full
-        for t ∈ setdiff(Sets.Technology, Subsets.DummyTechnology)
+        for t ∈ setdiff(Sets.Technology, Params.TagTechnologyToSubsets["DummyTechnology"])
             @constraint(model, model[:TotalCapacityAnnual][y,t,r] == tmp_TotalCapacityAnnual[y,t,r],
             base_name="Fix_Investments_$(y)_$(t)_$(r)")
         end
         if Switch.switch_infeasibility_tech == 1
-            for t ∈ Subsets.DummyTechnology
+            for t ∈ Params.TagTechnologyToSubsets["DummyTechnology"]
                 @constraint(model, model[:TotalCapacityAnnual][y,t,r] == 99999,
                 base_name="Fix_Investments_$(y)_$(t)_$(r)")
             end
@@ -217,7 +217,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         println(elapsed)
 
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Subsets, Params, VarPar, Switch, Settings, elapsed,"dispatch")
+            GENeSYS_MOD.genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
@@ -226,5 +226,5 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         println(termination_status(model))
     end
 
-    return model, Dict("Sets" => Sets, "Subsets" => Subsets, "Params" => Params, "Switch" => Switch)
+    return model, Dict("Sets" => Sets, "Params" => Params, "Switch" => Switch)
 end
