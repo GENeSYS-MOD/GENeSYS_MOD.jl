@@ -181,21 +181,28 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
     end
 
+    # print(CountryData["COOL_LOW"][7265,:])
+
     for r ∈ Sets.Region_full
         if sum(CountryData["LOAD"][l,r] for l ∈ Timeslice) != 0 
             AverageCapacityFactor["LOAD"][1,r] = sum(CountryData["LOAD"][:,r])/8760
+            CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
         end
-        CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
+        
 
         if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Timeslice) != 0 
             AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+            CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
         end
-        CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
+        
 
         if sum(CountryData["COOL_LOW"][l,r] for l ∈ Timeslice) != 0 
             AverageCapacityFactor["COOL_LOW"][1,r] = sum(CountryData["COOL_LOW"][:,r])/8760
+            # println(AverageCapacityFactor["COOL_LOW"][1,r])
+            CountryData["COOL_LOW"][!,r] = CountryData["COOL_LOW"][!,r] / AverageCapacityFactor["COOL_LOW"][1,r]
         end
-        CountryData["COOL_LOW"][!,r] = CountryData["COOL_LOW"][!,r] / AverageCapacityFactor["COOL_LOW"][1,r]
+        # println(AverageCapacityFactor["COOL_LOW"][1,r])
+        
 
         for cde ∈ Country_Data_Entries
             if sum(CountryData[cde][l,r] for l ∈ Timeslice) != 0 
@@ -203,6 +210,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
             end
         end
     end
+
+    # print(CountryData["COOL_LOW"])
 
     smoothing_range = Dict()
     smoothing_range["LOAD"] = 3
@@ -381,6 +390,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     CapacityFactor = JuMP.Containers.DenseAxisArray(ones(length(Sets.Region_full), length(Sets.Technology), length(Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Technology, Timeslice, Sets.Year)
 
     tmp = ScaledCountryData["LOAD"] ./ length(Timeslice)
+    # print(tmp)
     for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
             if sum(SpecifiedAnnualDemand[r,f,:]) != 0
@@ -389,7 +399,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
     end
 
-    print(SpecifiedAnnualDemand[:,"Heat_Low_Residential",:])
+    # print(SpecifiedDemandProfile[:,"Heat_Low_Residential",:,:])
 
     tmp=Dict()
     tmp["MOBILITY_PSNG"] = ScaledCountryData["MOBILITY_PSNG"] ./ combine(ScaledCountryData["MOBILITY_PSNG"], names(ScaledCountryData["MOBILITY_PSNG"]) .=> sum, renamecols=false)
@@ -397,12 +407,14 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     tmp["HEAT_HIGH"] = ScaledCountryData["HEAT_HIGH"] ./ combine(ScaledCountryData["HEAT_HIGH"], names(ScaledCountryData["HEAT_HIGH"]) .=> sum, renamecols=false)
     tmp["COOL_LOW"] = ScaledCountryData["COOL_LOW"] ./ combine(ScaledCountryData["COOL_LOW"], names(ScaledCountryData["COOL_LOW"]) .=> sum, renamecols=false)
 
+    # print(tmp["COOL_LOW"])
+
     for r ∈ Sets.Region_full 
         SpecifiedDemandProfile[r,"Mobility_Passenger",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
         SpecifiedDemandProfile[r,"Mobility_Freight",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Residential",:,Sets.Year[1]] = tmp["HEAT_LOW"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_Low_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Cool_Low_Building",:,Sets.Year[1]] = tmp["COOL_LOW"][Timeslice,r]
+        SpecifiedDemandProfile[r,"Cool_Low_Building",:,Sets.Year[1]] = ifelse.(isnan.(tmp["COOL_LOW"][Timeslice,r]),0,tmp["COOL_LOW"][Timeslice,r])
         SpecifiedDemandProfile[r,"Heat_Medium_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
         SpecifiedDemandProfile[r,"Heat_High_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
     end
@@ -463,6 +475,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
 
 
     if Switch.write_reduced_timeserie == 1
+        # print(SpecifiedDemandProfile[:,"Cool_Low_Building",:,:])
         df_SpecifiedDemandProfile = convert_jump_container_to_df(SpecifiedDemandProfile[:,sdp_list,:,:];dim_names=[:Region,:Fuel,:Timeslice,:Year])
         df_CapacityFactor = convert_jump_container_to_df(CapacityFactor[:,capf_list,:,:];dim_names=[:Region,:Technology,:Timeslice,:Year])
         df_x_peakingDemand = convert_jump_container_to_df(x_peakingDemand;dim_names=[:Region,:Sector])
