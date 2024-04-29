@@ -83,7 +83,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
     #
 
-    if Switch.switch_infeasibility_tech == 1
+#=     if Switch.switch_infeasibility_tech == 1
         Params.TagTechnologyToSector[Params.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
         Params.AvailabilityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
@@ -104,7 +104,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.CapacityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
         Params.OperationalLife[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         Params.EmissionActivityRatio[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
-    end
+    end =#
 
     #
     # ####### Bounds for non-supply technologies #############

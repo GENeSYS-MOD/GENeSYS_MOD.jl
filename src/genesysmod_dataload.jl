@@ -54,6 +54,10 @@ function genesysmod_dataload(Switch)
     tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
     DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
+    if Switch.switch_infeasibility_tech == 1
+        TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"]
+    end
     TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
     
     # Step 2: Read parameters from regional file  -> now includes World values
@@ -287,14 +291,14 @@ function genesysmod_dataload(Switch)
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        CapacityToActivityUnit[:,TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
+        CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         FixedCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         CapitalCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         VariableCost[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
         AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 1
         CapacityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-        OperationalLife[:,TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        OperationalLife[TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         EmissionActivityRatio[:,TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
     end
 

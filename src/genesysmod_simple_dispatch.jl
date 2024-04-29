@@ -22,15 +22,21 @@
 Run the simple dispatch model. A previous run is necessary to allow to read in investment 
 decisions. For information about the switches, refer to the datastructure documentation
 """
-function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
-        model_region="minimal", data_base_region="DE", data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
-        hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", threads=4, emissionPathway="MinimalExample",
-        emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\",resultdir="Results\\",
-        switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,switch_intertemporal=0,
-        switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
-        set_peaking_res_cf=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
-        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",  
-        elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0)
+function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=2018,
+    model_region="minimal", data_base_region="DE", 
+    data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
+    hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022",
+    threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit", 
+    socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\", 
+    switch_infeasibility_tech = 0, switch_investLimit=1, switch_ccs=0,
+    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
+    switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0,
+    set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025, 
+    switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 0,
+    switch_employment_calculation = 0, switch_endogenous_employment = 0,
+    employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
+    elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 0,
+    switch_iis = 1, switch_base_year_bounds_debugging = 0)
     
     elmod_daystep = 0
     elmod_hourstep = 1
