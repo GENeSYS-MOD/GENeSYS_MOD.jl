@@ -298,6 +298,7 @@ struct Parameters <: InputClass
 
     TagTechnologyToSubsets ::Dict{String,Array}
     TagFuelToSubsets ::Dict{String,Array}
+    TagRegionToSubsets ::Dict{String,Array}
 end
 
 struct Variables

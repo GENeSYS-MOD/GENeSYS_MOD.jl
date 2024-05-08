@@ -55,6 +55,7 @@ function genesysmod_dataload(Switch)
     DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
     TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
+    TagRegionToSubsets = read_subsets(tag_data, "Par_TagRegionToSubsets")
     
     # Step 2: Read parameters from regional file  -> now includes World values
     StartYear = Switch.StartYear
@@ -321,7 +322,7 @@ function genesysmod_dataload(Switch)
     ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,
-    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets)
+    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets, TagRegionToSubsets)
 
     return Sets, Params, Emp_Sets
 end
