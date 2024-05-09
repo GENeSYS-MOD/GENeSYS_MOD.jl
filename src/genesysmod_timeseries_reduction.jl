@@ -70,6 +70,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     "HEAT_LOW", "HEAT_HIGH",
     "HEAT_PUMP_AIR", "HEAT_PUMP_GROUND","HYDRO_ROR","PV_TRACKING"]
 
+    sector_to_tech = Dict(
+        "Industry"=>"HEAT_HIGH",
+        "Buildings"=>"HEAT_LOW",
+        "Transportation"=>"MOBILITY_PSNG",
+        "Power"=>"LOAD")
+
     Timeslice_Full = 1:8760
 
     CountryData = Dict()
@@ -127,19 +133,11 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     end
 
     df_peakingDemand = Dict()
-    for r ∈ Sets.Region_full
-        df_peakingDemand["Industry"] = combine(CountryData["HEAT_HIGH"], names(CountryData["HEAT_HIGH"]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue["HEAT_HIGH"]
-        df_peakingDemand["Buildings"] = combine(CountryData["HEAT_LOW"], names(CountryData["HEAT_LOW"]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue["HEAT_LOW"]
-        df_peakingDemand["Transportation"] = combine(CountryData["MOBILITY_PSNG"], names(CountryData["MOBILITY_PSNG"]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue["MOBILITY_PSNG"]
-        df_peakingDemand["Power"] = combine(CountryData["LOAD"], names(CountryData["LOAD"]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue["LOAD"]
-    end
-
     x_peakingDemand = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Sector)),Sets.Region_full, Sets.Sector)
-    for r ∈ Sets.Region_full
-        x_peakingDemand[r,"Industry"] = df_peakingDemand["Industry"][1,r]
-        x_peakingDemand[r,"Buildings"] = df_peakingDemand["Buildings"][1,r]
-        x_peakingDemand[r,"Transportation"] = df_peakingDemand["Transportation"][1,r]
-        x_peakingDemand[r,"Power"] = df_peakingDemand["Power"][1,r]
+
+    for s ∈ [s for s in Sets.Sector if s != "Infeasibility"], r ∈ Sets.Region_full
+        df_peakingDemand[s] = combine(CountryData[sector_to_tech[s]], names(CountryData[sector_to_tech[s]]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue[sector_to_tech[s]]
+        x_peakingDemand[r,s] = df_peakingDemand[s][1,r]
     end
 
     negativeCDE = Dict(x => mapcols(col -> min.(col,0), CountryData[x]) for x ∈ Country_Data_Entries)
