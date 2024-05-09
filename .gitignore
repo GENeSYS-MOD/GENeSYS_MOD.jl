@@ -2,3 +2,4 @@ docs/build/
 test/script.jl
 test/TestData/Results
 debug_scripts
+test/test.jl
