@@ -208,11 +208,12 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
+            GENeSYS_MOD.genesysmod_getduals(model, Switch,"dispatch")
         end
-        if switch_results_visualization == 1
-            GENeSYS_MOD.genesysmod_results_visualization(model, Sets, Params, Vars, VarPar, Switch,
-             Settings, elapsed,"dispatch")
-        end
+        #if switch_results_visualization == 1
+        #    GENeSYS_MOD.genesysmod_results_visualization(model, Sets, Params, Vars, VarPar, Switch,
+        #     Settings, elapsed,"dispatch")
+        #end
     else
         println("Termination status:", termination_status(model), ".")
     end
