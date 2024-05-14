@@ -131,7 +131,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Including Equations #############
     #
 
-    genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
+    @time genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
     #
     # ####### CPLEX Options #############
     #

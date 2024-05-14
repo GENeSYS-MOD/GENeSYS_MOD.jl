@@ -52,11 +52,17 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     # Model Variables #
     #####################
 
+    start = Dates.now()
+
     ############### Capacity Variables ############
+    
     
     NewCapacity = @variable(model, NewCapacity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     AccumulatedNewCapacity = @variable(model, AccumulatedNewCapacity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     TotalCapacityAnnual = @variable(model, TotalCapacityAnnual[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
+
+    date1 = Dates.now()
+    println("time 1: ", date1-start)
 
     ############### Activity Variables #############
 
@@ -74,6 +80,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
     @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
     @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
+
+    date2 = Dates.now()
+    println("time 2: ", date2-date1)
 
     
     ############### Costing Variables #############
@@ -94,7 +103,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AnnualCurtailmentCost = @variable(model, AnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     DiscountedAnnualCurtailmentCost = @variable(model, DiscountedAnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
-    
+    date3 = Dates.now()
+    println("time 3: ", date3-date2)
 
     ############### Storage Variables #############
 
@@ -110,6 +120,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     DiscountedSalvageValueStorage = @variable(model, DiscountedSalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     TotalDiscountedStorageCost = @variable(model, TotalDiscountedStorageCost[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
+    date4 = Dates.now()
+    println("time 4: ", date4-date3)
     
 
     ######## Reserve Margin #############
@@ -122,6 +134,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
         DemandNeedingReserveMargin = nothing
     end
 
+    date5 = Dates.now()
+    println("time 5: ", date5-date4)
+
     
 
     ######## RE Gen Target #############
@@ -131,7 +146,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     TotalTechnologyModelPeriodActivity = @variable(model, TotalTechnologyModelPeriodActivity[𝓣,𝓡], container=JuMP.Containers.DenseAxisArray) 
     RETargetMin = @variable(model, RETargetMin[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
 
-    
+    date6 = Dates.now()
+    println("time 6: ", date5-date4)
 
     ######## Emissions #############
 
@@ -149,7 +165,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓔,𝓡], container=JuMP.Containers.DenseAxisArray) 
     WeightedAnnualEmissions = @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡], container=JuMP.Containers.DenseAxisArray)
 
-    
+    date7 = Dates.now()
+    println("time 7: ", date7-date6)
+
     ######### SectoralEmissions #############
 
     AnnualSectoralEmissions = @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡], container=JuMP.Containers.DenseAxisArray) 
@@ -171,6 +189,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     TotalTradeCosts = @variable(model, TotalTradeCosts[𝓨,𝓛,𝓡], container=JuMP.Containers.DenseAxisArray) 
     AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
     DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
+
+    date8 = Dates.now()
+    println("time 8: ", date8-date7)
 
     ######### Peaking #############
     if Switch.switch_peaking_capacity == 1
@@ -210,6 +231,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
         DiscountedAnnualProductionChangeCost=nothing
     end
 
+    date9 = Dates.now()
+    println("time 9: ", date9-date8)
+
     if Switch.switch_intertemporal == 1
         RateOfTotalActivity = @variable(model, RateOfTotalActivity[𝓨,𝓛,𝓣,𝓡], container=JuMP.Containers.DenseAxisArray)
     else
@@ -230,6 +254,9 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
         end
     end end end
     DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+
+    date10 = Dates.now()
+    println("time 10: ", date10-date9)
     
     Vars = GENeSYS_MOD.Variables(NewCapacity,AccumulatedNewCapacity,TotalCapacityAnnual,
     RateOfActivity,TotalAnnualTechnologyActivityByMode,ProductionByTechnologyAnnual,
@@ -251,6 +278,10 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
     RateOfTotalActivity,BaseYearSlack,BaseYearBounds_TooLow,BaseYearBounds_TooHigh, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
     AnnualProductionChangeCost,DiscountedAnnualProductionChangeCost)
+
+    date11 = Dates.now()
+    println("time 11: ", date11-date10)
+
     return Vars
 end
 

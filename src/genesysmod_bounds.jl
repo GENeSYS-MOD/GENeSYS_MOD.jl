@@ -67,8 +67,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     f="ETS"
     for r ∈ Sets.Region_full
         for rr ∈ Sets.Region_full
-            if Params.TradeCosts[f,r,rr] == 0
-                Params.TradeCosts[f,r,rr] = 0.01
+            if Params.TradeCosts[r,rr,f] == 0
+                Params.TradeCosts[r,rr,f] = 0.01
     end end end
 
     for r ∈ Sets.Region_full
