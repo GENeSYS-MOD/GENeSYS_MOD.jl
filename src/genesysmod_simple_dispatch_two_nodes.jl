@@ -22,7 +22,7 @@
 Run the simple dispatch model. A previous run is necessary to allow to read in investment 
 decisions. For information about the switches, refer to the datastructure documentation
 """
-function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=2018,
+function genesysmod_simple_dispatch_two_nodes(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=2018,
     model_region="minimal", data_base_region="DE", 
     data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
     hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022",
@@ -36,9 +36,8 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 0,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, considered_region ="DE")
     
-    elmod_daystep = 80
     elmod_hourstep = 1
     elmod_nthhour = elmod_daystep*24 + elmod_hourstep
     elmod_starthour = 1
@@ -100,7 +99,7 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     # ####### Load data from provided excel files and declarations #############
     #
     println(Dates.now()-starttime)
-    Sets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
+    Sets, Params, Emp_Sets, full_region, Params_full = GENeSYS_MOD.genesysmod_dataload_two_nodes(Switch, considered_region);
     println(Dates.now()-starttime)
     Maps = make_mapping(Sets,Params)
     Vars = GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch,Maps)
@@ -128,40 +127,44 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     #
     # read investment results for relevant variables
     in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_dispatch.csv"), DataFrame)
-    tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
+    tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, full_region)
     in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_dispatch.csv"), DataFrame)
-    tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
+    tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, full_region, full_region)
     in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_dispatch.csv"), DataFrame)
-    tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
+    tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, full_region)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
     tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
     # make constraints fixing investments
-    for y ∈ Sets.Year for r ∈ Sets.Region_full
+    for y ∈ Sets.Year
         for t ∈ setdiff(Sets.Technology, Params.TagTechnologyToSubsets["DummyTechnology"])
-            fix(model[:TotalCapacityAnnual][y,t,r], tmp_TotalCapacityAnnual[y,t,r]; force=true)
+            fix(model[:TotalCapacityAnnual][y,t,Sets.Region_full[2]], sum(tmp_TotalCapacityAnnual[y,t,re] for re in full_region if re!=Sets.Region_full[1]); force=true)
+            fix(model[:TotalCapacityAnnual][y,t,Sets.Region_full[1]], tmp_TotalCapacityAnnual[y,t,Sets.Region_full[1]]; force=true)
             # @constraint(model, model[:TotalCapacityAnnual][y,t,r] == tmp_TotalCapacityAnnual[y,t,r],
             # base_name="Fix_Investments_$(y)_$(t)_$(r)")
         end
         if Switch.switch_infeasibility_tech == 1
             for t ∈ Params.TagTechnologyToSubsets["DummyTechnology"]
-                fix(model[:TotalCapacityAnnual][y,t,r], 99999; force=true)
+                fix(model[:TotalCapacityAnnual][y,t,Sets.Region_full[1]], 99999; force=true)
+                fix(model[:TotalCapacityAnnual][y,t,Sets.Region_full[2]], 99999; force=true)
                 # @constraint(model, model[:TotalCapacityAnnual][y,t,r] == 99999,
                 # base_name="Fix_Investments_$(y)_$(t)_$(r)")
             end
         end
         for s ∈ Sets.Storage
-            fix(model[:NewStorageCapacity][s,y,r], tmp_NewStorageCapacity[s,y,r]; force=true)
+            fix(model[:NewStorageCapacity][s,y,Sets.Region_full[1]], tmp_NewStorageCapacity[s,y,Sets.Region_full[1]]; force=true)
+            fix(model[:NewStorageCapacity][s,y,Sets.Region_full[2]], sum(tmp_NewStorageCapacity[s,y,r] for r in full_region if r!=Sets.Region_full[1]); force=true)
             # @constraint(model, model[:NewStorageCapacity][s,y,r] == tmp_NewStorageCapacity[s,y,r],
             # base_name="Fix_NewStorageCapacity_$(s)_$(y)_$(r)")
         end
-    end end
-    for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-        fix(model[:TotalTradeCapacity][y,f,r,rr], tmp_TotalTradeCapacity[y,f,r,rr]; force=true)
+    end
+    for y ∈ Sets.Year for f ∈ Sets.Fuel
+        fix(model[:TotalTradeCapacity][y,f,Sets.Region_full[1],Sets.Region_full[2]], sum(tmp_TotalTradeCapacity[y,f,Sets.Region_full[1],r] for r in full_region if r!=Sets.Region_full[1]); force=true)
+        fix(model[:TotalTradeCapacity][y,f,Sets.Region_full[2],Sets.Region_full[1]], sum(tmp_TotalTradeCapacity[y,f,r,Sets.Region_full[1]] for r in full_region if r!=Sets.Region_full[1]); force=true)
         # @constraint(model, model[:TotalTradeCapacity][y,f,r,rr] == tmp_TotalTradeCapacity[y,f,r,rr],
         # base_name="Fix_TradeConnection_$(y)_$(f)_$(r)_$(rr)")
-    end end end end
+    end end 
 
-    GENeSYS_MOD.genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
+    GENeSYS_MOD.genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region, Vars,Emp_Sets,Settings,Switch, Maps)
     
     #
     # ####### CPLEX Options #############
@@ -240,5 +243,5 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     end
 
 
-    # return model, Dict("Sets" => Sets, "Params" => Params, "Switch" => Switch)
+    return model, Dict("Sets" => Sets, "Params" => Params, "Switch" => Switch)
 end

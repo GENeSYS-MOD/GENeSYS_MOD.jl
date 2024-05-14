@@ -36,10 +36,11 @@ include("utils.jl")
 include("genesysmod.jl")
 include("genesysmod_dec.jl")
 include("genesysmod_timeseries_reduction.jl")
-include("genesysmod_dataload.jl")
+# include("genesysmod_dataload.jl")
 include("genesysmod_settings.jl")
 include("genesysmod_bounds.jl")
-include("genesysmod_equ.jl")
+include("genesysmod_equ_two_nodes.jl")
+# include("genesysmod_equ.jl")
 include("genesysmod_employment.jl")
 include("genesysmod_variable_parameter.jl")
 include("genesysmod_results_raw.jl")
@@ -47,8 +48,10 @@ include("genesysmod_results.jl")
 include("genesysmod_results_old.jl")
 include("genesysmod_levelizedcosts.jl")
 include("genesysmod_emissionintensity.jl")
-include("genesysmod_simple_dispatch.jl")
+# include("genesysmod_simple_dispatch.jl")
+include("genesysmod_dataload_two_nodes.jl")
+include("genesysmod_simple_dispatch_two_nodes.jl")
 
-export genesysmod, genesysmod_simple_dispatch
+export genesysmod, genesysmod_simple_dispatch_two_nodes
 
 end

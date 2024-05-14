@@ -324,11 +324,13 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
-        if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+        if Switch.switch_dispatch==0
+            if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
+                JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
+                JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
+                JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
+                JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+            end
         end
     Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]

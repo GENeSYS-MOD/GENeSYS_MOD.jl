@@ -214,6 +214,40 @@ function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els..
     return A
 end
 
+# assumption: the region is the first axe (otherwise do not use this function)
+function aggregate_daa(full_daa, considered_region, full_region, els...;mode="SUM")
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length.(els)...), considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        new_daa[considered_region[1],x...] = full_daa[considered_region[1],x...]
+        if mode=="SUM"
+            new_daa[considered_region[2],x...] = sum(full_daa[r,x...] for r in full_region) - full_daa[considered_region[1],x...]
+        elseif mode=="MEAN"
+            new_daa[considered_region[2],x...] = (sum(full_daa[r,x...] for r in full_region) - full_daa[considered_region[1],x...])/(length(full_region)-1)
+        end
+        if length(considered_region) >2
+            new_daa[considered_region[3],x...] = full_daa[considered_region[3],x...]
+        end
+    end
+    return new_daa
+end
+
+function aggregate_cross_daa(full_daa, considered_region, full_region, els...;mode="SUM")
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length(considered_region),length.(els)...), considered_region, considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        if mode=="SUM"
+            new_daa[considered_region[1],considered_region[2],x...] = sum(full_daa[considered_region[1],r,x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...]
+            new_daa[considered_region[2],considered_region[1],x...] = sum(full_daa[r,considered_region[1],x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...]
+        elseif mode=="MEAN"
+            new_daa[considered_region[1],considered_region[2],x...] = (sum(full_daa[considered_region[1],r,x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...])/(length(full_region)-1)
+            new_daa[considered_region[2],considered_region[1],x...] = (sum(full_daa[r,considered_region[1],x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...])/(length(full_region)-1)
+        end
+    end
+    return new_daa
+end
+
+
 function specified_demand_profile(time_series_data,Sets,base_region="DE")
 
     # Read table from Excel to DataFrame
