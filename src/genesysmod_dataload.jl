@@ -300,6 +300,13 @@ function genesysmod_dataload(Switch)
         CapacityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
         OperationalLife[TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         EmissionActivityRatio[:,TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
+
+        TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_ROAD"] .= 1
+        TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_RAIL"] .= 1
+        TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_AIR"] .= 1
+        TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_ROAD"] .= 1
+        TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_RAIL"] .= 1
+        TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_SHIP"] .= 1
     end
 
     Params = GENeSYS_MOD.Parameters(StartYear,YearSplit,SpecifiedAnnualDemand,
