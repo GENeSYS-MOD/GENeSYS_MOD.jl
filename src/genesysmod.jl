@@ -124,6 +124,11 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     # create tech, fuel and mode of operation mapping
     
+     # ####### Including Scenario Data #############
+    #
+
+    genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
+    #
     #
     # ####### Including Equations #############
     #
