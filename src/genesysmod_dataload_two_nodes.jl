@@ -127,9 +127,13 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
     Readin_TradeRoute2015 = aggregate_cross_daa(Readin_TradeRoute2015Full, 𝓡_nodes, 𝓡_full, 𝓕)
     TradeCapacityGrowthCostsFull = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓡_full, 𝓡_full, 𝓕)
     TradeCapacityGrowthCosts = aggregate_cross_daa(TradeCapacityGrowthCostsFull, 𝓡_nodes, 𝓡_full, 𝓕;mode="MEAN")
-    TradeCostsFull = create_daa(in_data,"Par_TradeCosts",dbr, 𝓡_full, 𝓡_full, 𝓕)
-    TradeCosts = aggregate_cross_daa(TradeCostsFull, 𝓡_nodes, 𝓡_full, 𝓕;mode="MEAN")
-
+    TradeCostsFull = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡_full, 𝓡_full)
+    TradeCosts = JuMP.Containers.DenseAxisArray(
+        zeros(length(𝓕),length(𝓡_nodes),length(𝓡_nodes)), 𝓕, 𝓡_nodes, 𝓡_nodes)
+    for f in 𝓕
+        TradeCosts[f,𝓡_nodes[1],𝓡_nodes[2]] = (sum(TradeCostsFull[f,𝓡_nodes[1],r] for r in 𝓡_full) - TradeCostsFull[f,𝓡_nodes[1],𝓡_nodes[1]])/(length(𝓡_full)-1)
+        TradeCosts[f,𝓡_nodes[2],𝓡_nodes[1]] = (sum(TradeCostsFull[f,r,𝓡_nodes[1]] for r in 𝓡_full) - TradeCostsFull[f,𝓡_nodes[1],𝓡_nodes[1]])/(length(𝓡_full)-1)
+    end
 
     ResidualCapacityFull = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡_full, 𝓣, 𝓨)
     ResidualCapacity = aggregate_daa(ResidualCapacityFull, 𝓡_nodes, 𝓡_full, 𝓣, 𝓨)

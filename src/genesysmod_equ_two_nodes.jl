@@ -509,7 +509,7 @@ function genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region,Va
 
   for y ∈ 𝓨 for r ∈ 𝓡
     if sum(Params.TradeRoute[r,rr,f,y] for f ∈ 𝓕 for rr ∈ 𝓡) > 0
-      @constraint(model, sum(Vars.Import[y,l,f,r,rr] * Params.TradeCosts[r,rr,f] for f ∈ 𝓕 for rr ∈ 𝓡 for l ∈ 𝓛 if Params.TradeRoute[r,rr,f,y] > 0) == Vars.AnnualTotalTradeCosts[y,r], base_name="TC1_AnnualTradeCosts_$(y)_$(r)")
+      @constraint(model, sum(Vars.Import[y,l,f,r,rr] * Params.TradeCosts[f,r,rr] for f ∈ 𝓕 for rr ∈ 𝓡 for l ∈ 𝓛 if Params.TradeRoute[r,rr,f,y] > 0) == Vars.AnnualTotalTradeCosts[y,r], base_name="TC1_AnnualTradeCosts_$(y)_$(r)")
     else
       JuMP.fix(Vars.AnnualTotalTradeCosts[y,r], 0; force=true)
     end

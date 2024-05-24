@@ -208,6 +208,8 @@ function genesysmod_simple_dispatch_two_nodes(;elmod_daystep, elmod_hourstep, so
     
     optimize!(model)
 
+    elapsed = (Dates.now() - starttime)
+
     if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
             println("Termination status:", termination_status(model), ". Computing IIS")
