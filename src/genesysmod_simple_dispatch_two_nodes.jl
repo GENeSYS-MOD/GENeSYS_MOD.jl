@@ -164,7 +164,7 @@ function genesysmod_simple_dispatch_two_nodes(;elmod_daystep, elmod_hourstep, so
         # base_name="Fix_TradeConnection_$(y)_$(f)_$(r)_$(rr)")
     end end 
 
-    GENeSYS_MOD.genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region, Vars,Emp_Sets,Settings,Switch, Maps)
+    considered_duals = GENeSYS_MOD.genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region, Vars,Emp_Sets,Settings,Switch, Maps)
     
     #
     # ####### CPLEX Options #############
@@ -227,8 +227,10 @@ function genesysmod_simple_dispatch_two_nodes(;elmod_daystep, elmod_hourstep, so
              Settings, elapsed,"dispatch2")
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch2")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch3")
         end
+        genesysmod_getspecifiedduals(model,Switch,"dispatch3", considered_duals)
+
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
             # Write variable names and values to the file

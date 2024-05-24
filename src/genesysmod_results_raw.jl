@@ -52,3 +52,15 @@ function genesysmod_getduals(model,Switch,extr_str)
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, df)
 end
+
+function genesysmod_getspecifiedduals(model,Switch,extr_str, specified_constraints)
+    df=DataFrames.DataFrame(names=[],values=[])
+    for con in specified_constraints
+        if dual(constraint_by_name(model,con)) != 0 && name(constraint_by_name(model,con)) != ""
+            push!(df,(name(constraint_by_name(model,con)),dual(constraint_by_name(model,con))))
+        end
+    end
+    fn = joinpath(Switch.resultdir, "Duals" * "_" * Switch.model_region * "_"
+             * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+    CSV.write(fn, df)
+end

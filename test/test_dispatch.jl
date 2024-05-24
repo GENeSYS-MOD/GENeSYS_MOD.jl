@@ -11,7 +11,8 @@ inputdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Inputs"),
 resultdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results"),
 data_file="RegularParameters_Europe_openENTRANCE_technoFriendly_dispatch",
 hourly_data_file = "Timeseries_Europe_openENTRANCE_technoFriendly",
-switch_raw_results = 1,
-write_reduced_timeserie = 0,
-year=2050
+# switch_raw_results = 1,
+# write_reduced_timeserie = 1,
+year=2050,
+# switch_processed_results =1
 );

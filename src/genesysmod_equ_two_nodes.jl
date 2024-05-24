@@ -22,6 +22,8 @@ Internal function used in the run process to define the model constraints.
 """
 function genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region,Vars,Emp_Sets,Settings,Switch, Maps)
 
+  considered_duals = String[]
+
   dbr = Switch.data_base_region
   𝓡 = Sets.Region_full
   𝓕 = Sets.Fuel
@@ -369,6 +371,7 @@ function genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region,Va
         @constraint(model,sum(Vars.RateOfActivity[y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)])* Params.YearSplit[l,y] ==
        (Params.Demand[y,l,f,r] + sum(Vars.RateOfActivity[y,l,t,m,r]*Params.InputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetInput[(r,f,y)])*Params.YearSplit[l,y] + Vars.NetTrade[y,l,f,r]),
         base_name="EB2_EnergyBalanceEachTS_$(y)_$(l)_$(f)_$(r)")
+        push!(considered_duals, "EB2_EnergyBalanceEachTS_$(y)_$(l)_$(f)_$(r)")
       end
     end
   end end end
@@ -1220,4 +1223,5 @@ function genesysmod_equ_two_nodes(model,Sets,Params, Params_full, full_region,Va
       base_name="Jobs1_TotalJobs_$(r)_$(y)")
     end end
   end
+  return considered_duals
 end
