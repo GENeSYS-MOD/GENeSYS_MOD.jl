@@ -12,4 +12,4 @@ resultdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results"),
 data_file="RegularParameters_Europe_openENTRANCE_technoFriendly",
 hourly_data_file = "Timeseries_Europe_openENTRANCE_technoFriendly",
 switch_raw_results = 1
-)
+);
