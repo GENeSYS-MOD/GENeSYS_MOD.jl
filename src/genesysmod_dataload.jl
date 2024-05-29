@@ -108,7 +108,7 @@ function genesysmod_dataload(Switch)
 
     GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
     Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
-    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute",dbr, 𝓡, 𝓡, 𝓕)
+    Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute_$(Switch.offshore_grid)",dbr, 𝓡, 𝓡, 𝓕)
     TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓡, 𝓡, 𝓕)
     TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
 

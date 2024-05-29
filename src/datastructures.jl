@@ -667,6 +667,7 @@ The raw results dumps the content of all variables into CSVs.\n
 additional metrics not part of the raw results.\n
 - **`write_reduced_timeserie ::Int8`** Used to enable the writing of a file containing the
  results of the time reduction algorithm.\n
+- **'offshore_grid ::String'** Type of offshore grid, used to read the correct input trade route. either None,Radial or Meshed 
 """
 struct Switch <: InputClass
     StartYear :: Int16
@@ -712,7 +713,7 @@ struct Switch <: InputClass
     switch_raw_results ::Int8
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
-
+    offshore_grid ::String
 end
 
 """
