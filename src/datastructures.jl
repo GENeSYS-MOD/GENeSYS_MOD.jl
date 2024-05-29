@@ -208,6 +208,7 @@ struct Parameters <: InputClass
     OutputActivityRatio ::JuMP.Containers.DenseAxisArray
     TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray
     RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray
+    TimeDepEfficiency ::JuMP.Containers.DenseAxisArray
 
     RegionalCCSLimit ::JuMP.Containers.DenseAxisArray
 

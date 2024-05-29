@@ -397,6 +397,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         SpecifiedDemandProfile[r,f,:,y] = SpecifiedDemandProfile[r,f,:,Sets.Year[1]]
     end end end
     
+    TimeDepEfficiency = JuMP.Containers.DenseAxisArray(ones(length(Sets.Region_full), length(Sets.Technology), length(Sets.Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Technology, Sets.Timeslice, Sets.Year)
+
     for y ∈ Sets.Year
         for t ∈ TagTechnologyToSubsets["Solar"]
             CapacityFactor[:,t,:,y] .= 0
@@ -406,8 +408,10 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
         for r ∈ Sets.Region_full 
             if length(Timeslice) < 8760
-                CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
-                CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HEAT_PUMP_GROUND"][Timeslice,r]
+                CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
+                CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
+                TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
+                TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HEAT_PUMP_GROUND"][Timeslice,r]
 
                 CapacityFactor[r,"RES_PV_Utility_Opt",:,y] = ScaledCountryData["PV_OPT"][Timeslice,r]
                 CapacityFactor[r,"RES_Wind_Onshore_Opt",:,y] = ScaledCountryData["WIND_ONSHORE_OPT"][Timeslice,r]
@@ -463,5 +467,5 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         "YearSplit" => df_YearSplit)
     end
 
-    return SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit
+    return SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, TimeDepEfficiency
 end
