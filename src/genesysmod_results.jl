@@ -51,7 +51,11 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
     end end
 
-    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    if Switch.switch_LCOE_calc == 1
+        resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    else
+        #get the duals, extract the resource cost and assign them
+    end
     
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]

@@ -36,7 +36,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 1,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, switch_LCOE_calc=0)
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
         @warn "Both elmod_nthhour and elmod_daystep/elmod_hourstep are defined.
@@ -100,7 +100,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elmod_hourstep,
     switch_raw_results,
     switch_processed_results,
-    write_reduced_timeserie)
+    write_reduced_timeserie,
+    switch_LCOE_calc)
 
     starttime= Dates.now()
     model= JuMP.Model()
