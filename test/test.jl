@@ -1,29 +1,12 @@
-import Pkg
-cd("/cluster/home/danare/git/GENeSYS-MOD/dev_jl")
-Pkg.activate(".")
-Pkg.develop(path="/cluster/home/danare/git/TMP/GENeSYS_MOD.jl")
-ENV["CPLEX_STUDIO_BINARIES"] = "/cluster/home/danare/opt/ibm/ILOG/CPLEX_Studio2211/cplex/bin/x86-64_linux/"
-Pkg.build("CPLEX")
-
-
 using GENeSYS_MOD
-using JuMP
-using Dates
-using CPLEX
+using HiGHS
 using Ipopt
-using CSV
-using Revise
-using XLSX
-using Pkg
-using DataFrames
-using PyCall
 
-
-model, data = genesysmod(;elmod_daystep = 80, elmod_hourstep = 1, solver=CPLEX.Optimizer, DNLPsolver = Ipopt.Optimizer, threads=30, 
-inputdir = joinpath("/cluster/home/danare/git/GENeSYS_MOD.data","Output", "output_excel"),
-resultdir = joinpath("/cluster/home/danare/git/GENeSYS-MOD/dev_jl","results"),
-data_file="RegularParameters_Europe_openENTRANCE_technoFriendly",
-hourly_data_file = "Timeseries_Europe_openENTRANCE_technoFriendly",
+model, data = genesysmod(;elmod_daystep = 80, elmod_hourstep = 1, solver=HiGHS.Optimizer, DNLPsolver = Ipopt.Optimizer, threads=0, 
+inputdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Inputs"),
+resultdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results"),
+data_file="RegularParameters_testdata",
+hourly_data_file = "Timeseries_testdata",
 switch_infeasibility_tech = 1,
 switch_investLimit=1,
 switch_ccs=1,
@@ -42,12 +25,9 @@ switch_peaking_minrun = 0,
 switch_employment_calculation = 0,
 switch_endogenous_employment = 0,
 employment_data_file = "",
-elmod_nthhour = 1,
 elmod_starthour = 0,
 elmod_dunkelflaute= 0,
 switch_raw_results = 0,
 switch_processed_results = 0,
 write_reduced_timeserie = 1,
-)
-
-
+);
