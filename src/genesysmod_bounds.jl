@@ -179,11 +179,13 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             end
         end
 
-        for t ∈ Sets.Technology
-            if Params.TagTechnologyToSector[t,"CHP"] == 1
-                for r ∈ Sets.Region_full
-                    if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
-                        JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
+        if "CHP" ∈ Sets.Sector
+            for t ∈ Sets.Technology 
+                if Params.TagTechnologyToSector[t,"CHP"] == 1
+                    for r ∈ Sets.Region_full
+                        if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
+                            JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
+                        end
                     end
                 end
             end
@@ -324,11 +326,10 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
-        if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+        for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HLR", "S_Heat_HLI"])
+            if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
+                JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
+            end
         end
     Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
