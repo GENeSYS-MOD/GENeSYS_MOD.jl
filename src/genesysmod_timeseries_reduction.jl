@@ -135,7 +135,7 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     df_peakingDemand = Dict()
     x_peakingDemand = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Sector)),Sets.Region_full, Sets.Sector)
 
-    for s ∈ [s for s in Sets.Sector if s != "Infeasibility"], r ∈ Sets.Region_full
+    for s ∈ intersect(Sets.Sector,keys(sector_to_tech)), r ∈ Sets.Region_full
         df_peakingDemand[s] = combine(CountryData[sector_to_tech[s]], names(CountryData[sector_to_tech[s]]) .=> maximum, renamecols=false) ./ x_averageTimeSeriesValue[sector_to_tech[s]]
         x_peakingDemand[r,s] = df_peakingDemand[s][1,r]
     end
