@@ -315,7 +315,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   end
 
   for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for l ∈ 𝓛
-    @constraint(model, model[:TotalCapacityAnnual][y,t,r] >= model[:CurtailedCapacity][r,l,t,y], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
+    @constraint(model, Vars.TotalCapacityAnnual[y,t,r] >= Vars.CurtailedCapacity[r,l,t,y], base_name="CA3c_CurtailedCapacity_$(r)_$(l)_$(t)_$(y)")
   end end end end
   print("Cstr: Cap Adequacy A3 : ",Dates.now()-start,"\n")
 
@@ -405,7 +405,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
       for l ∈ 𝓛
-        @constraint(model, (model[:Import][𝓨[i],l,"Power",r,rr]) <= model[:TotalTradeCapacity][𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
+        @constraint(model, (Vars.Import[𝓨[i],l,"Power",r,rr]) <= Vars.TotalTradeCapacity[𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport_$(𝓨[i])_$(l)_Power_$(r)_$(rr)")
       end
       for f ∈ 𝓕
         if Params.TradeCapacityGrowthCosts[r,rr,f] != 0
@@ -422,7 +422,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 
     if Switch.switch_dispatch == 0
       for f ∈ 𝓕
-        if Params.TradeRoute[r,rr,f,𝓨[i]] > 0
+        #if Params.TradeRoute[r,rr,f,𝓨[i]] > 0
           if 𝓨[i] == Switch.StartYear
             @constraint(model, Vars.TotalTradeCapacity[𝓨[i],f,r,rr] == Params.TradeCapacity[r,rr,f,𝓨[i]], base_name="TrC2a_TotalTradeCapacityStartYear_$(𝓨[i])_$(f)_$(r)_$(rr)")
           elseif 𝓨[i] > Switch.StartYear
@@ -434,7 +434,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
             @constraint(model, (Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],f,r,rr] >= Vars.NewTradeCapacity[𝓨[i],f,r,rr], 
             base_name="TrC3_NewTradeCapacityLimitPowerLines_$(𝓨[i])_Power_$(r)_$(rr)")
           end
-        end
+        #end
       end
     end
 
@@ -464,7 +464,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     end
 
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0
-      JuMP.fix(model[:NewTradeCapacity][𝓨[i],"Power",r,rr],0; force=true)
+      JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
 
 #=     for f ∈ 𝓕
