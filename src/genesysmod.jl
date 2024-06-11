@@ -131,7 +131,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Including Equations #############
     #
 
-    @time genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
+    considered_duals = genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
     #
     # ####### CPLEX Options #############
     #
@@ -200,6 +200,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"DE_run")
         end
+        genesysmod_getspecifiedduals(model,Switch,"run_FR_Bordeaux", considered_duals)
+
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
             # Write variable names and values to the file
