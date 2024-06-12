@@ -52,3 +52,41 @@ function genesysmod_getduals(model,Switch,extr_str)
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, df)
 end
+
+function genesysmod_getspecifiedduals(model,Switch,extr_str, specified_constraints)
+    df=DataFrames.DataFrame(names=[],values=[])
+    for con in specified_constraints
+        if dual(constraint_by_name(model,con)) != 0 && name(constraint_by_name(model,con)) != ""
+            push!(df,(name(constraint_by_name(model,con)),dual(constraint_by_name(model,con))))
+        end
+    end
+    date = Dates.now()
+    formatted_date = Dates.format(date, "mmdd_HHMM")
+    fn = joinpath(Switch.resultdir, "Selected_Duals" * "_" * Switch.model_region * "_"
+             * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+    CSV.write(fn, df)
+end
+
+function genesysmod_getdualsbyname(model,Switch,extr_str, constr_name)
+    df=DataFrames.DataFrame(names=[],values=[])
+    constr_list=[]
+    for (F, S) in list_of_constraint_types(model)
+        for con in all_constraints(model, F, S)
+            if occursin(constr_name, name(con))
+                push!(constr_list,con)
+            end
+        end
+    end
+    for con in constr_list
+        if dual(con) != 0
+            push!(df,(name(con),dual(con)))
+        end
+    end
+    date = Dates.now()
+    formatted_date = Dates.format(date, "mmdd_HHMM")
+    fn = joinpath(Switch.resultdir, constr_name * "_" * Switch.model_region * "_"
+             * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+    CSV.write(fn, df)
+
+    return df
+end

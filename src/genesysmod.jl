@@ -194,12 +194,12 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
-             Settings, elapsed,"dispatch")
+             Settings, elapsed,(switch_dispatch == 1 ? "dispatch" : ""))
             # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
             #  Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,(switch_dispatch == 1 ? "dispatch" : ""))
         end
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")

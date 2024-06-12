@@ -711,7 +711,7 @@ struct Switch <: InputClass
     switch_raw_results ::Int8
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
-
+    switch_LCOE_calc ::Int8
 end
 
 """
