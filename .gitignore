@@ -2,3 +2,7 @@ docs/build/
 test/script.jl
 test/TestData/Results
 debug_scripts
+
+Solution_julia.sol
+thoughts.txt
+gurobi.opt
