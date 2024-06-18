@@ -36,7 +36,7 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 0,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, extr_str_results = "one_node_dispatch", extr_str_dispatch = "run")
     
     elmod_daystep = 0
     elmod_hourstep = 1
@@ -91,7 +91,9 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     elmod_hourstep,
     switch_raw_results,
     switch_processed_results,
-    write_reduced_timeserie)
+    write_reduced_timeserie,
+    extr_str_results,
+    extr_str_dispatch)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -127,11 +129,11 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     # ####### Fix Investment Variables #############
     #
     # read investment results for relevant variables
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_DE_run.csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
     tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_DE_run.csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
     tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_DE_run.csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
     tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
     tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
@@ -219,12 +221,13 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
-             Settings, elapsed,"dispatch")
+             Settings, elapsed,Switch.extr_str_results)
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"DE_dispatch")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,Switch.extr_str_results)
         end
-        genesysmod_getspecifiedduals(model,Switch,"DE_dispatch", considered_duals)
+        genesysmod_getspecifiedduals(model,Switch,Switch.extr_str_results, considered_duals)
+
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
             # Write variable names and values to the file

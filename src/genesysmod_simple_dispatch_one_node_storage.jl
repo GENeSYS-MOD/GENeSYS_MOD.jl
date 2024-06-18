@@ -36,7 +36,7 @@ function genesysmod_simple_dispatch_one_node_storage(;elmod_daystep, elmod_hours
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 0,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, extr_str_results = "one_node_storage_dispatch", extr_str_dispatch = "run")
     
     elmod_daystep = 0
     elmod_hourstep = 1
@@ -91,7 +91,9 @@ function genesysmod_simple_dispatch_one_node_storage(;elmod_daystep, elmod_hours
     elmod_hourstep,
     switch_raw_results,
     switch_processed_results,
-    write_reduced_timeserie)
+    write_reduced_timeserie,
+    extr_str_results,
+    extr_str_dispatch)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -128,16 +130,16 @@ function genesysmod_simple_dispatch_one_node_storage(;elmod_daystep, elmod_hours
     # read investment results for relevant variables (from a run on full Europe)
     
     # keeping only the capacities for DE
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_full_run_30.csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
     tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
     
     # aggregating the trade capacities from and to DE (for the power), to size the storage
     col_names = ["Year", "Fuel","Region1","Region2","Value"]
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_full_run_30.csv"), DataFrame, header=col_names, skipto=2)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame, header=col_names, skipto=2)
     in_data_filtered = in_data[in.(in_data.Year, Ref(Sets.Year)) .& (in_data.Fuel .== "Power"),:]
     trade_capacity_in = sum(in_data_filtered[in.(in_data_filtered.Region2,Ref(Sets.Region_full)),:].Value)
 
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_full_run_30.csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
     tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
 
     # make constraints fixing investments
@@ -165,9 +167,9 @@ function genesysmod_simple_dispatch_one_node_storage(;elmod_daystep, elmod_hours
 
     # determining the ratio between charging and discharging the "trade storage" with the import and export
     col_names = ["Year", "Timeslice", "Fuel", "Region1", "Region2", "Value"]
-    in_data_import = CSV.read(joinpath(Switch.resultdir, "Import_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_full_run_30.csv"), DataFrame, header=col_names, skipto=2)
+    in_data_import = CSV.read(joinpath(Switch.resultdir, "Import_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame, header=col_names, skipto=2)
     sum_import = sum(in_data_import[in.(in_data_import.Region2, Ref(Sets.Region_full)) .& (in_data_import.Fuel .== "Power") .& in.(in_data_import.Year, Ref(Sets.Year)),:].Value)
-    in_data_export = CSV.read(joinpath(Switch.resultdir, "Export_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_full_run_30.csv"), DataFrame, header=col_names, skipto=2)
+    in_data_export = CSV.read(joinpath(Switch.resultdir, "Export_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame, header=col_names, skipto=2)
     sum_export = sum(in_data_export[in.(in_data_export.Region1, Ref(Sets.Region_full)) .& (in_data_export.Fuel .== "Power") .& in.(in_data_export.Year, Ref(Sets.Year)),:].Value)
     
     storage_ratio = sum_export/max(sum_import,0.001)
@@ -233,9 +235,9 @@ function genesysmod_simple_dispatch_one_node_storage(;elmod_daystep, elmod_hours
              Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,"one_node_storage_30_test")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,Switch.extr_str_results)
         end
-        genesysmod_getspecifiedduals(model,Switch,"one_node_storage_30_test", considered_duals)
+        genesysmod_getspecifiedduals(model,Switch,Switch.extr_str_results, considered_duals)
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
             # Write variable names and values to the file
