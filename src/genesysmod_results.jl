@@ -32,6 +32,19 @@ function merge_df(df, dict_col_value, final_df, colnames)
     end
 end
 
+function resourcecosts_from_duals(model, Sets, Switch, Settings, extr_str)
+    df_duals = genesysmod_getdualsbyname(model,Switch,extr_str, "EB2_EnergyBalanceEachTS")
+    cols = [:constraint_type, :year, :timestep, :fuel, :region]
+    transform!(df_duals, :names => ByRow(x -> split(x, '|')) => cols)
+    select!(df_duals, Not(:names,:constraint_type))
+    df_duals = df_duals[!, [:region, :fuel, :year, :timestep, :values]]
+    df_duals=combine(groupby(df_duals, [:region, :fuel, :year]), :values => mean)
+    df_duals.year = parse.(Int64,df_duals.year)
+    rename!(df_duals,:values_mean => :y)
+    resourcecosts = create_daa(df_duals,"","", Sets.Region_full, Sets.Fuel,  Sets.Year)
+    return resourcecosts
+end
+
 function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed, extr_str)
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
@@ -51,7 +64,11 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
     end end
 
-    resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    if Switch.switch_LCOE_calc == 1
+        resourcecosts, output_emissionintensity = genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Settings, z_fuelcosts, LoopSetOutput, LoopSetInput, extr_str)
+    else
+        resourcecosts = resourcecosts_from_duals(model, Sets, Switch, Settings, extr_str)
+    end
     
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]

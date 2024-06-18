@@ -1,8 +1,6 @@
 docs/build/
 test/script.jl
-<<<<<<< HEAD
 test/script2.jl
-=======
 test/TestData/Results
 debug_scripts
->>>>>>> main
+test/test.jl

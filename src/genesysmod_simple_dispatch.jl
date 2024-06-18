@@ -30,7 +30,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
         set_peaking_res_cf=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
         switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",  
-        elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0, offshore_grid="None")
+        elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0, offshore_grid="None", switch_LCOE_calc=0)
     
     elmod_daystep = 0
     elmod_hourstep = 1
@@ -83,7 +83,8 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     switch_raw_results,
     switch_processed_results,
     write_reduced_timeserie,
-    offshore_grid)
+    offshore_grid,
+    switch_LCOE_calc)
 
     starttime= Dates.now()
     model= JuMP.Model()

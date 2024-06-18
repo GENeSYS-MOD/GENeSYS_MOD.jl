@@ -56,6 +56,11 @@ function genesysmod_dataload(Switch)
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
     TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
     TagRegionToSubsets = read_subsets(tag_data, "Par_TagRegionToSubsets")
+
+    if Switch.switch_infeasibility_tech == 1
+        TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+        "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"]
+    end
     
     # Step 2: Read parameters from regional file  -> now includes World values
     StartYear = Switch.StartYear
@@ -74,7 +79,6 @@ function genesysmod_dataload(Switch)
 
     AvailabilityFactor = create_daa(in_data, "Par_AvailabilityFactor",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
     InputActivityRatio = create_daa(in_data, "Par_InputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
-
     OutputActivityRatio = create_daa(in_data, "Par_OutputActivityRatio",dbr, 𝓡, 𝓣, 𝓕, 𝓜, 𝓨; inherit_base_world=true)
 
     CapitalCost = create_daa(in_data, "Par_CapitalCost",dbr, 𝓡, 𝓣, 𝓨; inherit_base_world=true)
@@ -163,7 +167,6 @@ function genesysmod_dataload(Switch)
     CommissionedTradeCapacity = JuMP.Containers.DenseAxisArray(zeros(length(𝓡), length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓡, 𝓕 , 𝓨)
 
     SelfSufficiency = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓕), length(𝓡)), 𝓨, 𝓕 , 𝓡)
-
 
     # delete world region from region set
     deleteat!(Sets.Region_full,findall(x->x=="World",Sets.Region_full))
@@ -255,7 +258,7 @@ function genesysmod_dataload(Switch)
     # ####### Load from hourly Data #############
     #
     
-    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
+    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, TimeDepEfficiency = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡
         for f ∈ 𝓕
@@ -288,14 +291,14 @@ function genesysmod_dataload(Switch)
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
 
-        CapacityToActivityUnit[:,TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
+        CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         FixedCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         CapitalCost[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         VariableCost[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
         AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 1
         CapacityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-        OperationalLife[:,TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        OperationalLife[TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         EmissionActivityRatio[:,TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
     end
 
@@ -303,7 +306,7 @@ function genesysmod_dataload(Switch)
     SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     TagDispatchableTechnology,
-    RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
+    RegionalBaseYearProduction,TimeDepEfficiency,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
     StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
     TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,

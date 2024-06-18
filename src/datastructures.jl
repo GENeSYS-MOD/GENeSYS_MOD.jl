@@ -208,6 +208,7 @@ struct Parameters <: InputClass
     OutputActivityRatio ::JuMP.Containers.DenseAxisArray
     TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray
     RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray
+    TimeDepEfficiency ::JuMP.Containers.DenseAxisArray
 
     RegionalCCSLimit ::JuMP.Containers.DenseAxisArray
 
@@ -714,6 +715,7 @@ struct Switch <: InputClass
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     offshore_grid ::String
+    switch_LCOE_calc ::Int8
 end
 
 """

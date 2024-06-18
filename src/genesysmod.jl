@@ -36,7 +36,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 1,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0, offshore_grid = "None")
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, offshore_grid = "None", switch_LCOE_calc=0)
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
         @warn "Both elmod_nthhour and elmod_daystep/elmod_hourstep are defined.
@@ -101,7 +101,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_raw_results,
     switch_processed_results,
     write_reduced_timeserie,
-    offshore_grid)
+    offshore_grid,
+    switch_LCOE_calc)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -193,12 +194,13 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
-            genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
-             Settings, elapsed,"")
+            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
+             Settings, elapsed,(switch_dispatch == 1 ? "dispatch" : ""))
+            # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
+            #  Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
-            genesysmod_results_raw(model, Switch,"")
-            genesysmod_getduals(model,Switch,"")
+            GENeSYS_MOD.genesysmod_results_raw(model, Switch,(switch_dispatch == 1 ? "dispatch" : ""))
         end
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
