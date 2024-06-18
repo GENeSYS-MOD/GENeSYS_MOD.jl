@@ -39,6 +39,18 @@ function genesysmod_results_raw(model, Switch,extr_str)
     end
 end
 
+"""
+Write the values of each element of VarPar to CSV files.
+"""
+function genesysmod_write_varpar(VarPar, Switch,extr_str)
+    Threads.@threads for i in 1:length(fieldnames(typeof(VarPar)))
+        v = getfield(VarPar, i)
+        fn = joinpath(Switch.resultdir, string(fieldnames(typeof(VarPar))[i]) * "_" * Switch.model_region * "_"
+             * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+        CSV.write(fn, JuMP.Containers.rowtable(value, v)) 
+    end
+end
+
 function genesysmod_getduals(model,Switch,extr_str)
     df=DataFrames.DataFrame(names=[],values=[])
     for (F, S) in list_of_constraint_types(model)
