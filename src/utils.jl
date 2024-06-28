@@ -469,3 +469,12 @@ function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=
         end
     end
 end
+
+function write_struct_to_file(s, filename)
+    open(filename, "w") do io
+        for name in fieldnames(typeof(s))
+            value = getfield(s, name)
+            write(io, "$name: $value\n")
+        end
+    end
+end

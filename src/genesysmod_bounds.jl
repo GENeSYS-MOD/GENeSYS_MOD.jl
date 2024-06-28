@@ -197,7 +197,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     ### Offshore Wind nodes
 
-    for r ∈ Params.TagRegionToSubsets["OffshoreNodes"]
+    for r ∈ intersect(Sets.Region_full,Params.TagRegionToSubsets["OffshoreNodes"])
         for t ∈ Sets.Technology
             if (t ∉ Params.TagTechnologyToSubsets["Offshore"])  && (t ∉ ["X_Electrolysis", "D_Gas_H2", "S_Gas_H2"])
                 Params.TotalAnnualMaxCapacity[r,t,:] .= 0
