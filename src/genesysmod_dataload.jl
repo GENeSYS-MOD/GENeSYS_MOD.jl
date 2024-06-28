@@ -110,10 +110,10 @@ function genesysmod_dataload(Switch)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel",dbr, 𝓕, 𝓔)
     RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit",dbr, 𝓡, 𝓔, 𝓨)
 
-    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
+    GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCap_$(Switch.offshore_grid)",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
     Readin_PowerTradeCapacity = create_daa(in_data,"Par_TradeCapacity",dbr, 𝓡, 𝓡, 𝓕, 𝓨)
     Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute_$(Switch.offshore_grid)",dbr, 𝓡, 𝓡, 𝓕)
-    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapGrowthCosts_$(Switch.offshore_grid)",dbr, 𝓡, 𝓡, 𝓕)
+    TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts",dbr, 𝓡, 𝓡, 𝓕)
     TradeCosts = create_daa(in_data,"Par_TradeCosts",dbr, 𝓕, 𝓡, 𝓡)
 
     ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity",dbr, 𝓡, 𝓣, 𝓨)
