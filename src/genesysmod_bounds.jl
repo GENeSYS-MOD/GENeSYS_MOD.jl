@@ -27,7 +27,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
 
     sub=["Power", "Heat_Low_Residential", "Heat_Low_Industrial", "Heat_Medium_Industrial",
-     "Heat_High_Industrial", "Cool_Low_Building"]
+     "Heat_High_Industrial", "Cool_Low_Building", "Heat_Low_Building", "Heat_Low_DistrictHeat"]
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
