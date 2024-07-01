@@ -200,7 +200,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"DE_run")
         end
-        genesysmod_getspecifiedduals(model,Switch,"run_FR_Bordeaux", considered_duals)
+        genesysmod_getspecifiedduals(model,Switch,"DE_run", considered_duals)
 
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
