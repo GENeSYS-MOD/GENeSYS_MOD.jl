@@ -402,14 +402,16 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
 
     ### Trade Capacities for H2 and Natural Gas, when initially no capacities existed, so that the model has the ability to build additional capacities
 
-    if Params.TradeRoute[r,rr,"Gas_Natural",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]] > 0
-      @constraint(model, (Params.TradeCapacity[r,"Gas_Natural",𝓨[i],rr] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
+    if Params.TradeRoute[r,rr,"Gas_Natural",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]] > 0 && i > 1
+      @constraint(model, (Params.TradeCapacity[r, rr,"Gas_Natural",𝓨[i]] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
       base_name="TrC4a_NewTradeCapacityLimitNatGas_$(𝓨[i])_Gas_Natural_$(r)_$(rr)")
     end
-    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0
-      @constraint(model, (Params.TradeCapacity[r,"H2",𝓨[i],rr] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
+
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0 && i > 1
+      @constraint(model, (Params.TradeCapacity[r,rr,"H2",𝓨[i]] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
       base_name="TrC5a_NewTradeCapacityLimitH2_$(𝓨[i])_H2_$(r)_$(rr)")
     end
+
     for f ∈ 𝓕
       if Params.TradeRoute[r,rr,f,𝓨[i]] == 0
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)

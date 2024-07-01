@@ -22,17 +22,17 @@ Internal function used in the run process to set run settings such as dicount ra
 """
 function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   
-  for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-    Params.TradeCapacityGrowthCosts[r,rr,"Gas_Natural"] = 0.0039
-    Params.TradeCapacityGrowthCosts[r,rr,"H2"] = 0.0053
-    Params.TradeCapacityGrowthCosts[r,rr,"LSG"] = 0.0053
-    Params.TradeCapacityGrowthCosts[r,rr,"LH2"] = 0.0053
-  end end end
+  # for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
+  #   Params.TradeCapacityGrowthCosts[r,rr,"Gas_Natural"] = 0.0039
+  #   Params.TradeCapacityGrowthCosts[r,rr,"H2"] = 0.0053
+  #   Params.TradeCapacityGrowthCosts[r,rr,"LSG"] = 0.0053
+  #   Params.TradeCapacityGrowthCosts[r,rr,"LH2"] = 0.0053
+  # end end end
   
-  for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full  
-    Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",y] = 0.1
-    Params.GrowthRateTradeCapacity[r,rr,"H2",y] = 0.15
-  end end end end
+  # for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full  
+  #   Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",y] = 0.1
+  #   Params.GrowthRateTradeCapacity[r,rr,"H2",y] = 0.15
+  # end end end end
 
     
   for y ∈ Sets.Year for t ∈ Sets.Technology for r ∈ Sets.Region_full
