@@ -323,7 +323,7 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
         OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
+        #OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 

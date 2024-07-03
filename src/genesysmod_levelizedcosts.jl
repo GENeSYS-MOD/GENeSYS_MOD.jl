@@ -33,7 +33,6 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Set
     TierFive = [
     "Mobility_Passenger",
     "Mobility_Freight",
-    "Heat_Low_Residential",
     "Heat_Low_Industrial",
     "Heat_Medium_Industrial",
     "Heat_High_Industrial"]

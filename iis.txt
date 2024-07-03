@@ -1,9 +1,0 @@
-CA1_TotalNewCapacity_2018_HLR_Heatpump_Aerial_ES : -NewCapacity[2018,HLR_Heatpump_Aerial,ES] + AccumulatedNewCapacity[2018,HLR_Heatpump_Aerial,ES] == 0
-CA2_TotalAnnualCapacity_2018_HLR_Heatpump_Aerial_ES : AccumulatedNewCapacity[2018,HLR_Heatpump_Aerial,ES] - TotalCapacityAnnual[2018,HLR_Heatpump_Aerial,ES] == 0
-CA3b_RateOfTotalActivity_ES_7692_HLR_Heatpump_Aerial_2018 : -30.90528 TotalCapacityAnnual[2018,HLR_Heatpump_Aerial,ES] + RateOfActivity[2018,7692,HLR_Heatpump_Aerial,1,ES] + RateOfActivity[2018,7692,HLR_Heatpump_Aerial,2,ES] + 31.536 CurtailedCapacity[ES,7692,HLR_Heatpump_Aerial,2018] + DispatchDummy[ES,7692,HLR_Heatpump_Aerial,2018] == 0
-EB2_EnergyBalanceEachTS_2018_7692_Cool_Low_Building_ES : 0.2 RateOfActivity[2018,7692,HLR_Heatpump_Aerial,2,ES] - NetTrade[2018,7692,Cool_Low_Building,ES] == 5.29356975337436
-NewCapacity[2018,HLR_Heatpump_Aerial,ES] == 0
-NetTrade[2018,7692,Cool_Low_Building,ES] == 0
-RateOfActivity[2018,7692,HLR_Heatpump_Aerial,1,ES] >= 0
-CurtailedCapacity[ES,7692,HLR_Heatpump_Aerial,2018] >= 0
-DispatchDummy[ES,7692,HLR_Heatpump_Aerial,2018] >= 0

@@ -289,7 +289,7 @@ function genesysmod_dataload_one_node_storage(Switch)
         OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
+        #OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
         OutputActivityRatio[:,"D_Trade_Storage_Power","Power",2,:] .= 1
         InputActivityRatio[:,"D_Trade_Storage_Power","Power",1,:] .= 1
