@@ -481,10 +481,12 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   ##############* Pipeline-specific Capacity Accounting #############
 
   #$ifthen.equ_hydrogen_tradecapacity %switch_hydrogen_blending_share% == 0
-  for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡 for rr ∈ 𝓡
-    @constraint(model, sum(Vars.Import[y,l,f,rr,r] for f ∈ setdiff(intersect(𝓕,Params.TagFuelToSubsets["GasFuels"]),["H2"])) <= Vars.TotalTradeCapacity[y,"Gas_Natural",r,rr]*Params.YearSplit[l,y],
-    base_name="TrPA1a_TradeCapacityPipelineAccounting|$(y)|$(l)|$(r)|$(rr)")
-  end end end end
+
+  #for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡 for rr ∈ 𝓡
+  #  @constraint(model, sum(Vars.Import[y,l,f,rr,r] for f ∈ setdiff(intersect(𝓕,Params.TagFuelToSubsets["GasFuels"]),["H2"])) <= Vars.TotalTradeCapacity[y,"Gas_Natural",r,rr]*Params.YearSplit[l,y],
+  #  base_name="TrPA1a_TradeCapacityPipelineAccounting|$(y)|$(l)|$(r)|$(rr)")
+  #end end end end
+
   #$else.equ_hydrogen_tradecapacity
   #scalar dedicated_h2;
   #dedicated_h2 = %switch_hydrogen_blending_share%;
