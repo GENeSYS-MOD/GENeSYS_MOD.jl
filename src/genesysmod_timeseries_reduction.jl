@@ -68,7 +68,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     "WIND_OFFSHORE","WIND_OFFSHORE_SHALLOW","WIND_OFFSHORE_DEEP",
     "MOBILITY_PSNG",
     "HEAT_LOW", "HEAT_HIGH",
-    "HEAT_PUMP_AIR", "HEAT_PUMP_GROUND","HYDRO_ROR","PV_THSAT","PV_HSAT","PV_DAT","PV_VSAT"]
+    "HEAT_PUMP_AIR", "HEAT_PUMP_GROUND","HYDRO_ROR","PV_THSAT","PV_HSAT","PV_DAT","PV_VSAT", 
+    "BPV_90", "BPV_OPT", "BPV_HSAT", "BPV_THSAT", "BPV_VSAT", "BPV_DAT"]
 
     Timeslice_Full = 1:8760
 
@@ -96,6 +97,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     CountryData_PV_THSAT = DataFrame(XLSX.gettable(hourly_data["TS_PV_THSAT"]))
     CountryData_PV_VSAT = DataFrame(XLSX.gettable(hourly_data["TS_PV_VSAT"]))
     CountryData_PV_DAT = DataFrame(XLSX.gettable(hourly_data["TS_PV_DAT"]))
+    CountryData_BPV_90 = DataFrame(XLSX.gettable(hourly_data["TS_BPV_90"]))
+    CountryData_BPV_Opt = DataFrame(XLSX.gettable(hourly_data["TS_BPV_OPT"]))
+    CountryData_BPV_HSAT = DataFrame(XLSX.gettable(hourly_data["TS_BPV_HSAT"]))
+    CountryData_BPV_THSAT = DataFrame(XLSX.gettable(hourly_data["TS_BPV_THSAT"]))
+    CountryData_BPV_VSAT = DataFrame(XLSX.gettable(hourly_data["TS_BPV_VSAT"]))
+    CountryData_BPV_DAT = DataFrame(XLSX.gettable(hourly_data["TS_BPV_DAT"]))
 
     CountryData["LOAD"] = CountryData_Load
     CountryData["PV_AVG"] = CountryData_PV_Avg
@@ -105,6 +112,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     CountryData["PV_THSAT"] = CountryData_PV_THSAT
     CountryData["PV_VSAT"] = CountryData_PV_VSAT
     CountryData["PV_DAT"] = CountryData_PV_DAT
+    CountryData["BPV_90"] = CountryData_BPV_90
+    CountryData["BPV_OPT"] = CountryData_BPV_Opt
+    CountryData["BPV_HSAT"] = CountryData_BPV_HSAT
+    CountryData["BPV_THSAT"] = CountryData_BPV_THSAT
+    CountryData["BPV_VSAT"] = CountryData_BPV_VSAT
+    CountryData["BPV_DAT"] = CountryData_BPV_DAT
     CountryData["WIND_ONSHORE_AVG"] = CountryData_Wind_Onshore_Avg
     CountryData["WIND_ONSHORE_INF"] = CountryData_Wind_Onshore_Inf
     CountryData["WIND_ONSHORE_OPT"] = CountryData_Wind_Onshore_Opt
@@ -181,6 +194,13 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         Dunkelflaute["PV_VSAT"][lll,:] .= 0.5
         Dunkelflaute["PV_DAT"][lll,:] .= 0.5
 
+        Dunkelflaute["BPV_90"][lll,:] .= 0.5
+        Dunkelflaute["BPV_OPT"][lll,:] .= 0.5
+        Dunkelflaute["BPV_HSAT"][lll,:] .= 0.5
+        Dunkelflaute["BPV_THSAT"][lll,:] .= 0.5
+        Dunkelflaute["BPV_VSAT"][lll,:] .= 0.5
+        Dunkelflaute["BPV_DAT"][lll,:] .= 0.5
+
         j+=1
         #Depending on the length of the total time set the length of the dunkelflaute are included
         if Switch.elmod_daystep == 0
@@ -219,6 +239,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     smoothing_range["PV_THSAT"] = 1
     smoothing_range["PV_VSAT"] = 1
     smoothing_range["PV_DAT"] = 1
+    smoothing_range["BPV_90"] = 1
+    smoothing_range["BPV_OPT"] = 1
+    smoothing_range["BPV_HSAT"] = 1
+    smoothing_range["BPV_THSAT"] = 1
+    smoothing_range["BPV_VSAT"] = 1
+    smoothing_range["BPV_DAT"] = 1
     smoothing_range["WIND_ONSHORE_OPT"] = 2
     smoothing_range["WIND_OFFSHORE"] = 2
     smoothing_range["WIND_OFFSHORE_SHALLOW"] = 2
@@ -253,6 +279,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         smoothing_range["PV_THSAT"] = 1
         smoothing_range["PV_VSAT"] = 1
         smoothing_range["PV_DAT"] = 1
+        smoothing_range["BPV_90"] = 1
+        smoothing_range["BPV_OPT"] = 1
+        smoothing_range["BPV_HSAT"] = 1
+        smoothing_range["BPV_THSAT"] = 1
+        smoothing_range["BPV_VSAT"] = 1
+        smoothing_range["BPV_DAT"] = 1
         smoothing_range["WIND_ONSHORE_OPT"] = 4
         smoothing_range["WIND_OFFSHORE"] = 4
         smoothing_range["WIND_OFFSHORE_SHALLOW"] = 4
@@ -277,6 +309,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         smoothing_range["PV_THSAT"] = 1
         smoothing_range["PV_VSAT"] = 1
         smoothing_range["PV_DAT"] = 1
+        smoothing_range["BPV_90"] = 1
+        smoothing_range["BPV_OPT"] = 1
+        smoothing_range["BPV_HSAT"] = 1
+        smoothing_range["BPV_THSAT"] = 1
+        smoothing_range["BPV_VSAT"] = 1
+        smoothing_range["BPV_DAT"] = 1
         smoothing_range["WIND_ONSHORE_OPT"] = 3
         smoothing_range["WIND_OFFSHORE"] = 3
         smoothing_range["WIND_OFFSHORE_SHALLOW"] = 3
@@ -385,7 +423,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
 
     sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
     capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
-    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_HSAT","RES_PV_Utility_THSAT","RES_PV_Utility_VSAT","RES_PV_Utility_DAT","RES_Hydro_Small"]
+    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_HSAT","RES_PV_Utility_THSAT","RES_PV_Utility_VSAT","RES_PV_Utility_DAT","RES_BPV_Utility_90", "RES_BPV_Utility_Opt", "RES_BPV_Utility_HSAT", 
+    "RES_BPV_Utility_THSAT", "RES_BPV_Utility_VSAT", "RES_BPV_Utility_DAT","RES_Hydro_Small"]
 
     SpecifiedDemandProfile = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Fuel), length(Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Fuel, Timeslice, Sets.Year)
     CapacityFactor = JuMP.Containers.DenseAxisArray(ones(length(Sets.Region_full), length(Sets.Technology), length(Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Technology, Timeslice, Sets.Year)
@@ -446,6 +485,13 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
                 CapacityFactor[r,"RES_PV_Utility_VSAT",:,y] = ScaledCountryData["PV_VSAT"][Timeslice,r]
                 CapacityFactor[r,"RES_PV_Utility_DAT",:,y] = ScaledCountryData["PV_DAT"][Timeslice,r]
 
+                CapacityFactor[r,"RES_BPV_Utility_90",:,y] = ScaledCountryData["BPV_90"][Timeslice,r]
+                CapacityFactor[r,"RES_BPV_Utility_Opt",:,y] = ScaledCountryData["BPV_OPT"][Timeslice,r]
+                CapacityFactor[r,"RES_BPV_Utility_HSAT",:,y] = ScaledCountryData["BPV_HSAT"][Timeslice,r]
+                CapacityFactor[r,"RES_BPV_Utility_THSAT",:,y] = ScaledCountryData["BPV_THSAT"][Timeslice,r]
+                CapacityFactor[r,"RES_BPV_Utility_VSAT",:,y] = ScaledCountryData["BPV_VSAT"][Timeslice,r]
+                CapacityFactor[r,"RES_BPV_Utility_DAT",:,y] = ScaledCountryData["BPV_DAT"][Timeslice,r]
+
                 CapacityFactor[r,"RES_Hydro_Small",:,y] = ScaledCountryData["HYDRO_ROR"][Timeslice,r]
             else
                 CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
@@ -467,6 +513,13 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
                 CapacityFactor[r,"RES_PV_Utility_THSAT",:,y] = CountryData["PV_THSAT"][:,r]
                 CapacityFactor[r,"RES_PV_Utility_VSAT",:,y] = CountryData["PV_VSAT"][:,r]
                 CapacityFactor[r,"RES_PV_Utility_DAT",:,y] = CountryData["PV_DAT"][:,r]
+
+                CapacityFactor[r,"RES_BPV_Utility_90",:,y] = CountryData["BPV_90"][:,r]
+                CapacityFactor[r,"RES_BPV_Utility_Opt",:,y] = CountryData["BPV_OPT"][:,r]
+                CapacityFactor[r,"RES_BPV_Utility_HSAT",:,y] = CountryData["BPV_HSAT"][:,r]
+                CapacityFactor[r,"RES_BPV_Utility_THSAT",:,y] = CountryData["BPV_THSAT"][:,r]
+                CapacityFactor[r,"RES_BPV_Utility_VSAT",:,y] = CountryData["BPV_VSAT"][:,r]
+                CapacityFactor[r,"RES_BPV_Utility_DAT",:,y] = CountryData["BPV_DAT"][:,r]
 
                 CapacityFactor[r,"RES_Hydro_Small",:,y] = CountryData["HYDRO_ROR"][:,r]
             end
