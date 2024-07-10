@@ -449,7 +449,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[i])|H2|$(r)|$(rr)")
     end
     for f ∈ 𝓕
-      if Params.TradeRoute[r,rr,f,𝓨[i]] == 0
+      if Params.TradeRoute[r,rr,f,𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] == 0 || i == 1
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
       end
       if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != "Power"
@@ -463,7 +463,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       base_name="TrC6_SymmetricalTransmissionExpansion|$(𝓨[i])|$(r)|$(rr)")
     end
 
-    if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0
+    if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0 || i==1
       JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
 
