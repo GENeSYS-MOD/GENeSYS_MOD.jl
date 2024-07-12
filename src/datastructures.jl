@@ -18,6 +18,8 @@
 #
 # #############################################################
 
+using DataFrames
+
 """
 InputClass - Abstract type for the inputs
 """
@@ -222,6 +224,8 @@ struct Parameters <: InputClass
     ResidualStorageCapacity ::JuMP.Containers.DenseAxisArray
     TechnologyToStorage ::JuMP.Containers.DenseAxisArray
     TechnologyFromStorage ::JuMP.Containers.DenseAxisArray
+
+    TagDailyOrSeasonalStorage ::DataFrame
 
     StorageMaxCapacity ::JuMP.Containers.DenseAxisArray
 

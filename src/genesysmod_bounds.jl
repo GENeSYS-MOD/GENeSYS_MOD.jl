@@ -27,7 +27,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
 
     sub=["Power", "Heat_Low_Industrial", "Heat_Medium_Industrial",
-     "Heat_High_Industrial", "Cool_Low_Building", "Heat_Low_Building", "Heat_Low_DistrictHeat"] # "Heat_Low_DistrictHeat"
+         "Heat_High_Industrial", "Cool_Low_Building", "Heat_Low_Building", "Heat_Low_DistrictHeat"] # "Heat_Low_DistrictHeat"
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
@@ -322,14 +322,38 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         end
     end end end
 
+    if Switch.switch_dispatch==0 
+        for timestamp ∈ Sets.Timeslice for storage_row in eachrow(Params.TagDailyOrSeasonalStorage)
 
-    for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
+            if storage_row.IsDaily == 1 && (timestamp - Sets.Timeslice[1]) % 24 == 0
+                
+                for region ∈ Sets.Region_full for year ∈ Sets.Year
+                    JuMP.fix(Vars.StorageLevelTSStart[storage_row.Storage,year,timestamp,region], 0; force = true)
+                end end
+
+            end
+
+        end end
+    end
+
+    for region ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for year ∈ Sets.Year
+    Params.CapacityFactor[region,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
+    Params.CapacityFactor[region,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
+    Params.CapacityFactor[region,"RES_CSP",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Opt",Sets.Timeslice[i],year]
+    Params.CapacityFactor[region,"HLR_Solar_Thermal",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
+    Params.CapacityFactor[region,"HLI_Solar_Thermal",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
+    end end end
+
+
+    """for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
         if Switch.switch_dispatch==0
             if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
                 JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
                 JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
                 JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
                 JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+                JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLB",y,Sets.Timeslice[i],r], 0; force = true)
+                JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLDH",y,Sets.Timeslice[i],r], 0; force = true)
             end
         end
     Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
@@ -337,7 +361,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"HLR_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"HLI_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    end end end
+    end end end"""
 
 end
 

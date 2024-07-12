@@ -36,7 +36,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 1,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, solution_file_name = "Solution_julia.sol")
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
         @warn "Both elmod_nthhour and elmod_daystep/elmod_hourstep are defined.
@@ -143,7 +143,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         #set_optimizer_attribute(model, "Names", "no")
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
-        set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
+        set_optimizer_attribute(model, "ResultFile", solution_file_name)
         file = open("gurobi.opt","w")
         write(file,"threads $threads ")
         write(file,"method 2 ")

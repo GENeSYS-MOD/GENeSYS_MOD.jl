@@ -398,7 +398,6 @@ end
 
 """
 Extension of split function to take lists of substrings and keep delimiters
-
 """
 function split_by_substrings(text::AbstractString, substrings::Vector{<:AbstractString}; keepdelim=true)
     result = [text]

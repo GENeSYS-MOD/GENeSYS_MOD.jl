@@ -523,10 +523,11 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     else
       JuMP.fix(Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r],0; force=true)
     end
-  end end end end 
+  end end end end
 
   for i ∈ eachindex(𝓨) for f ∈ 𝓕 for r ∈ 𝓡
-    for t ∈ Maps.Fuel_Tech[f] 
+    for t ∈ Maps.Fuel_Tech[f]
+
       if sum(Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ 𝓜) > 0 &&
         Params.AvailabilityFactor[r,t,𝓨[i]] > 0 &&
         Params.TotalAnnualMaxCapacity[r,t,𝓨[i]] > 0 &&
@@ -536,6 +537,19 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         ((JuMP.is_fixed(Vars.TotalCapacityAnnual[𝓨[i],t,r])) && (JuMP.fix_value(Vars.TotalCapacityAnnual[𝓨[i],t,r]) > 0)))
         @constraint(model, sum(sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,𝓨[i]] != 0)* Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛) == Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r], base_name= "ACC2_FuelProductionByTechnologyAnnual_$(𝓨[i])_$(t)_$(f)_$(r)")
       else
+        #if f == "Heat_Low_DistrictHeat"
+        #println("Error: ", "y: ", 𝓨[i], " t: ", t," r: ",r, " f: ", f)
+        #println("Params.OutputActivityRatio[r,t,f,m,𝓨[i]]", sum(Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ 𝓜))
+        #println("Params.AvailabilityFactor[r,t,𝓨[i]]", Params.AvailabilityFactor[r,t,𝓨[i]])
+        #println("Params.TotalAnnualMaxCapacity[r,t,𝓨[i]]", Params.TotalAnnualMaxCapacity[r,t,𝓨[i]])
+        #println("Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t]", Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t])
+        # Write to file
+
+        
+
+        
+
+        #end
         JuMP.fix(Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r],0;force=true)
       end
 
@@ -665,6 +679,16 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   
   start=Dates.now()
   for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
+
+    #if t == "D_Heat_HLDH"
+    #  for m in Maps.Tech_MO[t]
+    #    println("y: ",y," t: ",t," r: ",r, " m: ", m)
+    #    println("Params.VariableCost[r,t,m,y]: ",Params.VariableCost[r,t,m,y])
+    #    println("CanBuildTechnology[y,t,r]: ",CanBuildTechnology[y,t,r])
+    #  end
+    #end
+    
+
     if (sum(Params.VariableCost[r,t,m,y] for m ∈ Maps.Tech_MO[t]) > 0) & (CanBuildTechnology[y,t,r] > 0)
       @constraint(model, sum((Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r]*Params.VariableCost[r,t,m,y]) for m ∈ Maps.Tech_MO[t]) == Vars.AnnualVariableOperatingCost[y,t,r], base_name="OC1_OperatingCostsVariable_$(y)_$(t)_$(r)")
     else
