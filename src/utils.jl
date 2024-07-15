@@ -46,7 +46,9 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
 
     var_val  = value.(var)
 
-    df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind)])
+    df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind) if var_val[(ind[i]...,)...] !=0])
+    # for the old version of results
+    # df = DataFrame([merge(NamedTuple{tup_dim}(ind[i]), NamedTuple{(value_col,)}(var_val[(ind[i]...,)...])) for i in 1:length(ind)])
 
     return df
 end

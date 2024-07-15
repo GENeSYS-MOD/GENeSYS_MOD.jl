@@ -33,8 +33,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
         for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
             Params.RETagTechnology[r,t,y] = 1
         end
-        for t ∈ intersect(Sets.Fuel,sub)
-            Params.RETagFuel[r,t,y] = 1
+        for f ∈ intersect(Sets.Fuel,sub)
+            Params.RETagFuel[r,f,y] = 1
         end
     end end
 
@@ -168,22 +168,24 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ vcat(Params.TagTechnologyToSubsets["SectorCoupling"], Params.TagTechnologyToSubsets["StorageDummies"], Params.TagTechnologyToSubsets["PowerSupply"], Params.TagTechnologyToSubsets["Transformation"])
+            for t ∈ intersect(Sets.Technology, vcat(Params.TagTechnologyToSubsets["Transformation"],Params.TagTechnologyToSubsets["PowerSupply"], Params.TagTechnologyToSubsets["SectorCoupling"], Params.TagTechnologyToSubsets["StorageDummies"]))
                 JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ vcat(Params.TagTechnologyToSubsets["Biomass"],Params.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])
+            for t ∈ intersect(Sets.Technology, vcat(Params.TagTechnologyToSubsets["Biomass"],Params.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"]))
                 if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
                     JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                 end
             end
         end
 
-        for t ∈ Sets.Technology
-            if Params.TagTechnologyToSector[t,"CHP"] == 1
-                for r ∈ Sets.Region_full
-                    if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
-                        JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
+        if "CHP" ∈ Sets.Sector
+            for t ∈ Sets.Technology 
+                if Params.TagTechnologyToSector[t,"CHP"] == 1
+                    for r ∈ Sets.Region_full
+                        if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
+                            JuMP.unfix(model[:NewCapacity][Switch.StartYear,t,r])
+                        end
                     end
                 end
             end
@@ -272,42 +274,42 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
     #$ontext
     if Switch.switch_ramping == 1
         for r ∈ Sets.Region_full for y ∈ Sets.Year
-            Params.RampingUpFactor[r,"RES_Hydro_Large",y] = 0.25
-            Params.RampingUpFactor[r,"P_Nuclear",y] = 0.01
-            Params.RampingDownFactor[r,"RES_Hydro_Large",y] = 0.25
-            Params.RampingDownFactor[r,"P_Nuclear",y] = 0.01
+#=             Params.RampingUpFactor["RES_Hydro_Large",y] = 0.25
+            Params.RampingUpFactor["P_Nuclear",y] = 0.01
+            Params.RampingDownFactor["RES_Hydro_Large",y] = 0.25
+            Params.RampingDownFactor["P_Nuclear",y] = 0.01
             Params.ProductionChangeCost[r,"RES_Hydro_Large",y] = 50/3.6
             Params.ProductionChangeCost[r,"P_Nuclear",y] = 200/3.6
             for t ∈ Params.TagTechnologyToSubsets["PowerBiomass"]
-                Params.RampingUpFactor[r,t,y] = 0.04
-                Params.RampingDownFactor[r,t,y] = 0.04
+                Params.RampingUpFactor[t,y] = 0.04
+                Params.RampingDownFactor[t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["FossilPower"]
-                Params.RampingUpFactor[r,t,y] = 0.04
-                Params.RampingDownFactor[r,t,y] = 0.04
+                Params.RampingUpFactor[t,y] = 0.04
+                Params.RampingDownFactor[t,y] = 0.04
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["Coal"]
-                Params.RampingUpFactor[r,t,y] = 0.02
-                Params.RampingDownFactor[r,t,y] = 0.02
+                Params.RampingUpFactor[t,y] = 0.02
+                Params.RampingDownFactor[t,y] = 0.02
                 Params.ProductionChangeCost[r,t,y] = 50/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["Gas"]
-                Params.RampingUpFactor[r,t,y] = 0.2
-                Params.RampingDownFactor[r,t,y] = 0.2
+                Params.RampingUpFactor[t,y] = 0.2
+                Params.RampingDownFactor[t,y] = 0.2
                 Params.ProductionChangeCost[r,t,y] = 20/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["HeatSlowRamper"]
-                Params.RampingUpFactor[r,t,y] = 0.1
-                Params.RampingDownFactor[r,t,y] = 0.1
+                Params.RampingUpFactor[t,y] = 0.1
+                Params.RampingDownFactor[t,y] = 0.1
                 Params.ProductionChangeCost[r,t,y] = 100/3.6
             end
             for t ∈ Params.TagTechnologyToSubsets["HeatQuickRamper"]
-                Params.RampingUpFactor[r,t,y] = 0
-                Params.RampingDownFactor[r,t,y] = 0
+                Params.RampingUpFactor[t,y] = 0
+                Params.RampingDownFactor[t,y] = 0
                 Params.ProductionChangeCost[r,t,y] = 0
-            end
+            end =#
             for l ∈ Sets.Timeslice
                 Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Large",r] = 0.1
                 Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Small",r] = 0.05
@@ -324,11 +326,10 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
 
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
-        if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Li-Ion",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Battery_Redox",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLR",y,Sets.Timeslice[i],r], 0; force = true)
-            JuMP.fix(Vars.StorageLevelTSStart["S_Heat_HLI",y,Sets.Timeslice[i],r], 0; force = true)
+        for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HLR", "S_Heat_HLI"])
+            if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
+                JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
+            end
         end
     Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]

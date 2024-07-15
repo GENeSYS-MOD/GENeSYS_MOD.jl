@@ -30,7 +30,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
         set_peaking_res_cf=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
         switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",  
-        elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0)
+        elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 1, write_reduced_timeserie = 0, switch_LCOE_calc=0)
     
     elmod_daystep = 0
     elmod_hourstep = 1
@@ -82,7 +82,8 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     elmod_hourstep,
     switch_raw_results,
     switch_processed_results,
-    write_reduced_timeserie)
+    write_reduced_timeserie,
+    switch_LCOE_calc)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -93,7 +94,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     println(Dates.now()-starttime)
     Sets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
     println(Dates.now()-starttime)
-    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch)
+    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
@@ -105,13 +106,13 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     # ####### apply general model bounds #############
     #
 
-    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params,Settings,Switch)
+    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     println(Dates.now()-starttime)
     #
     # ####### Including Equations #############
     #
 
-    GENeSYS_MOD.genesysmod_equ(model,Sets,Params,Emp_Sets,Settings,Switch)
+    GENeSYS_MOD.genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     println(Dates.now()-starttime)
     #
     # ####### Fix Investment Variables #############
@@ -217,7 +218,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         println(elapsed)
 
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Switch, Settings, elapsed,"dispatch")
+            GENeSYS_MOD.genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,"dispatch")
