@@ -35,7 +35,7 @@ end
 """
 Internal function used in the run process to define the model variables.
 """
-function genesysmod_dec(model,Sets, Params,Switch)
+function genesysmod_dec(model,Sets, Params,Switch,Maps)
 
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
@@ -137,7 +137,7 @@ function genesysmod_dec(model,Sets, Params,Switch)
 
     AnnualTechnologyEmissionByMode = def_daa(𝓨,𝓣,𝓔,𝓜,𝓡)
     for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔 
-        for m ∈ Sets.Mode_of_operation
+        for m ∈ Maps.Tech_MO[t]
             AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
         end
     end end end end 
@@ -196,7 +196,7 @@ function genesysmod_dec(model,Sets, Params,Switch)
         ProductionUpChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
         ProductionDownChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
         for y ∈ 𝓨 for r ∈ 𝓡 for f ∈ 𝓕 for l ∈ 𝓛
-            for t ∈ Sets.Technology
+            for t ∈ Maps.Fuel_Tech[f]
                 ProductionUpChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionUpChangeInTimeslice[$y,$l,$f,$t,$r]")
                 ProductionDownChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionDownChangeInTimeslice[$y,$l,$f,$t,$r]")
             end

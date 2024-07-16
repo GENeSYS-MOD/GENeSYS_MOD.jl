@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to modify batches of input data.
 """
-function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
+function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     #
     # ####### Default Values #############
@@ -245,7 +245,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch)
                 for t ∈ Params.TagTechnologyToSubsets["CCS"]
                     Params.TotalAnnualMaxCapacity[r,t,y] = 0
                     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] = 0
-                    for f ∈ Sets.Fuel
+                    for f ∈ Maps.Tech_Fuel[t]
                         JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r],0; force=true)
                     end
                 end 

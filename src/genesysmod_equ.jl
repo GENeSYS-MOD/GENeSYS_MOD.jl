@@ -20,7 +20,7 @@
 """
 Internal function used in the run process to define the model constraints.
 """
-function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
+function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 
   dbr = Switch.data_base_region
   𝓡 = Sets.Region_full
@@ -272,7 +272,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
   end end end
 
   start=Dates.now()
-  for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡 for l ∈ 𝓛 for m ∈ Sets.Mode_of_operation
+  for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡 for l ∈ 𝓛 for m ∈ Maps.Tech_MO[t]
     if ((Params.CapacityFactor[r,t,l,y] == 0)) ||
       (Params.AvailabilityFactor[r,t,y] == 0) ||
       (Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] == 0) ||
@@ -440,14 +440,14 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
 
     ### Trade Capacities for H2 and Natural Gas, when initially no capacities existed, so that the model has the ability to build additional capacities
 
-    if Params.TradeRoute[r,rr,"Gas_Natural",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]] > 0 && i > 1
-      @constraint(model, (Params.TradeCapacity[r, rr,"Gas_Natural",𝓨[i]] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
-      base_name="TrC4a_NewTradeCapacityLimitNatGas_$(𝓨[i])_Gas_Natural_$(r)_$(rr)")
+    if Params.TradeRoute[r,rr,"Gas_Natural",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]] > 0
+      @constraint(model, (Params.TradeCapacity[r,"Gas_Natural",𝓨[i],rr] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
+      base_name="TrC4a_NewTradeCapacityLimitNatGas|$(𝓨[i])|Gas_Natural|$(r)|$(rr)")
     end
 
-    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0 && i > 1
-      @constraint(model, (Params.TradeCapacity[r,rr,"H2",𝓨[i]] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
-      base_name="TrC5a_NewTradeCapacityLimitH2_$(𝓨[i])_H2_$(r)_$(rr)")
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0
+      @constraint(model, (Params.TradeCapacity[r,"H2",𝓨[i],rr] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
+      base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[i])|H2|$(r)|$(rr)")
     end
 
     for f ∈ 𝓕
@@ -516,7 +516,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
   ############### Accounting Technology Production/Use #############
   
   start=Dates.now()
-  for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for m ∈ Sets.Mode_of_operation
+  for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for m ∈ Maps.Tech_MO[t]
     if CanBuildTechnology[y,t,r] > 0
       @constraint(model, sum(Vars.RateOfActivity[y,l,t,m,r]*Params.YearSplit[l,y] for l ∈ 𝓛) == Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r], base_name="ACC1_ComputeTotalAnnualRateOfActivity|$(y)|$(t)|$(m)|$(r)")
     else
@@ -525,7 +525,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
   end end end end 
 
   for i ∈ eachindex(𝓨) for f ∈ 𝓕 for r ∈ 𝓡
-    for t ∈ Sets.Technology 
+    for t ∈ Maps.Fuel_Tech[f]
       if sum(Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ 𝓜) > 0 &&
         Params.AvailabilityFactor[r,t,𝓨[i]] > 0 &&
         Params.TotalAnnualMaxCapacity[r,t,𝓨[i]] > 0 &&
@@ -579,12 +579,12 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
               base_name="SC2_LimitAnnualCapacityAdditions|$(𝓨[i])|$(r)|$(t)")
             end
             for f ∈ 𝓕
-              for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["PhaseInSet"])
+              for t ∈ intersect(Maps.Fuel_Tech[f],Params.TagTechnologyToSubsets["PhaseInSet"])
                 @constraint(model,
                 Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] >= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseIn[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1), 
                 base_name="SC3_SmoothingRenewableIntegration|$(𝓨[i])|$(r)|$(t)|$(f)")
               end
-              for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["PhaseOutSet"])
+              for t ∈ intersect(Maps.Fuel_Tech[f],Params.TagTechnologyToSubsets["PhaseOutSet"])
                 @constraint(model, 
                 Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] <= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseOut[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1), 
                 base_name="SC3_SmoothingFossilPhaseOuts|$(𝓨[i])|$(r)|$(t)|$(f)")
@@ -664,7 +664,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
   
   start=Dates.now()
   for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
-    if (sum(Params.VariableCost[r,t,m,y] for m ∈ Maps.Tech_MO[t]) > 0) & (CanBuildTechnology[y,t,r] > 0)
+    if !isempty(Maps.Tech_MO[t]) && (sum(Params.VariableCost[r,t,m,y] for m ∈ Maps.Tech_MO[t]) > 0) && (CanBuildTechnology[y,t,r] > 0)
       @constraint(model, sum((Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r]*Params.VariableCost[r,t,m,y]) for m ∈ Maps.Tech_MO[t]) == Vars.AnnualVariableOperatingCost[y,t,r], base_name="OC1_OperatingCostsVariable|$(y)|$(t)|$(r)")
     else
       JuMP.fix(Vars.AnnualVariableOperatingCost[y,t,r],0; force=true)
@@ -829,7 +829,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
         @constraint(model, Params.EmissionActivityRatio[r,t,m,e,y]*sum((Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r]*Params.EmissionContentPerFuel[f,e]*Params.InputActivityRatio[r,t,f,m,y]) for f ∈ Maps.Tech_Fuel[t]) == Vars.AnnualTechnologyEmissionByMode[y,t,e,m,r] , base_name="E1_AnnualEmissionProductionByMode|$(y)|$(t)|$(e)|$(m)|$(r)" )
       end end
     else
-      for m ∈ Sets.Mode_of_operation for e ∈ 𝓔
+      for m ∈ Maps.Tech_MO[t] for e ∈ 𝓔
         JuMP.fix(Vars.AnnualTechnologyEmissionByMode[y,t,e,m,r],0; force=true)
       end end
     end
@@ -943,8 +943,8 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
     for j ∈ eachindex(𝓛)
       @constraint(model,
       (j>1 ? Vars.StorageLevelTSStart[s,𝓨[i],𝓛[j-1],r] + 
-      (sum((Params.TechnologyToStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] : 0) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Sets.Mode_of_operation)
-        - sum((Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] : 0 ) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Sets.Mode_of_operation)) * Params.YearSplit[𝓛[j-1],𝓨[i]] : 0)
+      (sum((Params.TechnologyToStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] : 0) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t])
+        - sum((Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] : 0 ) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t])) * Params.YearSplit[𝓛[j-1],𝓨[i]] : 0)
         + (j == 1 ? Vars.StorageLevelYearStart[s,𝓨[i],r] : 0)   == Vars.StorageLevelTSStart[s,𝓨[i],𝓛[j],r],
         base_name="S2_StorageLevelTSStart|$(r)|$(s)|$(𝓨[i])|$(𝓛[j])")
       @constraint(model,
@@ -991,7 +991,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
         end
       end
     end
-    for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Sets.Mode_of_operation
+    for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t]
       if Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0
         for r ∈ 𝓡 for j ∈ eachindex(𝓛)
           @constraint(model,
@@ -1051,12 +1051,12 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
     ############### Ramping #############
     start=Dates.now()
     for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
-      for f ∈ Sets.Fuel
+      for f ∈ Maps.Tech_Fuel[t]
         for i ∈ eachindex(𝓛)
           if i>1
             if Params.TagDispatchableTechnology[t]==1 && (Params.RampingUpFactor[t,y] != 0 || Params.RampingDownFactor[t,y] != 0 && Params.AvailabilityFactor[r,t,y] > 0 && Params.TotalAnnualMaxCapacity[r,t,y] > 0 && Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0)
               @constraint(model,
-              ((sum(Vars.RateOfActivity[y,𝓛[i],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Sets.Mode_of_operation if Params.OutputActivityRatio[r,t,f,m,y] != 0)*Params.YearSplit[𝓛[i],y]) - (sum(Vars.RateOfActivity[y,𝓛[i-1],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Sets.Mode_of_operation if Params.OutputActivityRatio[r,t,f,m,y] != 0)*Params.YearSplit[𝓛[i-1],y]))
+              ((sum(Vars.RateOfActivity[y,𝓛[i],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,y] != 0)*Params.YearSplit[𝓛[i],y]) - (sum(Vars.RateOfActivity[y,𝓛[i-1],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,y] != 0)*Params.YearSplit[𝓛[i-1],y]))
               == Vars.ProductionUpChangeInTimeslice[y,𝓛[i],f,t,r] - Vars.ProductionDownChangeInTimeslice[y,𝓛[i],f,t,r],
               base_name="R1_ProductionChange|$(y)|$(𝓛[i])|$(f)|$(t)|$(r)")
             end
@@ -1074,7 +1074,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
           ############### Min Runing Constraint #############
           if Params.MinActiveProductionPerTimeslice[y,𝓛[i],f,t,r] > 0
             @constraint(model,
-            sum(Vars.RateOfActivity[y,𝓛[i],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Sets.Mode_of_operation if Params.OutputActivityRatio[r,t,f,m,y] != 0) >= 
+            sum(Vars.RateOfActivity[y,𝓛[i],t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,y] != 0) >= 
             Vars.TotalCapacityAnnual[y,t,r]*Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[t]*Params.MinActiveProductionPerTimeslice[y,𝓛[i],f,t,r],
             base_name="MRC1_MinRunningConstraint|$(y)|$(𝓛[i])|$(f)|$(t)|$(r)")
           end
@@ -1119,7 +1119,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
    ############### General BaseYear Limits && trajectories #############
    start=Dates.now()
     for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
-      for f ∈ Sets.Fuel
+      for f ∈ Maps.Tech_Fuel[t]
         if Params.RegionalBaseYearProduction[r,t,f,y] != 0
           @constraint(model,
           Vars.ProductionByTechnologyAnnual[y,t,f,r] >= Params.RegionalBaseYearProduction[r,t,f,y]*(1-Settings.BaseYearSlack[f]) - Vars.BaseYearBounds_TooHigh[y,r,t,f],
@@ -1156,13 +1156,13 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
       Vars.PeakingCapacity[y,r] ==
         sum((sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛 ) < length(𝓛) ? Vars.TotalCapacityAnnual[y,t,r]*Params.AvailabilityFactor[r,t,y]*RenewableCapacityFactorReduction*(sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛)/length(𝓛)) : 0)
         + (sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛 ) >= length(𝓛) ? Vars.TotalCapacityAnnual[y,t,r]*Params.AvailabilityFactor[r,t,y] : 0)
-        for t ∈ setdiff(𝓣,Params.TagTechnologyToSubsets["StorageDummies"]) if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0)),
+        for t ∈ setdiff(𝓣,Params.TagTechnologyToSubsets["StorageDummies"]) if (!isempty(Maps.Tech_MO[t]) && sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0)),
         base_name="PC2_PowerPeakingCapacity|$(y)|$(r)")
 
       if y >Switch.set_peaking_startyear
         @constraint(model,
         Vars.PeakingCapacity[y,r] + (Switch.switch_peaking_with_trade == 1 ? sum(Vars.TotalTradeCapacity[y,"Power",rr,r] for rr ∈ 𝓡) : 0)
-        + (Switch.switch_peaking_with_storages == 1 ? sum(Vars.TotalCapacityAnnual[y,t,r] for t ∈ setdiff(𝓣,Params.TagTechnologyToSubsets["StorageDummies"]) if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Sets.Mode_of_operation) != 0)) : 0)
+        + (Switch.switch_peaking_with_storages == 1 ? sum(Vars.TotalCapacityAnnual[y,t,r] for t ∈ setdiff(𝓣,Params.TagTechnologyToSubsets["StorageDummies"]) if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0)) : 0)
         >= Vars.PeakingDemand[y,r]*PeakingSlack,
         base_name="PC3_PeakingConstraint|$(y)|$(r)")
       end
@@ -1183,7 +1183,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
             ((JuMP.is_fixed(Vars.TotalCapacityAnnual[y,t,r])) && (JuMP.fix_value(Vars.TotalCapacityAnnual[y,t,r]) > 0)))) && 
             y > Switch.set_peaking_startyear)
             @constraint(model,
-            sum(sum(Vars.RateOfActivity[y,l,t,m,r] for m ∈ Sets.Mode_of_operation)*Params.YearSplit[l,y] for l ∈ 𝓛 ) >= 
+            sum(sum(Vars.RateOfActivity[y,l,t,m,r] for m ∈ Maps.Tech_MO[t])*Params.YearSplit[l,y] for l ∈ 𝓛 ) >= 
             sum(Vars.TotalCapacityAnnual[y,t,r]*Params.CapacityFactor[r,t,l,y]*Params.YearSplit[l,y]*Params.AvailabilityFactor[r,t,y]*Params.CapacityToActivityUnit[t] for l ∈ 𝓛 )*MinRunShare,
             base_name="PC4_MinRunConstraint|$(y)|$(t)|$(r)")
           end
@@ -1209,7 +1209,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch)
       +(Vars.UseByTechnologyAnnual[y,t,f,r]*Emp_Params.EFactorFuelSupply[t,y]))*(1-Emp_Params.DeclineRate[t,y])^YearlyDifferenceMultiplier(y,Sets)
       +((Vars.UseByTechnologyAnnual[y,"HLI_Hardcoal","Hardcoal",r]+Vars.UseByTechnologyAnnual[y,"HMI_HardCoal","Hardcoal",r]
       +(Vars.UseByTechnologyAnnual[y,"HHI_BF_BOF","Hardcoal",r])*Emp_Params.EFactorCoalJobs["Coal_Heat",y]*Emp_Params.CoalSupply[r,y]))
-      +(Emp_Params.CoalSupply[r,y]*Emp_Params.CoalDigging[Switch.model_region,"Coal_Export","$(Switch.emissionPathway)_$(Switch.emissionScenario)",y]*Emp_Params.EFactorCoalJobs["Coal_Export",y]) for f ∈ 𝓕 for t ∈ Sets.Technology)
+      +(Emp_Params.CoalSupply[r,y]*Emp_Params.CoalDigging[Switch.model_region,"Coal_Export","$(Switch.emissionPathway)_$(Switch.emissionScenario)",y]*Emp_Params.EFactorCoalJobs["Coal_Export",y]) for f ∈ 𝓕 for t ∈ Maps.Fuel_Tech[f])
       == Vars.TotalJobs[r,y],
       base_name="Jobs1_TotalJobs|$(r)|$(y)")
     end end
