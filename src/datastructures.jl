@@ -712,6 +712,10 @@ struct Switch <: InputClass
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     switch_LCOE_calc ::Int8
+    switch_2degree ::Int8
+    switch_PVtracking ::Int8
+    switch_bifacialPV ::Int8
+    switch_highH2 ::Int8
 end
 
 """

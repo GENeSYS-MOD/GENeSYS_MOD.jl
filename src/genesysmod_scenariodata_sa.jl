@@ -46,4 +46,56 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     end
   end end end
 
+  #Scenrios
+  #2degree emission pathway
+  if Switch.switch_2degree == 1
+    Params.AnnualEmissionLimit["CO2", 2018] = 310
+    Params.AnnualEmissionLimit["CO2", 2025] = 240
+    Params.AnnualEmissionLimit["CO2", 2030] = 170
+    Params.AnnualEmissionLimit["CO2", 2035] = 100
+    Params.AnnualEmissionLimit["CO2", 2040] = 40
+    Params.AnnualEmissionLimit["CO2", 2045] = 20
+    Params.AnnualEmissionLimit["CO2", 2050] = 0.1
+  end
+
+  #hydrogen demand
+  if Switch.switch_highH2 == 1
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2018] = 0.01
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2025] = 0.01
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2030] = 165
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2035] = 243
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2040] = 320
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2045] = 354
+    Params.SpecifiedAnnualDemand["SA-EC","H2", 2050] = 450
+    for y ∈ Sets.Year for r ∈ Sets.Region_full
+      Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
+    end end
+  end
+
+  #tracking not allowed
+  if Switch.switch_PVtracking == 0
+    for y ∈ Sets.Year for r ∈ Sets.Region_full
+      Params.AvailabilityFactor[r,"RES_PV_Utility_HSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_PV_Utility_THSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_PV_Utility_VSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_PV_Utility_DAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",y] = 0
+    end end
+  end
+
+  #bifacial not allowed
+  if Switch.switch_bifacialPV == 0
+    for y ∈ Sets.Year for r ∈ Sets.Region_full
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_90",y] = 0
+      Params.AvailabilityFactor[r,"RES_BPV_Utility_Opt",y] = 0
+    end end
+  end
+
 end
