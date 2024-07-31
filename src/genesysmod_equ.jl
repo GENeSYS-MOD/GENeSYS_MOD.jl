@@ -537,7 +537,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         ((JuMP.is_fixed(Vars.TotalCapacityAnnual[𝓨[i],t,r])) && (JuMP.fix_value(Vars.TotalCapacityAnnual[𝓨[i],t,r]) > 0)))
         @constraint(model, sum(sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,𝓨[i]] != 0)* Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛) == Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r], base_name= "ACC2_FuelProductionByTechnologyAnnual_$(𝓨[i])_$(t)_$(f)_$(r)")
       else
-        #if f == "Heat_Low_DistrictHeat"
+        #if f == "Heat_District"
         #println("Error: ", "y: ", 𝓨[i], " t: ", t," r: ",r, " f: ", f)
         #println("Params.OutputActivityRatio[r,t,f,m,𝓨[i]]", sum(Params.OutputActivityRatio[r,t,f,m,𝓨[i]] for m ∈ 𝓜))
         #println("Params.AvailabilityFactor[r,t,𝓨[i]]", Params.AvailabilityFactor[r,t,𝓨[i]])

@@ -27,7 +27,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
 
     sub=["Power", "Heat_Low_Industrial", "Heat_Medium_Industrial",
-         "Heat_High_Industrial", "Cool_Low_Building", "Heat_Low_Building", "Heat_Low_DistrictHeat"] # "Heat_Low_DistrictHeat"
+         "Heat_High_Industrial", "Cool_Low_Building", "Heat_Low_Building", "Heat_District"] # "Heat_District"
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Renewables"])
@@ -322,10 +322,10 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         end
     end end end
 
-    if Switch.switch_dispatch==0 
+    """if Switch.switch_dispatch==0 
         for timestamp ∈ Sets.Timeslice for storage_row in eachrow(Params.TagDailyOrSeasonalStorage)
 
-            if storage_row.IsDaily == 1 && (timestamp - Sets.Timeslice[1]) % 24 == 0
+            if storage_row.IsDaily == 1 && (timestamp - Switch.elmod_hourstep + Switch.elmod_starthour) % 24 == 0
                 
                 for region ∈ Sets.Region_full for year ∈ Sets.Year
                     JuMP.fix(Vars.StorageLevelTSStart[storage_row.Storage,year,timestamp,region], 0; force = true)
@@ -334,7 +334,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             end
 
         end end
-    end
+    end"""
 
     for region ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for year ∈ Sets.Year
     Params.CapacityFactor[region,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
