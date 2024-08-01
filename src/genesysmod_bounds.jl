@@ -322,7 +322,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         end
     end end end
 
-    """if Switch.switch_dispatch==0 
+    if Switch.switch_dispatch==0 
         for timestamp ∈ Sets.Timeslice for storage_row in eachrow(Params.TagDailyOrSeasonalStorage)
 
             if storage_row.IsDaily == 1 && (timestamp - Switch.elmod_hourstep + Switch.elmod_starthour) % 24 == 0
@@ -334,7 +334,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             end
 
         end end
-    end"""
+    end
 
     for region ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for year ∈ Sets.Year
     Params.CapacityFactor[region,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],year] = Params.CapacityFactor[region,"RES_PV_Utility_Avg",Sets.Timeslice[i],year]
