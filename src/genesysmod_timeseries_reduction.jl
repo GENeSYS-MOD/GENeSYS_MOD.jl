@@ -384,8 +384,8 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
 
     sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Cool_Low_Building","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial", "Heat_Low_Building", "Heat_District"] # "Heat_District"
     capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
-    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small"]
-
+    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small", "HLDH_Heatpump_Air", "HLDH_Heatpump_ExcessHeat", "HLI_Heatpump", "HMLI_Heatpump"]
+    
     SpecifiedDemandProfile = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full), length(Sets.Fuel), length(Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Fuel, Timeslice, Sets.Year)
     CapacityFactor = JuMP.Containers.DenseAxisArray(ones(length(Sets.Region_full), length(Sets.Technology), length(Timeslice), length(Sets.Year)), Sets.Region_full, Sets.Technology, Timeslice, Sets.Year)
 
@@ -437,6 +437,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
                 CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
                 CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HEAT_PUMP_GROUND"][Timeslice,r]
 
+                # I added this block, is it correct
+                CapacityFactor[r,"HLDH_Heatpump_Air",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
+                CapacityFactor[r,"HLDH_Heatpump_ExcessHeat",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
+                CapacityFactor[r,"HLI_Heatpump",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
+                CapacityFactor[r,"HMLI_Heatpump",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Timeslice,r]
+
                 CapacityFactor[r,"RES_PV_Utility_Opt",:,y] = ScaledCountryData["PV_OPT"][Timeslice,r]
                 CapacityFactor[r,"RES_Wind_Onshore_Opt",:,y] = ScaledCountryData["WIND_ONSHORE_OPT"][Timeslice,r]
                 CapacityFactor[r,"RES_Wind_Offshore_Transitional",:,y] = ScaledCountryData["WIND_OFFSHORE"][Timeslice,r]
@@ -455,6 +461,12 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
             else
                 CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
                 CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = CountryData["HEAT_PUMP_GROUND"][:,r]
+
+                # I added this block, is it correct
+                CapacityFactor[r,"HLDH_Heatpump_Air",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
+                CapacityFactor[r,"HLDH_Heatpump_ExcessHeat",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
+                CapacityFactor[r,"HLI_Heatpump",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
+                CapacityFactor[r,"HMLI_Heatpump",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
 
                 CapacityFactor[r,"RES_PV_Utility_Opt",:,y] = CountryData["PV_OPT"][:,r]
                 CapacityFactor[r,"RES_Wind_Onshore_Opt",:,y] = CountryData["WIND_ONSHORE_OPT"][:,r]
