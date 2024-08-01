@@ -46,6 +46,11 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     end
   end end end
 
+  #Nuclear
+  for y ∈ Sets.Year for r ∈ Sets.Region_full
+    Params.TotalAnnualMaxCapacity[r,"P_Nuclear",y] = Params.ResidualCapacity[r,"P_Nuclear",y]
+  end end
+
   #Scenrios
   #2degree emission pathway
   if Switch.switch_2degree == 1
