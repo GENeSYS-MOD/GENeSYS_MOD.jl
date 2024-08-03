@@ -65,44 +65,44 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
 
   #hydrogen demand
   if Switch.switch_highH2 == 1
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2018] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2018] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2018] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2018] = 0.01 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2018] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2018] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2018] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2018] = 0.0025
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2025] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2025] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2025] = 0.01 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2025] = 0.01 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2025] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2025] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2025] = 0.0025
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2025] = 0.0025
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2030] = 165 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2030] = 165 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2030] = 165 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2030] = 165 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2030] = 41.25
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2030] = 41.25
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2030] = 41.25
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2030] = 41.25
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2035] = 243 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2035] = 243 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2035] = 243 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2035] = 243 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2035] = 60.75
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2035] = 60.75
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2035] = 60.75
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2035] = 60.75
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2040] = 320 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2040] = 320 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2040] = 320 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2040] = 320 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2040] = 80
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2040] = 80
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2040] = 80
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2040] = 80
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2045] = 354 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2045] = 354 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2045] = 354 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2045] = 354 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2045] = 88.5
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2045] = 88.5
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2045] = 88.5
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2045] = 88.5
     
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2050] = 450 / 4
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2050] = 450 / 4
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2050] = 450 / 4
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2050] = 450 / 4
+    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2050] = 112.5
+    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2050] = 112.5
+    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2050] = 112.5
+    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2050] = 112.5
     for y ∈ Sets.Year for r ∈ Sets.Region_full
-        Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
-      end end
-    end
+      Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
+    end end
+  end
 
   #tracking not allowed
   if Switch.switch_PVtracking == 0
