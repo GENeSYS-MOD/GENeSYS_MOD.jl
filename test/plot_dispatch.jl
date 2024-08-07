@@ -7,12 +7,41 @@ using StatsPlots
 using Colors
 using ColorSchemes
 
+aggregation = Dict(
+    "P_Nuclear"=>"Nuclear",
+    "P_Coal_Hardcoal"=>"Hardcoal",
+    "P_Coal_Lignite"=>"Lignite",
+    "P_Oil"=>"Oil",
+    "P_Gas_OCGT"=>"Gas",
+    "P_Gas_CCGT"=>"Gas",
+    "P_Gas_CCS"=>"Gas",
+    "P_Gas_Engines"=>"Gas",
+    "RES_Hydro_Large"=>"Hydro Reservoir",
+    "RES_Hydro_Small"=>"Hydro Run-of-River",
+    "RES_Wind_Offshore_Deep"=>"Wind_Offshore",
+    "RES_Wind_Offshore_Transitional"=>"Wind_Offshore",
+    "RES_Wind_Offshore_Shallow"=>"Wind_Offshore",
+    "RES_Wind_Onshore_Opt"=>"Wind_Onshore",
+    "RES_Wind_Onshore_Avg"=>"Wind_Onshore",
+    "RES_Wind_Onshore_Inf"=>"Wind_Onshore",
+    "RES_PV_Utility_Opt"=>"PV",
+    "RES_PV_Utility_Avg"=>"PV",
+    "RES_PV_Rooftop_Residential"=>"PV",
+    "RES_PV_Utility_Tracking"=>"PV",
+    "RES_PV_Utility_Inf"=>"PV",
+    "RES_PV_Rooftop_Commercial"=>"PV",
+    "P_Biomass"=>"Biomass",
+    "P_Biomass_CCS"=>"Biomass",
+    "D_PHS"=>"Pumped Hydro",
+    "D_PHS_Residual"=>"Pumped Hydro",
+)
+
 # function when sectors are considered
-function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_names, region, sector, inf_tech; defined_sector_techno=nothing, group_techno=false,reduce_subset=true)
+function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_names, region, year, sector, inf_tech; defined_sector_techno=nothing, group_techno=false,reduce_subset=true, aggregate_techno=true)
     in_data = CSV.read("test\\TestData\\Results\\$(result_file)_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
 
     ## removing the 0 from the dataframe, so the data is smaller
-    subset_df = in_data[in_data.Region .== region,:]
+    subset_df = in_data[(in_data.Region .== region) .&& (in_data.Year .== year),:]
     subset_df_reduced = subset_df
     if reduce_subset
         subset_df_reduced = subset_df[subset_df.Value .!=0,:]
@@ -24,9 +53,21 @@ function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_na
         sector_techno = tag_techno_sector[tag_techno_sector.Sector .== sector, :].Technology
         sector_techno = vcat(sector_techno, inf_tech)
     end
+    # Set sector_techno to equal [D_Heat_HLI, D_Heat_HLDH, D_Heat_HLB]
+    sector_techno = ["D_Heat_HLR", "D_Heat_HLDH", "D_Heat_HLB"]
+    # Make it a
+
     ## keeping only the sector technologies
     subset_df_sector = subset_df_reduced[in.(subset_df_reduced.Technology, Ref(sector_techno)),:]
     
+    ## aggregation of technologies so the results are easier to read
+    if aggregate_techno
+        replace!(subset_df_sector.Technology, aggregation...)
+        pop!(col_names)
+        grouped_df = groupby(subset_df_sector, col_names)
+        subset_df_sector = combine(grouped_df, :Value => sum=>:Value)
+    end
+    print(first(aggregate_techno,5))
     ## summing over all the technologies for each timeslice
     if group_techno
         grouped_df = groupby(subset_df_sector, :Timeslice)
@@ -38,7 +79,7 @@ function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_na
 end
 
 function separation_mo_storage(subset_df_sector)
-    subset_df_production = subset_df_sector[(subset_df_sector.ModeOfOperation .== 1) .& .!occursin.("D_", subset_df_sector.Technology),:] 
+    subset_df_production = subset_df_sector[.!occursin.("D_", subset_df_sector.Technology),:] 
     grouped_df_production = groupby(subset_df_production, :Timeslice)
     subset_df_sum_production = combine(grouped_df_production, :Value => sum=>:Value)
 
@@ -54,11 +95,11 @@ function separation_mo_storage(subset_df_sector)
 end
 
 # function when fuels are considered
-function extraction_and_cleaning(extr_str, result_file, col_names, region, fuels; group_fuels=false, reduce_subset=true)
+function extraction_and_cleaning(extr_str, result_file, col_names, region, year, fuels; group_fuels=false, reduce_subset=true)
     in_data = CSV.read("test\\TestData\\Results\\$(result_file)_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
 
     ## removing the 0 from the dataframe, so the data is smaller
-    subset_df = in_data[in_data.Region .== region,:]
+    subset_df = in_data[(in_data.Region .== region) .&& (in_data.Year .== year),:]
     subset_df_reduced = subset_df
     if reduce_subset
         subset_df_reduced = subset_df[subset_df.Value .!=0,:]
@@ -80,11 +121,11 @@ end
 
 function plot_roa(extr_str, tag_techno_sector,region, year, sector, inf_tech, colors; year_split=1/8760, display_plot=true, reduce_subset=true)
     col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
-    subset_df_sector, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, sector, inf_tech, reduce_subset = reduce_subset)
+    subset_df_sector, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, inf_tech, reduce_subset = reduce_subset)
     fig = AbstractTrace[]
     df_dict = Dict()
     i = 1
-    for t in sector_techno
+    for t in unique(subset_df_sector.Technology)
         if startswith(t,"D_")
             subset_df_techno = subset_df_sector[(subset_df_sector.Technology.==t) .& (subset_df_sector.Year.==year),:]
             if !isempty(subset_df_techno)
@@ -93,24 +134,26 @@ function plot_roa(extr_str, tag_techno_sector,region, year, sector, inf_tech, co
                     if display_plot
                         push!(fig, PlotlyJS.bar(x = subdf.Timeslice,
                                 y = (mo.ModeOfOperation == 2 ? 1 : -1) * subdf.Value * year_split,
-                                name=t,
-                                marker_color=colors[i]))
+                                name=t)) #marker_color=colors[i]
                     end
                     df_dict["$(t)_$(mo.ModeOfOperation)"] = subdf
                 end
                 i = i+1
             end
         else
+             
             subset_df_techno = subset_df_sector[(subset_df_sector.Technology.==t) .& (subset_df_sector.Year.==year),:]
             if !isempty(subset_df_techno)
-                if display_plot
-                    push!(fig, PlotlyJS.bar(x = subset_df_techno.Timeslice,
-                    y = subset_df_techno.Value*year_split,
-                    name=t,
-                    marker_color=colors[i]))
-                    i += 1
+                gdf_techno = groupby(subset_df_techno, "ModeOfOperation")
+                for (mo, subdf) in pairs(gdf_techno)
+                    if display_plot
+                        push!(fig, PlotlyJS.bar(x = subset_df_techno.Timeslice,
+                        y = subset_df_techno.Value*year_split,
+                        name=t)) # marker_color=colors[i]
+                        i += 1
+                    end
+                    df_dict["$(t)_$(mo.ModeOfOperation)"] = subdf
                 end
-                df_dict[t] = subset_df_techno
             end 
         end
     end
@@ -124,9 +167,9 @@ function plot_roa(extr_str, tag_techno_sector,region, year, sector, inf_tech, co
     return df_dict
 end
 
-function plot_net_trade(extr_str, region, fuels)
+function plot_net_trade(extr_str, region, year, fuels)
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Value"]
-    subset_df_fuels = extraction_and_cleaning(extr_str, "NetTrade", col_names, region, fuels)
+    subset_df_fuels = extraction_and_cleaning(extr_str, "NetTrade", col_names, region, year, fuels)
     
     fig = AbstractTrace[]
     for f in fuels
@@ -147,7 +190,8 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
     dict_demand = Dict()
     ## 1. Curtailment
     col_names = ["Region", "Timeslice", "Technology", "Year", "Value"]
-    subset_df_curtailment, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"CurtailedCapacity", col_names, region, sector, inf_tech, group_techno=true)
+    subset_df_curtailment, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"CurtailedCapacity", col_names, region, year, sector, inf_tech, group_techno=true)
+    
     push!(fig, PlotlyJS.bar(x = subset_df_curtailment.Timeslice,
                     y = -subset_df_curtailment.Value*31.56*year_split,
                     name="Curtailment"))
@@ -155,7 +199,8 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
 
     ## 2. Export
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
-    subset_df_export = extraction_and_cleaning(extr_str, "Export", col_names, region, fuels, group_fuels = true)
+    subset_df_export = extraction_and_cleaning(extr_str, "Export", col_names, region, year, fuels, group_fuels = true)
+    println(sum(subset_df_export.Value))
     push!(fig, PlotlyJS.bar(x = subset_df_export.Timeslice,
     y = -subset_df_export.Value,
     name = "Exports"))
@@ -169,8 +214,10 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
             push!(added_tech, t)
         end
     end
-    subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, sector, added_tech)
+    subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, added_tech)
+    print(subset_df)
     subset_df_production, subset_df_charge, subset_df_discharge = separation_mo_storage(subset_df)
+    timeslices = subset_df_production.Timeslice
     push!(fig, PlotlyJS.bar(x = subset_df_production.Timeslice,
     y = subset_df_discharge.Value * year_split,
     name = "Storage discharge"))
@@ -194,7 +241,7 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
             push!(real_inf_tech,t)
         end
     end
-    subset_df_inf, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, sector, inf_tech, group_techno=true, defined_sector_techno = real_inf_tech)
+    subset_df_inf, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, inf_tech, group_techno=true, defined_sector_techno = real_inf_tech)
     push!(fig, PlotlyJS.bar(x = subset_df_inf.Timeslice,
     y = subset_df_inf.Value*year_split,
     name="Infeasible"))
@@ -202,7 +249,7 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
 
     ## 5. Import
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
-    subset_df_import = extraction_and_cleaning(extr_str, "Import", col_names, region, fuels, group_fuels = true)
+    subset_df_import = extraction_and_cleaning(extr_str, "Import", col_names, region, year, fuels, group_fuels = true)
     push!(fig, PlotlyJS.bar(x = subset_df_import.Timeslice,
     y = subset_df_import.Value,
     name = "Imports"))
@@ -210,11 +257,10 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
 
     ## 6. Dual
     if plot_prices
-        df_dual = plot_duals(extr_str, region, considered_dual = considered_dual, display_plot=false)
-        df_dual_region = df_dual[(df_dual.Region .== region) .& (df_dual.Year .== year), :]
-        gdf_fuel = groupby(df_dual_region, :Fuel)
-        for (fuel, subdf) in pairs(gdf_fuel)
-            push!(fig, PlotlyJS.scatter(x=subdf.Timeslice, y = subdf.Value*(31.536/8760)*1000, name="Dual $(fuel.Fuel)", yaxis="y2"))
+        prices = plot_duals([extr_str], region, year, considered_dual = considered_dual, display_plot=false)
+        for (fuel, price) in prices
+            price_year = price[price.Year .== year,:]
+            push!(fig, PlotlyJS.scatter(x=timeslices, y = price_year.Value*(31.536/8760)*1000, name="Dual $(fuel)", yaxis="y2"))
         end
         if display_fig
             display(PlotlyJS.plot(fig, Layout(title="Energy demand in $(region) for sector $(sector) and fuels $(fuels) ($(extr_str))",
@@ -262,32 +308,37 @@ function plot_storage_status(extr_str, region, year; considered_storages=nothing
                         yaxis_title="Storage level (PJ)",
                         barmode="stack"),
                         config=PlotConfig(scrollZoom=true)))
+    return subset_df_storages
 
 
 end
 
-function plot_duals(extr_str, region; considered_dual=nothing, display_plot=true)
-    in_data = read_dual_results(extr_str)
-    considered_data = in_data
-    if !isnothing(considered_dual)
-        considered_data = in_data[in.(in_data.Fuel, Ref(considered_dual)),:]
-    end
-    
+function plot_duals(extr_str_list, region, year; considered_dual=nothing, display_plot=true)
     fig = AbstractTrace[]
-    dual_gdf = groupby(in_data,"Fuel")
-    for (f,subdf) in pairs(dual_gdf)
-        subdf_region = subdf[subdf.Region .== region, :]
-        push!(fig, PlotlyJS.scatter(x = subdf_region.Timeslice,
-                    y = subdf_region.Value,
-                    name=f.Fuel))
+    results_data = Dict()
+    for extr_str in extr_str_list
+        in_data = read_dual_results(extr_str)
+        considered_data = in_data
+        if !isnothing(considered_dual)
+            considered_data = in_data[in.(in_data.Fuel, Ref(considered_dual)),:]
+        end 
+
+        dual_gdf = groupby(considered_data,"Fuel")
+        for (f,subdf) in pairs(dual_gdf)
+            subdf_region = subdf[(subdf.Region .== region) .&& (subdf. Year .== year), :]
+            push!(fig, PlotlyJS.scatter(x = subdf_region.Timeslice,
+                        y = subdf_region.Value*(31.536/8760)*1000,
+                        name= "$(f.Fuel)_$(extr_str)"))
+            results_data["$(f.Fuel)_$(extr_str)"] = subdf_region
+        end
     end
     if display_plot
-        PlotlyJS.plot(fig, Layout(title="Energy Balance dual values for Region $(region) ($(extr_str))",
+        display(PlotlyJS.plot(fig, Layout(title="Energy Balance dual values for Region $(region) ($(extr_str))",
                         xaxis_title="Time (hours)",
-                        yaxis_title="Dual (price)"),
-                        config=PlotConfig(scrollZoom=true))
+                        yaxis_title="Cost(euros/MWh)"),
+                        config=PlotConfig(scrollZoom=true)))
     end
-    return considered_data
+    return results_data
 
 end
 
@@ -323,8 +374,7 @@ function plot_period_comparison_roa(extr_str_list, period, region, year, tag_tec
         if !iszero(y)
             push!(fig, PlotlyJS.bar(x = extr_str_list,
             y = y,
-            name=tech,
-            marker_color=colors[i]))
+            name=tech)) #marker_color=colors[i]
             i+=1
         end
     end
@@ -334,11 +384,11 @@ function plot_period_comparison_roa(extr_str_list, period, region, year, tag_tec
     config=PlotConfig(scrollZoom=true)))
 end
 
-function plot_year_comparison_demand(extr_str_list, region, tag_techno_sector, sector, inf_tech, fuels; year_split=1/8760)
+function plot_year_comparison_demand(extr_str_list, region, year, tag_techno_sector, sector, inf_tech, fuels; year_split=1/8760)
     values_list_dict = []
     fig = AbstractTrace[]
     for extr_str in extr_str_list
-        values_dict = plot_demand(extr_str, tag_techno_sector, region, sector, inf_tech, fuels, year_split=year_split, display_fig=false)
+        values_dict = plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech, fuels, year_split=year_split, display_fig=false)
         push!(values_list_dict, values_dict)
     end
     keys_dict = [keys(dict) for dict in values_list_dict]
@@ -348,6 +398,8 @@ function plot_year_comparison_demand(extr_str_list, region, tag_techno_sector, s
         for value_dict in values_list_dict
             if haskey(value_dict, index)
                 push!(y, sum(value_dict[index]))
+            else
+                push!(y, 0)
             end
         end
         if !iszero(y)
@@ -363,44 +415,45 @@ function plot_year_comparison_demand(extr_str_list, region, tag_techno_sector, s
     config=PlotConfig(scrollZoom=true)))      
 end
 
-function plot_capacities(extr_str1, extr_str2, region, year, tag_techno_sector, sector, colors)
-    col_names = ["Year", "Technology", "Region", "Value"]
-    in_data = CSV.read("test\\TestData\\Results\\TotalCapacityAnnual_minimal_MinimalExample_globalLimit_$(extr_str1).csv", DataFrame, header=col_names, skipto=2)
-    in_data_reduced = in_data[(in_data.Value .!= 0) .& (in_data.Region .== region) .& (in_data.Year .== year),: ]
-    in_data2 = CSV.read("test\\TestData\\Results\\TotalCapacityAnnual_minimal_MinimalExample_globalLimit_$(extr_str2).csv", DataFrame, header=col_names, skipto=2)
-    in_data_reduced2 = in_data2[(in_data2.Value .!= 0) .& (in_data2.Region .== region) .& (in_data2.Year .== year),: ]
-
+function plot_capacities(extr_str_list, region, year, tag_techno_sector, sector, colors;aggregate_techno=true)
     sector_techno = tag_techno_sector[tag_techno_sector.Sector .== sector, :].Technology
-    
-    capacities_dict = Dict(Pair.(in_data_reduced.Technology, in_data_reduced.Value))
-    capacities_dict2 = Dict(Pair.(in_data_reduced2.Technology, in_data_reduced2.Value))
+    dict_list = Dict[]
+    for extr_str in extr_str_list
+        col_names = ["Year", "Technology", "Region", "Value"]
+        in_data = CSV.read("test\\TestData\\Results\\TotalCapacityAnnual_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
+        in_data_reduced = in_data[(in_data.Value .!= 0) .& (in_data.Region .== region) .& (in_data.Year .== year) .& in.(in_data.Technology, Ref(sector_techno)),: ]
+        df_aggregated = in_data_reduced
+        if aggregate_techno
+            replace!(in_data_reduced.Technology, aggregation...)
+            pop!(col_names)
+            grouped_df = groupby(in_data_reduced, col_names)
+            df_aggregated = combine(grouped_df, :Value => sum=>:Value)
+        end
+        capacities_dict = Dict(Pair.(df_aggregated.Technology, df_aggregated.Value))
+        push!(dict_list, capacities_dict)
+    end
 
     fig = AbstractTrace[]
     i = 1
-    
-    for (tech, capacity) in capacities_dict
-        if in(tech, sector_techno)
-            if haskey(capacities_dict2, tech)
-                push!(fig, PlotlyJS.bar(x = [extr_str1, extr_str2],
-                y = [capacity, capacities_dict2[tech]],
-                name=tech,
-                marker_color=colors[i]))
+    keys_dict = [keys(dict) for dict in dict_list]
+    union_index = union(keys_dict...)
+    for index in union_index
+        y = []
+        for dict in dict_list
+            if haskey(dict, index)
+                push!(y, sum(dict[index]))
             else
-                push!(fig, PlotlyJS.bar(x = [extr_str1, extr_str2],
-                y = [capacity, 0],
-                name=tech,
-                marker_color=colors[i]))
+                push!(y, 0)
             end
-            i+=1
         end
-    end
-
-    for tech in setdiff(keys(capacities_dict2), keys(capacities_dict))
-        push!(fig, PlotlyJS.bar(x = [extr_str1, extr_str2],
-                y = [0, capacities_dict2[tech]],
-                name=tech,
-                marker_color=colors[i]))
-        i+=1
+        if !iszero(y)
+            push!(fig, PlotlyJS.bar(x = extr_str_list,
+            y = y,
+            name=index,
+            marker_color=colors[i]
+            ))
+            i = i+1
+        end
     end
 
     display(PlotlyJS.plot(fig, Layout(title="Computed capacities in region $(region) for sector $(sector)",
@@ -409,36 +462,37 @@ function plot_capacities(extr_str1, extr_str2, region, year, tag_techno_sector, 
     config=PlotConfig(scrollZoom=true)))
 end
 
-function write_demand(extr_str, tag_techno_sector, region, sector, inf_tech, fuels; considered_dual=nothing, year_split=1/8760)
+function write_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech, fuels; considered_dual=nothing, year_split=1/8760)
     ## 1. Curtailment
     col_names = ["Region", "Timeslice", "Technology", "Year", "Value"]
-    subset_df_curtailment, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"CurtailedCapacity", col_names, region, sector, inf_tech, group_techno=true, reduce_subset=false)
-    df = DataFrame("Curtailment_PJ"=>subset_df_curtailment.Value*31.56*year_split)
+    subset_df_curtailment, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"CurtailedCapacity", col_names, region, year, sector, inf_tech, group_techno=true, reduce_subset=false)
+    df = DataFrame("Timeslices_hours"=>subset_df_curtailment.Timeslice)
+    df[:,:Curtailment_PJ] .= subset_df_curtailment.Value*31.56*year_split
 
     ## 2. Export
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
-    subset_df_export = extraction_and_cleaning(extr_str, "Export", col_names, region, fuels, group_fuels = true, reduce_subset=false)
+    subset_df_export = extraction_and_cleaning(extr_str, "Export", col_names, region, year, fuels, group_fuels = true, reduce_subset=false)
     df[:,:Exports_PJ] .= subset_df_export.Value
 
     ## 3. Total production including charge / discharge of the storage
     col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
-    subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, sector, [], reduce_subset=false)
+    subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, [], reduce_subset=false)
     subset_df_production, subset_df_charge, subset_df_discharge = separation_mo_storage(subset_df)
     df[:,:Production_PJ] .= subset_df_production.Value * year_split
     df[:,:Storage_charge_PJ] .= subset_df_charge.Value * year_split
 
     ## 4. Infeasibility
     col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
-    subset_df_inf, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, sector, inf_tech, group_techno=true, defined_sector_techno = inf_tech, reduce_subset=false)
+    subset_df_inf, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, inf_tech, group_techno=true, defined_sector_techno = inf_tech, reduce_subset=false)
     df[:,:Infeasible_PJ] .= subset_df_inf.Value * year_split
 
     ## 5. Import
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
-    subset_df_import = extraction_and_cleaning(extr_str, "Import", col_names, region, fuels, group_fuels = true, reduce_subset=false)
+    subset_df_import = extraction_and_cleaning(extr_str, "Import", col_names, region, year, fuels, group_fuels = true, reduce_subset=false)
     df[:,:Imports_PJ] .= subset_df_import.Value
 
     ## 6. Dual
-    df_dual = plot_duals(extr_str, region, considered_dual = considered_dual, display_plot=false)
+    df_dual = plot_duals(extr_str, region, year, considered_dual = considered_dual, display_plot=false)
     df_dual_region = df_dual[df_dual.Region .== region, :]
     gdf_fuel = groupby(df_dual_region, :Fuel)
     for (fuel, subdf) in pairs(gdf_fuel)
@@ -449,9 +503,9 @@ function write_demand(extr_str, tag_techno_sector, region, sector, inf_tech, fue
     CSV.write("demand_$(sector)_$(region)_$(extr_str).csv", df)
 end
 
-function plot_RE_heat(extr_str, tag_techno_sector, region, inf_tech, colors)
-    df_roa_power_dict = plot_roa(extr_str, tag_techno_sector, region, "Power", inf_tech, colors, display_plot=false)
-    df_roa_heat_dict = plot_roa(extr_str, tag_techno_sector, region, "Buildings", [], colors, display_plot=false)
+function plot_RE_heat(extr_str, tag_techno_sector, region, year, inf_tech, colors)
+    df_roa_power_dict = plot_roa(extr_str, tag_techno_sector, region, year, "Power", inf_tech, colors, display_plot=false)
+    df_roa_heat_dict = plot_roa(extr_str, tag_techno_sector, region, year, "Buildings", [], colors, display_plot=false)
     
     # we want to keep only the heat produced with heat pump and the heat storage
     df_HP = copy(df_roa_heat_dict["HLR_Heatpump_Aerial"])
@@ -514,4 +568,251 @@ function read_dual_results(extr_str)
     df.Region = regions
     df.Year = years
     return df[!, ["Name", "Fuel", "Timeslice", "Region", "Year", "Value"]]
+end
+
+function compare_roa_in_time(extr_str1, extr_str2, tag_techno_sector,region, year, sector, inf_tech, colors; year_split=1/8760)
+    df_dict1 = plot_roa(extr_str1, tag_techno_sector, region, year, sector, inf_tech, colors, year_split = year_split, display_plot = false, reduce_subset=false)
+    df_dict2 = plot_roa(extr_str2, tag_techno_sector, region, year, sector, inf_tech, colors, year_split = year_split, display_plot = false, reduce_subset=false)
+
+    keys1 = collect(keys(df_dict1))
+    n_timeslice = size(df_dict1[keys1[1]].Value, 1)
+    union_tech = union(keys(df_dict1), keys(df_dict2))
+    i=1
+    fig = AbstractTrace[]
+
+    for tech in union_tech
+        difference = zeros(n_timeslice)
+        if haskey(df_dict1, tech)
+            gdf = groupby(df_dict1[tech], :Timeslice)
+            df_all_mo = combine(gdf, :Value => sum=>:Value)
+            difference = difference .+ (df_all_mo.Value * year_split)
+        end
+        if haskey(df_dict2, tech)
+            gdf = groupby(df_dict2[tech], :Timeslice)
+            df_all_mo = combine(gdf, :Value => sum=>:Value)
+            difference = difference .- (df_all_mo.Value * year_split)
+        end
+        if !iszero(difference)
+            push!(fig, PlotlyJS.bar(x = 1:n_timeslice,
+                                y = difference,
+                                name=tech,
+                                marker_color=colors[i]))
+            i = i+1
+        end
+    end
+    display(PlotlyJS.plot(fig, Layout(title="Energy production comparison between $(extr_str1) and $(extr_str2)",
+    xaxis_title="Time (hours)",
+    yaxis_title="Production (PJ)",
+    barmode="relative"),
+    config=PlotConfig(scrollZoom=true)))
+end
+
+function plot_price_and_dummy(extr_str, tag_techno_sector,region, year, sector, inf_tech, colors; year_split=1/8760, display_plot=true, reduce_subset=true, considered_dual = [sector])
+    col_names = ["Region", "Timeslice", "Technology", "Year", "Value"]
+    subset_df_sector, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"DispatchDummy", col_names, region, year, sector, inf_tech, reduce_subset = reduce_subset)
+    fig = AbstractTrace[]
+    df_dict = Dict()
+    i = 1
+    timeslices = []
+    for t in sector_techno
+        subset_df_techno = subset_df_sector[(subset_df_sector.Technology.==t),:]
+        timeslices = subset_df_techno.Timeslice
+        if !isempty(subset_df_techno)
+            if display_plot
+                push!(fig, PlotlyJS.bar(x = subset_df_techno.Timeslice,
+                y = (subset_df_techno.Value/31.536)*1000,
+                name=t,
+                marker_color=colors[i]))
+                i += 1
+            end
+            df_dict[t] = subset_df_techno
+        end 
+    end
+
+    prices = plot_duals([extr_str], region, considered_dual = considered_dual, display_plot=false)
+    for (fuel, price) in prices
+        push!(fig, PlotlyJS.scatter(x=timeslices, y = price.Value*(31.536/8760)*1000, name="Dual $(fuel)", yaxis="y2"))
+    end
+
+    storages = plot_storage_status(extr_str, region, year, considered_storages=["S_Gas_H2"])
+    push!(fig, PlotlyJS.scatter(x=timeslices, y=storages.Value*1000, name="H2 Storage No unit"))
+    if display_plot
+        display(PlotlyJS.plot(fig, Layout(title="Available capacity in $(region) for sector $(sector) ($(extr_str))",
+                                xaxis_title="Time (hours)",
+                                yaxis_title="Available capacity (MW)",
+                                yaxis2=attr(title="Cost (€/MWh)", overlaying="y", side="right"),
+                                barmode="relative"),
+                                config=PlotConfig(scrollZoom=true)))
+    end
+    return df_dict
+end
+
+
+function peaking_production(extr_str_list, tag_techno_sector, region, year, sector, inf_tech;year_split=1/8760, write_results=false, id=nothing)
+    added_tech = []
+    roa_dict = Dict()
+    for t in inf_tech
+        if startswith(t, "D_")
+            push!(added_tech, t)
+        end
+    end
+    for extr_str in extr_str_list
+        # computing the argmax of the production (max_timeslice)
+        col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
+        subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, added_tech)
+        subset_df_production, subset_df_charge, subset_df_discharge = separation_mo_storage(subset_df)
+        rename!(subset_df_production, [:Timeslice, :Value_Production])
+        rename!(subset_df_discharge, [:Timeslice, :Value_Discharge])
+        subset_df_total = coalesce.(outerjoin(subset_df_production, subset_df_discharge, on = :Timeslice),0)
+        subset_df_total[!, "Value"] = subset_df_total[!, "Value_Production"] + subset_df_total[!, "Value_Discharge"]
+        argmax_production = argmax(subset_df_total.Value)
+        max_timeslice = subset_df_total.Timeslice[argmax_production]
+
+        # finding the roa at this timeslice + roa of discharging
+        subset_df_max = subset_df[subset_df.Timeslice .== max_timeslice,:]
+        rename!(subset_df_max, :Value => "Value_$(extr_str)_production")
+        # value in GWh
+        subset_df_max[!, "Value_$(extr_str)_production"] = subset_df_max[!, "Value_$(extr_str)_production"] * year_split * 8760/31.536
+
+        # computing the ratio capacity used / total capacity
+        col_names_capacity = ["Year", "Technology", "Region", "Value"]
+        capacities_tmp, _ = extraction_and_cleaning(extr_str, tag_techno_sector, "TotalCapacityAnnual", col_names_capacity, region, year, sector, inf_tech)
+        rename!(capacities_tmp, :Value => :Value_capacity)
+        subset_df_max = coalesce.(leftjoin(subset_df_max, capacities_tmp, on = [:Year, :Technology, :Region]),0)
+        subset_df_max[!, "Ratio_$(extr_str)"] = subset_df_max[:,"Value_$(extr_str)_production"]./subset_df_max.Value_capacity
+        print(subset_df_max)
+
+        roa_dict[extr_str] = select(subset_df_max, Not([:Timeslice]))
+
+    end
+    df_sum = roa_dict[pop!(extr_str_list)]
+    for extr_str in extr_str_list
+        df_sum = coalesce.(outerjoin(df_sum, roa_dict[extr_str], on = [:Technology, :ModeOfOperation, :Region, :Year], makeunique=true), 0)
+    end
+    col_name_production = [name for name in names(df_sum) if occursin("production", name)]
+    df_sum[!, "Value_sum"] = sum(df_sum[!, col_name] for col_name in col_name_production)
+    println(df_sum)
+    if write_results
+        CSV.write("..//Results//peaking_production_$(id).csv", df_sum)
+    end
+    return df_sum
+end
+
+function plot_peaking_production(list_extr_str_list, name_list, tag_techno_sector, region, year, sector, inf_tech;year_split=1/8760)
+    fig = AbstractTrace[]
+    i=1
+    for extr_str_list in list_extr_str_list
+        df_peaking_production = peaking_production(extr_str_list, tag_techno_sector, region, year, sector, inf_tech, year_split=year_split)
+        push!(fig, PlotlyJS.bar(x = df_peaking_production.Technology,
+        y = df_peaking_production.Value_sum,
+        name=name_list[i]
+        ))
+        i+=1
+        fig2 = AbstractTrace[]
+        ratio_list = [ratio for ratio in names(df_peaking_production) if startswith(ratio, "Ratio")]
+        for ratio in ratio_list
+            push!(fig2, PlotlyJS.bar(x = df_peaking_production.Technology,
+            y = df_peaking_production[!,ratio],
+            name=last(split(ratio,"_"))
+            ))
+        end
+        
+        display(PlotlyJS.plot(fig2, Layout(title="Ratio between peaking production and available capacity",
+                                xaxis_title="Technologies",
+                                yaxis_title="Ratio"
+                                ),
+                                config=PlotConfig(scrollZoom=true)))
+    end
+    display(PlotlyJS.plot(fig, Layout(title="Peaking production in $(region) for sector $(sector)",
+                                xaxis_title="Technologies",
+                                yaxis_title="Production (GWh)"
+                                ),
+                                config=PlotConfig(scrollZoom=true)))
+end
+
+function plot_production_capacities(list_extr_str_list, name_list, tag_techno_sector, region, year, sector, fuels, inf_tech;year_split=1/8760)
+    fig1 = AbstractTrace[]
+    fig2 = AbstractTrace[]
+    i=1
+    for extr_str_list in list_extr_str_list
+        df_production_capacities = capacities_production_sum(extr_str_list,region, year, fuels, tag_techno_sector, sector, inf_tech)
+        push!(fig1, PlotlyJS.bar(x = df_production_capacities.Technology,
+        y = df_production_capacities.Capacities_sum,
+        name=name_list[i]
+        ))
+        push!(fig2, PlotlyJS.bar(x = df_production_capacities.Technology,
+        y = df_production_capacities.Production_sum,
+        name=name_list[i]
+        ))
+        i+=1
+    end
+    display(PlotlyJS.plot(fig1, Layout(title="Capacities in $(region) for sector $(sector)",
+                                xaxis_title="Technologies",
+                                yaxis_title="Capacity (GW)"
+                                ),
+                                config=PlotConfig(scrollZoom=true)))
+    display(PlotlyJS.plot(fig2, Layout(title="Total annual production in $(region) for sector $(sector)",
+    xaxis_title="Technologies",
+    yaxis_title="Production (GWh)"
+    ),
+    config=PlotConfig(scrollZoom=true)))
+    
+end
+
+function production_sum(extr_str_list,region, year, fuels)
+    col_names = ["Year", "Technology", "Fuel", "Region", "Value"]
+    production = 0
+    for extr_str in extr_str_list
+        df = extraction_and_cleaning(extr_str, "ProductionByTechnologyAnnual", col_names, region, year, fuels)
+        production += sum(df.Value)
+    end
+    return production * 0.0036
+end
+
+function capacities_production_sum(extr_str_list,region, year, fuels, tag_techno_sector, sector, inf_tech; write_results=false, id=nothing)
+    # production in GWh and capacities in GW
+    col_names_production = ["Year", "Technology", "Fuel", "Region", "Value"]
+    col_names_capacity = ["Year", "Technology", "Region", "Value"]
+    extr_str1 = pop!(extr_str_list)
+    df_total = select(extraction_and_cleaning(extr_str1, "ProductionByTechnologyAnnual", col_names_production, region, year, fuels), Not(:Fuel))
+    inf_tech_wo_inf = [tech for tech in inf_tech if !startswith(tech, "Infeasibility")]
+    print(inf_tech_wo_inf)
+    df_capacities, _ = extraction_and_cleaning(extr_str1, tag_techno_sector, "TotalCapacityAnnual", col_names_capacity, region, year, sector, inf_tech_wo_inf)
+    print(df_capacities)
+    df_total.Value = df_total.Value / 0.0036
+    rename!(df_total, :Value => :Value_Production)
+    rename!(df_capacities, :Value => :Value_Capacities)
+    df_total = coalesce.(leftjoin(df_total, df_capacities, on = [:Year, :Technology, :Region]),0)
+     
+    for extr_str in extr_str_list
+        col_names_production = ["Year", "Technology", "Fuel", "Region", "Value"]
+        col_names_capacity = ["Year", "Technology", "Region", "Value"]
+        production_tmp = select(extraction_and_cleaning(extr_str, "ProductionByTechnologyAnnual", col_names_production, region, year, fuels), Not(:Fuel))
+        production_tmp.Value = production_tmp.Value / 0.0036
+        capacities_tmp, _ = extraction_and_cleaning(extr_str, tag_techno_sector, "TotalCapacityAnnual", col_names_capacity, region, year, sector, inf_tech_wo_inf)
+        rename!(production_tmp, :Value => :Value_Production)
+        rename!(capacities_tmp, :Value => :Value_Capacities)
+
+        df_total = coalesce.(outerjoin(df_total, capacities_tmp, on = [:Year, :Technology, :Region], makeunique=true), 0)
+        df_total = coalesce.(leftjoin(df_total, production_tmp, on = [:Year, :Technology, :Region], makeunique=true), 0)
+    end
+    
+    col_name_capacities = [name for name in names(df_total) if occursin("Capacities", name)]
+    col_name_production = [name for name in names(df_total) if occursin("Production", name)]
+    df_total[!, "Capacities_sum"] = sum(df_total[!, col_name] for col_name in col_name_capacities)
+    df_total[!, "Production_sum"] = sum(df_total[!, col_name] for col_name in col_name_production)
+    if write_results
+        CSV.write("..//Results//capacities_production_$(id).csv", df_total)
+    end
+    return df_total
+end
+
+function max_use_capacities(extr_str, tag_techno_sector,region, year, sector, inf_tech; year_split=1/8760)
+    colors = []
+    df_roa = plot_roa(extr_str, tag_techno_sector, region, year, sector, inf_tech, colors, year_split= year_split, display_plot=false)
+    max_used_capacity = Dict()
+    for tech in keys(df_roa)
+        max_used_capacity[tech] = maximum(df_roa[tech].Value)*year_split * 8760 / 31.536
+    end
+    return max_used_capacity
 end
