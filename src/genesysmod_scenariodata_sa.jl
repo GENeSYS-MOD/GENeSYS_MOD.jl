@@ -33,6 +33,48 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",y] = 0.1
     Params.GrowthRateTradeCapacity[r,rr,"H2",y] = 0.15
   end end end end
+  ######Availability Factor Gas to zero
+  for r ∈ Sets.Region_full 
+    Params.AvailabilityFactor[r,"Z_Import_Gas",2018] = 0
+  end
+
+  #No new PV technologies in 2018 & 2025
+  #tracking not allowed
+  for r ∈ Sets.Region_full
+    Params.AvailabilityFactor[r,"RES_PV_Utility_HSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_THSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_VSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_DAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_HSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_THSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_VSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_PV_Utility_DAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2025] = 0
+  end
+  
+  #bifacial not allowed
+  for r ∈ Sets.Region_full
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2018] = 0 
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_90",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_Opt",2018] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2025] = 0 
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_90",2025] = 0
+    Params.AvailabilityFactor[r,"RES_BPV_Utility_Opt",2025] = 0
+
+  end
 
 
   for y ∈ Sets.Year for t ∈ Sets.Technology for r ∈ Sets.Region_full

@@ -1126,11 +1126,13 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
           base_name="BYB1_RegionalBaseYearProductionLowerBound|$(y)|$(r)|$(t)|$(f)")
         end
       end
-      if Params.RegionalBaseYearProduction[r,t,"Power",y] != 0
-        @constraint(model,
-        Vars.ProductionByTechnologyAnnual[y,t,"Power",r] <= Params.RegionalBaseYearProduction[r,t,"Power",y] + Vars.BaseYearBounds_TooLow[r,t,"Power",y],
-        base_name="BYB2_RegionalBaseYearProductionUpperBound|$(y)|$(r)|$(t)_Power")
-      end
+      for f ∈ Maps.Tech_Fuel[t]
+        if Params.RegionalBaseYearProduction[r,t,f,y] != 0
+         @constraint(model,
+         Vars.ProductionByTechnologyAnnual[y,t,f,r] <= Params.RegionalBaseYearProduction[r,t,f,y] + Vars.BaseYearBounds_TooLow[r,t,f,y],
+         base_name="BYB2_RegionalBaseYearProductionUpperBound|$(y)|$(r)|$(t)|$(f)")
+        end
+      end  
     end end end
     print("Cstr: Baseyear : ",Dates.now()-start,"\n")
   end
