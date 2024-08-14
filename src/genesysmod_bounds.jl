@@ -328,8 +328,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             if storage_row.IsDaily == 1 && (timestamp - Switch.elmod_hourstep + Switch.elmod_starthour) % 24 == 0
                 
                 for region ∈ Sets.Region_full for year ∈ Sets.Year
-                    JuMP.fix(Vars.StorageLevelTSStart[storage_row.Storage,year,timestamp,region], 0; force = true)
-                    #Vars.StorageLevelYearStart[storage_row.Storage,year,region]
+                    # Make reset equal to the initial storage level
+                    @constraint(model, Vars.StorageLevelTSStart[storage_row.Storage,year,timestamp,region] == Vars.StorageLevelYearStart[storage_row.Storage,year,region])
                 end end
 
             end

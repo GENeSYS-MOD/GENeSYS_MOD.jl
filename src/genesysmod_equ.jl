@@ -680,15 +680,6 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   start=Dates.now()
   for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
 
-    #if t == "D_Heat_HLDH"
-    #  for m in Maps.Tech_MO[t]
-    #    println("y: ",y," t: ",t," r: ",r, " m: ", m)
-    #    println("Params.VariableCost[r,t,m,y]: ",Params.VariableCost[r,t,m,y])
-    #    println("CanBuildTechnology[y,t,r]: ",CanBuildTechnology[y,t,r])
-    #  end
-    #end
-    
-
     if (sum(Params.VariableCost[r,t,m,y] for m ∈ Maps.Tech_MO[t]) > 0) & (CanBuildTechnology[y,t,r] > 0)
       @constraint(model, sum((Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r]*Params.VariableCost[r,t,m,y]) for m ∈ Maps.Tech_MO[t]) == Vars.AnnualVariableOperatingCost[y,t,r], base_name="OC1_OperatingCostsVariable_$(y)_$(t)_$(r)")
     else
