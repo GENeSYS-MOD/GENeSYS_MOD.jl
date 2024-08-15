@@ -37,6 +37,77 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   for r ∈ Sets.Region_full 
     Params.AvailabilityFactor[r,"Z_Import_Gas",2018] = 0
   end
+  ############################### Settings 2025 ###############################################
+  #####  Solar Capacity Cap for 2025
+  @constraint(model, 
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Solar"]) <= 13, 
+    base_name="JH_PvRestriction_Total_2025")
+  #####
+  #####  Wind Capacity Cap for 2025
+  @constraint(model, 
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Wind"]) <= 9, 
+    base_name="JH_WindRestriction_Total_2025")
+  #####
+
+  #####  Hydro Capacity Cap for 2025
+  @constraint(model, 
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Hydro"]) <= 4, 
+    base_name="JH_HydroRestriction_Total_2025")
+  #####
+
+  ###### P_Gas_OCGT Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_OCGT", r] for r in Sets.Region_full) <= 5, 
+  base_name="JH_Gas_1_Restriction_Total_2025")
+  #####
+  
+  ###### P_Gas_CCGT Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_CCGT", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_2_Restriction_Total_2025")
+  #####  
+
+  ###### CHP_Gas_CCGT_Natural Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"CHP_Gas_CCGT_Natural", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_3_Restriction_Total_2025")
+  #####  
+
+  ###### P_Gas_Engines Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_Engines", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_4_Restriction_Total_2025")
+  #####  
+
+  ###### CHP_Gas_CCGT_Biogas Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"CHP_Gas_CCGT_Biogas", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_5_Restriction_Total_2025")
+  #####  
+
+  ###### CHP_Gas_CCGT_SynGas Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"CHP_Gas_CCGT_SynGas", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_6_Restriction_Total_2025")
+  #####  
+
+  ###### RES_Wind_Offshore_Transitional Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"RES_Wind_Offshore_Transitional", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Wind_offshore_Transitional_Restriction_Total_2025")
+  #####  
+  ###### RES_Wind_Offshore_Shallow Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"RES_Wind_Offshore_Shallow", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Wind_offshore_Shallow_Restriction_Total_2025")
+  #####  
+  ###### RES_Wind_Offshore_Deep Cap for 2025
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2025,"RES_Wind_Offshore_Deep", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Wind_offshore_Deep_Restriction_Total_2025")
+  #####  
+
+
 
   #No new PV technologies in 2018 & 2025
   #tracking not allowed
