@@ -129,11 +129,11 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
     # ####### Fix Investment Variables #############
     #
     # read investment results for relevant variables
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch * ".csv"), DataFrame)
     tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch * ".csv"), DataFrame)
     tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_dispatch * ".csv"), DataFrame)
     tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
     tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
@@ -146,7 +146,7 @@ function genesysmod_simple_dispatch(;elmod_daystep, elmod_hourstep, solver, DNLP
         end
         if Switch.switch_infeasibility_tech == 1
             for t ∈ Params.TagTechnologyToSubsets["DummyTechnology"]
-                fix(model[:TotalCapacityAnnual][y,t,r], 99999; force=true)
+                fix(model[:TotalCapacityAnnual][y,t,r], 999999; force=true)
                 # @constraint(model, model[:TotalCapacityAnnual][y,t,r] == 99999,
                 # base_name="Fix_Investments_$(y)_$(t)_$(r)")
             end

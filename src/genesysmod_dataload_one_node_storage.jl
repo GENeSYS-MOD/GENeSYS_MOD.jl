@@ -42,7 +42,7 @@ function genesysmod_dataload_one_node_storage(Switch)
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Sector"]
     if Switch.switch_infeasibility_tech == 1
         append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power"])
+         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power", "Infeasibility_CLB"])
         append!(Storage, ["S_Trade_Storage_Power"])
         push!(Sector,"Infeasibility")
     end
@@ -58,7 +58,7 @@ function genesysmod_dataload_one_node_storage(Switch)
     TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
     if Switch.switch_infeasibility_tech == 1
         TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power"]
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power", "Infeasibility_CLB"]
         push!(TagTechnologyToSubsets["StorageDummies"], "D_Trade_Storage_Power")
     end
     
@@ -261,7 +261,7 @@ function genesysmod_dataload_one_node_storage(Switch)
     # ####### Load from hourly Data #############
     #
     
-    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
+    SpecifiedDemandProfile, CapacityFactor, x_peakingDemand, YearSplit, TimeDepEfficiency = GENeSYS_MOD.timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnnualDemand)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡
         for f ∈ 𝓕
@@ -295,6 +295,7 @@ function genesysmod_dataload_one_node_storage(Switch)
         InputActivityRatio[:,"D_Trade_Storage_Power","Power",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+        OutputActivityRatio[:,"Infeasibility_CLB","Cool_Low_Building",1,:] .= 1
 
         CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -331,7 +332,7 @@ function genesysmod_dataload_one_node_storage(Switch)
     SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     TagDispatchableTechnology,
-    RegionalBaseYearProduction,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
+    RegionalBaseYearProduction,TimeDepEfficiency, RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
     StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
     TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
@@ -355,20 +356,3 @@ function genesysmod_dataload_one_node_storage(Switch)
     return Sets, Params, Emp_Sets
 end
 
-"""
-make_mapping(Sets,Params)
-
-Creates a mapping of the allowed combinations of technology and fuel (and revers) and mode of operations.
-"""
-function make_mapping(Sets,Params)
-    Map_Tech_Fuel = Dict(t=>[f for f ∈ Sets.Fuel if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
-    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for t ∈ Sets.Technology)
-
-   Map_Tech_MO = Dict(t=>[m for m ∈ Sets.Mode_of_operation if (any(Params.OutputActivityRatio[:,t,:,m,:].>0)
-    || any(Params.InputActivityRatio[:,t,:,m,:].>0))] for t ∈ Sets.Technology)
-
-   Map_Fuel_Tech = Dict(f=>[t for t ∈ Sets.Technology if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
-    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for f ∈ Sets.Fuel)
-
-    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
-end

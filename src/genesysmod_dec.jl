@@ -61,6 +61,14 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AccumulatedNewCapacity = @variable(model, AccumulatedNewCapacity[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     TotalCapacityAnnual = @variable(model, TotalCapacityAnnual[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
+    for r in 𝓡 for y in 𝓨
+        for t in 𝓣
+            if startswith(t, "Z_Import")
+                JuMP.fix(model[:TotalCapacityAnnual][y,t,r], 9999; force=true)
+            end
+        end
+    end end
+
     date1 = Dates.now()
     println("time 1: ", date1-start)
 

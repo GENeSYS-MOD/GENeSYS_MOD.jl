@@ -42,7 +42,7 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Sector"]
     if Switch.switch_infeasibility_tech == 1
         append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
+         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_CLB"])
         push!(Sector,"Infeasibility")
     end
 
@@ -61,7 +61,7 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
     if Switch.switch_infeasibility_tech == 1
         TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"]
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_CLB"]
     end
     TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
     
@@ -327,6 +327,7 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
         OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
         OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
         OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+        OutputActivityRatio[:,"Infeasibility_CLB","Cool_Low_Building",1,:] .= 1
 
         CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -398,22 +399,4 @@ function genesysmod_dataload_two_nodes(Switch, considered_region)
     TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets)
 
     return Sets, Params, Emp_Sets, Sets_full.Region_full, Params_full
-end
-
-"""
-make_mapping(Sets,Params)
-
-Creates a mapping of the allowed combinations of technology and fuel (and revers) and mode of operations.
-"""
-function make_mapping(Sets,Params)
-    Map_Tech_Fuel = Dict(t=>[f for f ∈ Sets.Fuel if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
-    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for t ∈ Sets.Technology)
-
-   Map_Tech_MO = Dict(t=>[m for m ∈ Sets.Mode_of_operation if (any(Params.OutputActivityRatio[:,t,:,m,:].>0)
-    || any(Params.InputActivityRatio[:,t,:,m,:].>0))] for t ∈ Sets.Technology)
-
-   Map_Fuel_Tech = Dict(f=>[t for t ∈ Sets.Technology if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
-    || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for f ∈ Sets.Fuel)
-
-    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
 end

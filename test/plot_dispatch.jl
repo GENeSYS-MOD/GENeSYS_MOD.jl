@@ -41,7 +41,11 @@ function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_na
     in_data = CSV.read("test\\TestData\\Results\\$(result_file)_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
 
     ## removing the 0 from the dataframe, so the data is smaller
-    subset_df = in_data[(in_data.Region .== region) .&& (in_data.Year .== year),:]
+    if !isnothing(region)
+        subset_df = in_data[(in_data.Region .== region) .&& (in_data.Year .== year),:]
+    else
+        subset_df = in_data[(in_data.Year .== year),:]
+    end
     subset_df_reduced = subset_df
     if reduce_subset
         subset_df_reduced = subset_df[subset_df.Value .!=0,:]
@@ -143,14 +147,20 @@ function plot_roa(extr_str, tag_techno_sector,region, year, sector, inf_tech, co
             if !isempty(subset_df_techno)
                 gdf_techno = groupby(subset_df_techno, "ModeOfOperation")
                 for (mo, subdf) in pairs(gdf_techno)
+                    println(t)
+                    println(mo)
+
+                    gdf = groupby(subdf, :Timeslice)
+                    df_all_region = combine(gdf, :Value => sum=>:Value)
+
                     if display_plot
-                        push!(fig, PlotlyJS.bar(x = subset_df_techno.Timeslice,
-                        y = subset_df_techno.Value*year_split,
+                        push!(fig, PlotlyJS.bar(x = subdf.Timeslice,
+                        y = df_all_region.Value*year_split,
                         name=t,
                         marker_color=colors[i]))
                         i += 1
                     end
-                    df_dict["$(t)_$(mo.ModeOfOperation)"] = subdf
+                    df_dict["$(t)_$(mo.ModeOfOperation)"] = df_all_region
                 end
             end 
         end
@@ -189,20 +199,23 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
     ## 1. Curtailment
     col_names = ["Region", "Timeslice", "Technology", "Year", "Value"]
     subset_df_curtailment, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"CurtailedCapacity", col_names, region, year, sector, inf_tech, group_techno=true)
+    gdf = groupby(subset_df_curtailment, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
     
     push!(fig, PlotlyJS.bar(x = subset_df_curtailment.Timeslice,
-                    y = -subset_df_curtailment.Value*31.56*year_split,
+                    y = -df_all_region.Value*31.56*year_split,
                     name="Curtailment"))
-    dict_demand["Curtailment"] = -subset_df_curtailment.Value*31.56*year_split
+    dict_demand["Curtailment"] = -df_all_region.Value*31.56*year_split
 
     ## 2. Export
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
     subset_df_export = extraction_and_cleaning(extr_str, "Export", col_names, region, year, fuels, group_fuels = true)
-    println(sum(subset_df_export.Value))
+    gdf = groupby(subset_df_export, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
     push!(fig, PlotlyJS.bar(x = subset_df_export.Timeslice,
-    y = -subset_df_export.Value,
+    y = -df_all_region.Value,
     name = "Exports"))
-    dict_demand["Exports"] = -subset_df_export.Value
+    dict_demand["Exports"] = -df_all_region.Value
 
     ## 3. Total production including charge / discharge of the storage
     col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
@@ -216,20 +229,30 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
     print(subset_df)
     subset_df_production, subset_df_charge, subset_df_discharge = separation_mo_storage(subset_df)
     timeslices = subset_df_production.Timeslice
-    push!(fig, PlotlyJS.bar(x = subset_df_production.Timeslice,
-    y = subset_df_discharge.Value * year_split,
-    name = "Storage discharge"))
-    dict_demand["StorageDischarge"] = subset_df_discharge.Value * year_split
+    
+    gdf = groupby(subset_df_discharge, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
 
     push!(fig, PlotlyJS.bar(x = subset_df_production.Timeslice,
-    y = subset_df_production.Value * year_split,
+    y = df_all_region.Value * year_split,
+    name = "Storage discharge"))
+    dict_demand["StorageDischarge"] = df_all_region.Value * year_split
+
+    gdf = groupby(subset_df_production, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
+
+    push!(fig, PlotlyJS.bar(x = subset_df_production.Timeslice,
+    y = df_all_region.Value * year_split,
     name = "Production"))
-    dict_demand["Production"] = subset_df_production.Value * year_split
+    dict_demand["Production"] = df_all_region.Value * year_split
+
+    gdf = groupby(subset_df_charge, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
     
     push!(fig, PlotlyJS.bar(x = subset_df_charge.Timeslice,
-    y = -subset_df_charge.Value * year_split,
+    y = -df_all_region.Value * year_split,
     name = "Storage charge"))
-    dict_demand["StorageCharge"] = -subset_df_charge.Value * year_split
+    dict_demand["StorageCharge"] = -df_all_region.Value * year_split
 
     ## 4. Infeasibility
     col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
@@ -240,18 +263,26 @@ function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech
         end
     end
     subset_df_inf, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, inf_tech, group_techno=true, defined_sector_techno = real_inf_tech)
+
+    gdf = groupby(subset_df_inf, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
+
     push!(fig, PlotlyJS.bar(x = subset_df_inf.Timeslice,
-    y = subset_df_inf.Value*year_split,
+    y = df_all_region.Value*year_split,
     name="Infeasible"))
-    dict_demand["Infeasible"] = subset_df_inf.Value*year_split
+    dict_demand["Infeasible"] = df_all_region.Value*year_split
 
     ## 5. Import
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Region2","Value"]
     subset_df_import = extraction_and_cleaning(extr_str, "Import", col_names, region, year, fuels, group_fuels = true)
+
+    gdf = groupby(subset_df_import, :Timeslice)
+    df_all_region = combine(gdf, :Value => sum=>:Value)
+
     push!(fig, PlotlyJS.bar(x = subset_df_import.Timeslice,
-    y = subset_df_import.Value,
+    y = df_all_region.Value,
     name = "Imports"))
-    dict_demand["Imports"] = subset_df_import.Value
+    dict_demand["Imports"] = df_all_region.Value
 
     ## 6. Dual
     if plot_prices
@@ -377,7 +408,11 @@ function plot_period_comparison_roa(extr_str_list, period, region, year, tag_tec
             i+=1
         end
     end
-    display(PlotlyJS.plot(fig, Layout(title="Production in sector $(sector) of $(region) in period $(period)",
+    title = "Production in sector $(sector) of $(region) in period $(period)"
+    if isnothing(region)
+        title = "Production in sector $(sector) in Europe in period $(period)"
+    end
+    display(PlotlyJS.plot(fig, Layout(title=title,
     yaxis_title="Energy (PJ)",
     barmode="relative"),
     config=PlotConfig(scrollZoom=true)))
@@ -408,7 +443,11 @@ function plot_year_comparison_demand(extr_str_list, region, year, tag_techno_sec
             ))
         end
     end
-    display(PlotlyJS.plot(fig, Layout(title="Energy demand in sector $(sector) of $(region) in the year",
+    title = "Energy demand in sector $(sector) for $(region) in the year $(year)"
+    if isnothing(region)
+        title = title = "Energy demand in sector $(sector) in Europe during the year $(year)"
+    end
+    display(PlotlyJS.plot(fig, Layout(title=title,
     yaxis_title="Energy (PJ)",
     barmode="relative"),
     config=PlotConfig(scrollZoom=true)))      
@@ -658,7 +697,7 @@ function peaking_production(extr_str_list, tag_techno_sector, region, year, sect
     for extr_str in extr_str_list
         # computing the argmax of the production (max_timeslice)
         col_names = ["Year", "Timeslice", "Technology", "ModeOfOperation", "Region", "Value"]
-        subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, added_tech)
+        subset_df, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"RateOfActivity", col_names, region, year, sector, inf_tech)
         subset_df_production, subset_df_charge, subset_df_discharge = separation_mo_storage(subset_df)
         rename!(subset_df_production, [:Timeslice, :Value_Production])
         rename!(subset_df_discharge, [:Timeslice, :Value_Discharge])
@@ -795,6 +834,7 @@ function capacities_production_sum(extr_str_list,region, year, fuels, tag_techno
         df_total = coalesce.(outerjoin(df_total, capacities_tmp, on = [:Year, :Technology, :Region], makeunique=true), 0)
         df_total = coalesce.(leftjoin(df_total, production_tmp, on = [:Year, :Technology, :Region], makeunique=true), 0)
     end
+    print(df_total)
     
     col_name_capacities = [name for name in names(df_total) if occursin("Capacities", name)]
     col_name_production = [name for name in names(df_total) if occursin("Production", name)]
@@ -814,4 +854,52 @@ function max_use_capacities(extr_str, tag_techno_sector,region, year, sector, in
         max_used_capacity[tech] = maximum(df_roa[tech].Value)*year_split * 8760 / 31.536
     end
     return max_used_capacity
+end
+
+function plot_emissions(extr_str_list, sectors, years; name_list=nothing)
+    col_names = ["Year", "Emissions", "Sector", "Region", "Value"]
+    fig = AbstractTrace[]
+    in_data_dict = Dict()
+    for extr_str in extr_str_list
+        in_data = CSV.read("test\\TestData\\Results\\AnnualSectoralEmissions_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
+        in_data_dict[extr_str] = in_data
+    end
+    if isnothing(name_list)
+        name_list = extr_str_list
+    end
+    for sector in sectors
+        y = []
+        for extr_str in extr_str_list
+            for year in years
+                in_data = in_data_dict[extr_str]
+                in_data_sector = in_data[(in_data.Sector .== sector) .& (in_data.Year .== year),:]
+                push!(y, sum(in_data_sector.Value))
+            end
+        end
+        push!(fig, PlotlyJS.bar(x = name_list,
+        y = y,
+        name=sector
+        ))
+    end
+    y = []
+    for extr_str in extr_str_list
+        for year in years
+            in_data = in_data_dict[extr_str]
+            in_data_other_sectors = in_data[.!in.(in_data.Sector,Ref(sectors)) .& (in_data.Year .== year),:]
+            push!(y, sum(in_data_other_sectors.Value))
+        end
+    end
+    push!(fig, PlotlyJS.bar(x = name_list,
+        y = y,
+        name="Other"
+        ))
+
+    display(PlotlyJS.plot(fig, Layout(title="Annual CO2 emissions in Europe in $(years)",
+    xaxis_title="Taxation scenario",
+    yaxis_title="Annual CO2 emissions (MtCO2 eq)",
+    barmode="relative"
+    ),
+    config=PlotConfig(scrollZoom=true)))
+
+
 end
