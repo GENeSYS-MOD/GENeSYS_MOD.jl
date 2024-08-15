@@ -330,14 +330,25 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
                 JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
             end
+#=         for s in intersect(Sets.Storage, ["S_CAES"])
+            if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (48/Switch.elmod_hourstep) == 0
+                JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
+            end =#
         end
-    Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"HLR_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"HLI_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
+        Params.CapacityFactor[r,"HLR_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        Params.CapacityFactor[r,"HLI_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
     end end end
 
+    #for r ∈ Sets.Region_full for s in Sets.Storage for y ∈ Sets.Year
+        #Params.CapitalCostStorage[r,s,y] = CapitalCostStorage[r,s,y]/365*8760/Switch.elmod_nthhour/(24/Switch.elmod_hourstep)
+
+        #@constraint(model, Vars.StorageUpperLimit[s,y,r] <= sum(Params.TotalCapacityAnnual[y,t,r] * Partams.StorageE2PRatio[s] * 0.0036 * 3 for t in Sets.Technology for m in Sets.Mode_of_operation if Params.TechnologyToStorage[t,s,m,y] != 0),
+        #base_name="Add_E2PRatio_up|$(s)|$(y)|$(r)")
+        #@constraint(model, Vars.StorageUpperLimit[s,y,r] >= sum(Params.TotalCapacityAnnual[y,t,r] * Partams.StorageE2PRatio[s] * 0.0036 * 0.5 for t in Sets.Technology for m in Sets.Mode_of_operation if Params.TechnologyToStorage[t,s,m,y] != 0),
+        #base_name="Add_E2PRatio_low|$(s)|$(y)|$(r)")
 end
 
 function YearlyDifferenceMultiplier(y,Sets);

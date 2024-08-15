@@ -51,10 +51,12 @@ function genesysmod_dataload(Switch)
     Sets=GENeSYS_MOD.Sets(Timeslice_full,Emission,Technology,Fuel,
         Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
 
-    tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
+#=     tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
     DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
-    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
+    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets") =#
+    TagTechnologyToSubsets = read_subsets(in_data, "Par_TagTechnologyToSubsets")
+    TagFuelToSubsets = read_subsets(in_data, "Par_TagFuelToSubsets")
 
     if Switch.switch_infeasibility_tech == 1
         TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
@@ -138,6 +140,9 @@ function genesysmod_dataload(Switch)
     TagElectricTechnology = create_daa(in_data, "Par_TagElectricTechnology",dbr, 𝓣)
     TagTechnologyToModalType = create_daa(in_data, "Par_TagTechnologyToModalType",dbr, 𝓣, 𝓜, 𝓜𝓽)
     TagTechnologyToSector = create_daa(in_data, "Par_TagTechnologyToSector",dbr, 𝓣, 𝓢𝓮)
+    
+    StorageE2PRatio = nothing
+    #StorageE2PRatio = create_daa(in_data, "Par_StorageE2PRatio",dbr, 𝓢)
 
 
     RateOfDemand = JuMP.Containers.DenseAxisArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓡)
@@ -324,7 +329,8 @@ function genesysmod_dataload(Switch)
     ModalSplitByFuelAndModalType,TagTechnologyToModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,
-    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets)
+    TagDemandFuelToSector,TagElectricTechnology, TagTechnologyToSubsets, TagFuelToSubsets,
+    StorageE2PRatio)
 
     return Sets, Params, Emp_Sets
 end
