@@ -1118,16 +1118,21 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
    start=Dates.now()
     for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡
       for f ∈ Maps.Tech_Fuel[t]
+        if Switch.switch_base_year_bounds_debugging == 0
+          JuMP.fix(Vars.BaseYearBounds_TooHigh[y,r,t,f], 0; force=true)
+          JuMP.fix(Vars.BaseYearBounds_TooLow[y,r,t,f], 0; force=true)
+        end
         if Params.RegionalBaseYearProduction[r,t,f,y] != 0
           @constraint(model,
           Vars.ProductionByTechnologyAnnual[y,t,f,r] >= Params.RegionalBaseYearProduction[r,t,f,y]*(1-Settings.BaseYearSlack[f]) - Vars.BaseYearBounds_TooHigh[y,r,t,f],
           base_name="BYB1_RegionalBaseYearProductionLowerBound|$(y)|$(r)|$(t)|$(f)")
         end
-      end
-      if Params.RegionalBaseYearProduction[r,t,"Power",y] != 0
-        @constraint(model,
-        Vars.ProductionByTechnologyAnnual[y,t,"Power",r] <= Params.RegionalBaseYearProduction[r,t,"Power",y] + Vars.BaseYearBounds_TooLow[r,t,"Power",y],
-        base_name="BYB2_RegionalBaseYearProductionUpperBound|$(y)|$(r)|$(t)_Power")
+      
+        if Params.RegionalBaseYearProduction[r,t,f,y] != 0
+          @constraint(model,
+          Vars.ProductionByTechnologyAnnual[y,t,f,r] <= Params.RegionalBaseYearProduction[r,t,f,y] + Vars.BaseYearBounds_TooLow[r,t,f,y],
+          base_name="BYB2_RegionalBaseYearProductionUpperBound|$(y)|$(r)|$(t)|$(f)")
+        end
       end
     end end end
     print("Cstr: Baseyear : ",Dates.now()-start,"\n")
