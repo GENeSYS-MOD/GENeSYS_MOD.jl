@@ -7,3 +7,4 @@ Solution_julia.sol
 thoughts.txt
 gurobi.opt
 plan.txt
+test/test.jl

@@ -266,7 +266,7 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Set
     ####
     for r ∈ Sets.Region_full for y ∈ Sets.Year 
         if resourcecosts[r,"H2",y] == 0
-            resourcecosts[r,"H2",y] = levelizedcostsPJ(r,"Z_Import_H2","H2",1,y)
+            resourcecosts[r,"H2",y] = levelizedcostsPJ[r,"Z_Import_H2","H2",1,y]
         end
         if resourcecosts[r,"Biofuel",y] == 0
             resourcecosts[r,"Biofuel",y] = levelizedcostsPJ[r,"X_Biofuel","Biofuel",1,y]

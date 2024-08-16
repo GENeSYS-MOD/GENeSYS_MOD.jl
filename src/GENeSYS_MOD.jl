@@ -30,6 +30,7 @@ using Dates
 using JuMP
 using XLSX
 using CSV
+using Statistics
 
 include("datastructures.jl")
 include("utils.jl")
