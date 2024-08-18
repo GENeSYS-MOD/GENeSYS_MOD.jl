@@ -38,6 +38,24 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     Params.AvailabilityFactor[r,"Z_Import_Gas",2018] = 0
   end
   ############################### Settings 2025 ###############################################
+  ### Coal min production to be in line with IRP and current ressearc
+  @constraint(model, 
+    sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 770, 
+    base_name="JH_Coal_MinProd_Total_2025")
+  #####
+
+   ### Coal min production to be in line with IRP and current ressearc
+  @constraint(model, 
+    sum(Vars.ProductionByTechnologyAnnual[2030,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 300, 
+    base_name="JH_Coal_MinProd_Total_2030")
+  #####
+
+  #####  CHP Biomass Capacity Cap for 2025
+  @constraint(model, 
+    sum(Vars.ProductionByTechnologyAnnual[2025,"CHP_Biomass_Solid","Power", r] for r in Sets.Region_full) <= 16, 
+    base_name="JH_Biomass_MaxProd_Total_2025")
+  #####
+
   #####  Solar Capacity Cap for 2025
   @constraint(model, 
     sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Solar"]) <= 13, 
@@ -107,7 +125,42 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   base_name="JH_Wind_offshore_Deep_Restriction_Total_2025")
   #####  
 
+  ######################Caps for 2030##############
+  ###### P_Gas_OCGT Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"P_Gas_OCGT", r] for r in Sets.Region_full) <= 12, 
+  base_name="JH_Gas_1_Restriction_Total_2030")
+  #####
+  
+  ###### P_Gas_CCGT Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"P_Gas_CCGT", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_2_Restriction_Total_2030")
+  #####  
 
+  ###### CHP_Gas_CCGT_Natural Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"CHP_Gas_CCGT_Natural", r] for r in Sets.Region_full) <= 7.5, 
+  base_name="JH_Gas_3_Restriction_Total_2030")
+  #####  
+
+  ###### P_Gas_Engines Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"P_Gas_Engines", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_4_Restriction_Total_2030")
+  #####  
+
+  ###### CHP_Gas_CCGT_Biogas Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"CHP_Gas_CCGT_Biogas", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_5_Restriction_Total_2030")
+  #####  
+
+  ###### CHP_Gas_CCGT_SynGas Cap for 2030
+  @constraint(model, 
+  sum(Vars.TotalCapacityAnnual[2030,"CHP_Gas_CCGT_SynGas", r] for r in Sets.Region_full) <= 0.1, 
+  base_name="JH_Gas_6_Restriction_Total_2030")
+  #####  
 
   #No new PV technologies in 2018 & 2025
   #tracking not allowed

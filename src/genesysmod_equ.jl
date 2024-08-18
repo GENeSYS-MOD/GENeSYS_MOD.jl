@@ -579,10 +579,15 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
               base_name="SC2_LimitAnnualCapacityAdditions|$(𝓨[i])|$(r)|$(t)")
             end
             for f ∈ 𝓕
-              for t ∈ intersect(Maps.Fuel_Tech[f],Params.TagTechnologyToSubsets["PhaseInSet"])
+              for t ∈ intersect(Maps.Fuel_Tech[f], Params.TagTechnologyToSubsets["PhaseInSet"])
                 @constraint(model,
-                Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] >= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseIn[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1), 
-                base_name="SC3_SmoothingRenewableIntegration|$(𝓨[i])|$(r)|$(t)|$(f)")
+                    Vars.ProductionByTechnologyAnnual[𝓨[i], t, f, r] >= 
+                    Vars.ProductionByTechnologyAnnual[𝓨[i-1], t, f, r] * 
+                    Settings.PhaseIn[𝓨[i]] * 
+                    (Params.SpecifiedAnnualDemand[r, f, 𝓨[i]] > 0 && Params.SpecifiedAnnualDemand[r, f, 𝓨[i-1]] > 0 ?
+                     Params.SpecifiedAnnualDemand[r, f, 𝓨[i]] / Params.SpecifiedAnnualDemand[r, f, 𝓨[i-1]] : 1),
+                    base_name="SC3_SmoothingRenewableIntegration|$(𝓨[i])|$(r)|$(t)|$(f)"
+                  )
               end
               for t ∈ intersect(Maps.Fuel_Tech[f],Params.TagTechnologyToSubsets["PhaseOutSet"])
                 @constraint(model, 
