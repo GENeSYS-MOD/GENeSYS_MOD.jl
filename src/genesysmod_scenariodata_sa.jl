@@ -37,6 +37,16 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   for r ∈ Sets.Region_full 
     Params.AvailabilityFactor[r,"Z_Import_Gas",2018] = 0
   end
+
+
+  ####################Capacity in 2025 Constraint ##############################################
+  ### max cap to stop studden build-up
+  #@constraint(model, 
+  #sum(Vars.AccumulatedNewCapacity[2018,t,r] for r in Sets.Region_full, t in Sets.Technology) <= 200, 
+  #base_name="JH_RES_MAX_CAP_2025")
+  #####
+
+
   ############################### Settings 2025 ###############################################
   ### Coal min production to be in line with IRP and current ressearc
   @constraint(model, 
@@ -58,12 +68,12 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
 
   #####  Solar Capacity Cap for 2025
   @constraint(model, 
-    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Solar"]) <= 13, 
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Solar"]) <= 15, #13
     base_name="JH_PvRestriction_Total_2025")
   #####
   #####  Wind Capacity Cap for 2025
   @constraint(model, 
-    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Wind"]) <= 9, 
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Wind"]) <= 15,  #9
     base_name="JH_WindRestriction_Total_2025")
   #####
 
@@ -75,13 +85,13 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
 
   ###### P_Gas_OCGT Cap for 2025
   @constraint(model, 
-  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_OCGT", r] for r in Sets.Region_full) <= 5, 
+  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_OCGT", r] for r in Sets.Region_full) <= 5, #5
   base_name="JH_Gas_1_Restriction_Total_2025")
   #####
   
   ###### P_Gas_CCGT Cap for 2025
   @constraint(model, 
-  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_CCGT", r] for r in Sets.Region_full) <= 0.1, 
+  sum(Vars.TotalCapacityAnnual[2025,"P_Gas_CCGT", r] for r in Sets.Region_full) <= 0.1, #0.1
   base_name="JH_Gas_2_Restriction_Total_2025")
   #####  
 
@@ -220,51 +230,17 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #Scenrios
   #2degree emission pathway
   if Switch.switch_2degree == 1
-    Params.AnnualEmissionLimit["CO2", 2018] = 310
-    Params.AnnualEmissionLimit["CO2", 2025] = 240
-    Params.AnnualEmissionLimit["CO2", 2030] = 170
-    Params.AnnualEmissionLimit["CO2", 2035] = 100
-    Params.AnnualEmissionLimit["CO2", 2040] = 40
-    Params.AnnualEmissionLimit["CO2", 2045] = 20
-    Params.AnnualEmissionLimit["CO2", 2050] = 0.1
+    Params.AnnualEmissionLimit["CO2", 2018] = 430   #310old based on climate Tracker South Africa
+    Params.AnnualEmissionLimit["CO2", 2025] = 331   #240   ##
+    Params.AnnualEmissionLimit["CO2", 2030] = 264   #170 
+    Params.AnnualEmissionLimit["CO2", 2035] = 196   #100
+    Params.AnnualEmissionLimit["CO2", 2040] = 129    #40
+    Params.AnnualEmissionLimit["CO2", 2045] = 62    #20
+    Params.AnnualEmissionLimit["CO2", 2050] = 0     #### based on https://carbonbudgetcalculator.com/country.html?country=South%20Africa
   end
 
   #hydrogen demand
   if Switch.switch_highH2 == 1
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2018] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2018] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2018] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2018] = 0.0025
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2025] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2025] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2025] = 0.0025
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2025] = 0.0025
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2030] = 41.25
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2030] = 41.25
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2030] = 41.25
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2030] = 41.25
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2035] = 60.75
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2035] = 60.75
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2035] = 60.75
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2035] = 60.75
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2040] = 80
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2040] = 80
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2040] = 80
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2040] = 80
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2045] = 88.5
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2045] = 88.5
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2045] = 88.5
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2045] = 88.5
-    
-    Params.SpecifiedAnnualDemand["SA-EC", "H2", 2050] = 112.5
-    Params.SpecifiedAnnualDemand["SA-KW", "H2", 2050] = 112.5
-    Params.SpecifiedAnnualDemand["SA-NC", "H2", 2050] = 112.5
-    Params.SpecifiedAnnualDemand["SA-WC", "H2", 2050] = 112.5
     for y ∈ Sets.Year for r ∈ Sets.Region_full
       Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
     end end

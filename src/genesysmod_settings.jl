@@ -40,7 +40,7 @@ function genesysmod_settings(Sets, Params, socialdiscountrate)
     end
 
     InvestmentLimit = Float64(1.9)  #Freedom for investment choices to spread across periods. A value of 1 would mean equal share for each period.1.9
-    NewRESCapacity = Float64(0.1)
+    NewRESCapacity = Float64(0.1)  #0.1
     ProductionGrowthLimit=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel)), Sets.Year, Sets.Fuel)
     for y ∈ Sets.Year for f ∈ Sets.Fuel
         if f ∈ vcat(["Power"],Params.TagFuelToSubsets["HeatFuels"],Params.TagFuelToSubsets["TransportFuels"])
