@@ -48,7 +48,7 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
 
 
   ############################### Settings Coal production ###############################################
-  ### Coal min production to be in line with IRP and current ressearc
+  ### Coal min production to be in line with IRP and current research
 
   @constraint(model, 
     sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 770, 
@@ -67,7 +67,7 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     sum(Vars.ProductionByTechnologyAnnual[2030,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 680, 
     base_name="JH_Coal_MinProd_Total_2030")
     @constraint(model, 
-    sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) <= 750, 
+    sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) <= 795, 
     base_name="JH_Coal_MaxProd_Total_2025")
   end
 
