@@ -78,6 +78,7 @@ function extraction_and_cleaning(extr_str,tag_techno_sector, result_file, col_na
     return subset_df_sector, sector_techno
 end
 
+# makes 3 dataframes: 1 with the storage charge, 1 with the storage discharge, and 1 with the production, excluding the storages
 function separation_mo_storage(subset_df_sector)
     subset_df_production = subset_df_sector[.!occursin.("D_", subset_df_sector.Technology),:] 
     grouped_df_production = groupby(subset_df_production, :Timeslice)
@@ -186,11 +187,11 @@ function plot_net_trade(extr_str, region, year, fuels)
                     y = subset_df_fuel.Value,
                     name=f))
     end
-    PlotlyJS.plot(fig, Layout(title="Net Trade in $(region) ($(extr_str))",
+    display(PlotlyJS.plot(fig, Layout(title="Net Trade in $(region) ($(extr_str))",
                         xaxis_title="Time (hours)",
                         yaxis_title="Net Trade (PJ)",
                         barmode="stack"),
-                        config=PlotConfig(scrollZoom=true))
+                        config=PlotConfig(scrollZoom=true)))
 end
 
 function plot_demand(extr_str, tag_techno_sector, region, year, sector, inf_tech, fuels;display_fig=true, plot_prices = false, considered_dual=nothing, year_split=1/8760)
@@ -371,7 +372,7 @@ function plot_duals(extr_str_list, region, year; considered_dual=nothing, displa
 
 end
 
-function plot_period_comparison_roa(extr_str_list, period, region, year, tag_techno_sector, sector, inf_tech, colors; year_split=1/8760)
+function plot_period_comparison_roa(extr_str_list, period, region, year, tag_techno_sector, sector, inf_tech, colors; year_split=1/8760, name_list=nothing)
     list_df_dict = []
     for extr_str in extr_str_list
         df_dict = plot_roa(extr_str, tag_techno_sector, region, year, sector, inf_tech, colors, year_split=year_split, display_plot=false, reduce_subset= false)
@@ -401,7 +402,7 @@ function plot_period_comparison_roa(extr_str_list, period, region, year, tag_tec
             end
         end
         if !iszero(y)
-            push!(fig, PlotlyJS.bar(x = extr_str_list,
+            push!(fig, PlotlyJS.bar(x = isnothing(name_list) ? extr_str_list : name_list,
             y = y,
             name=tech,
             marker_color=colors[i]))
@@ -418,7 +419,7 @@ function plot_period_comparison_roa(extr_str_list, period, region, year, tag_tec
     config=PlotConfig(scrollZoom=true)))
 end
 
-function plot_year_comparison_demand(extr_str_list, region, year, tag_techno_sector, sector, inf_tech, fuels; year_split=1/8760)
+function plot_year_comparison_demand(extr_str_list, region, year, tag_techno_sector, sector, inf_tech, fuels; year_split=1/8760, name_list=nothing)
     values_list_dict = []
     fig = AbstractTrace[]
     for extr_str in extr_str_list
@@ -437,7 +438,7 @@ function plot_year_comparison_demand(extr_str_list, region, year, tag_techno_sec
             end
         end
         if !iszero(y)
-            push!(fig, PlotlyJS.bar(x = extr_str_list,
+            push!(fig, PlotlyJS.bar(x = isnothing(name_list) ? extr_str_list : name_list,
             y = y,
             name=index
             ))
@@ -541,48 +542,6 @@ function write_demand(extr_str, tag_techno_sector, region, year, sector, inf_tec
     CSV.write("demand_$(sector)_$(region)_$(extr_str).csv", df)
 end
 
-function plot_RE_heat(extr_str, tag_techno_sector, region, year, inf_tech, colors)
-    df_roa_power_dict = plot_roa(extr_str, tag_techno_sector, region, year, "Power", inf_tech, colors, display_plot=false)
-    df_roa_heat_dict = plot_roa(extr_str, tag_techno_sector, region, year, "Buildings", [], colors, display_plot=false)
-    
-    # we want to keep only the heat produced with heat pump and the heat storage
-    df_HP = copy(df_roa_heat_dict["HLR_Heatpump_Aerial"])
-    rename!(df_HP, :Value => :Value_HP)
-    df_HLRStorage_charge = copy(df_roa_heat_dict["D_Heat_HLR_1"])
-    rename!(df_HLRStorage_charge, :Value => :Value_Storage)
-    df_HLRStorage_discharge = df_roa_heat_dict["D_Heat_HLR_2"]
-
-    # keeping only the heat charged in the battery with electricity (assuming heat pump is the first in the merit order, compared to gas and district heating)
-    df_join_heat = outerjoin(df_HP[:,[:Timeslice, :Value_HP]], df_HLRStorage_charge[:,[:Timeslice, :Value_Storage]], on = :Timeslice)
-    df_join_heat_clean = coalesce.(df_join_heat, 0)
-    df_join_heat_clean.Value = min.(df_join_heat_clean.Value_HP, df_join_heat_clean.Value_Storage)
-    
-    # plotting the power roa and the charge/discharge of battery to compare (charge only with electricity)
-    fig = AbstractTrace[]
-    i = 1
-    for (tech,df) in df_roa_power_dict
-        if startswith(tech, "D_") & endswith(tech, "1")
-            push!(fig, PlotlyJS.bar(x = df.Timeslice,
-                                y =  - df.Value * year_split,
-                                name=tech,
-                                marker_color=colors[i]))
-            i = i+1
-        else
-            push!(fig, PlotlyJS.bar(x = df.Timeslice,
-                                y =  df.Value * year_split,
-                                name=tech,
-                                marker_color=colors[i]))
-            i = i+1
-        end
-    end
-    push!(fig, PlotlyJS.bar(x = df_join_heat_clean.Timeslice, y = - df_join_heat_clean.Value * year_split, name = "D_Heat_HLR_charge", marker_color = colors[i]))
-    push!(fig, PlotlyJS.bar(x = df_HLRStorage_discharge.Timeslice, y = df_HLRStorage_discharge.Value *year_split, name = "D_Heat_HLR", marker_color = colors[i]))
-    display(PlotlyJS.plot(fig, Layout(title="Energy production in $(region) for sector Power and Heat ($(extr_str))",
-    xaxis_title="Time (hours)",
-    yaxis_title="Production (PJ)",
-    barmode="relative"),
-    config=PlotConfig(scrollZoom=true)))
-end
 
 function read_dual_results(extr_str)
     col_names = ["Name", "Value"]
@@ -645,9 +604,9 @@ function compare_roa_in_time(extr_str1, extr_str2, tag_techno_sector,region, yea
     config=PlotConfig(scrollZoom=true)))
 end
 
-function plot_price_and_dummy(extr_str, tag_techno_sector,region, year, sector, inf_tech, colors; year_split=1/8760, display_plot=true, reduce_subset=true, considered_dual = [sector])
+function plot_price_and_dummy(extr_str, tag_techno_sector,region, year, sector, inf_tech, colors; year_split=1/8760, display_plot=true, considered_dual = [sector])
     col_names = ["Region", "Timeslice", "Technology", "Year", "Value"]
-    subset_df_sector, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"DispatchDummy", col_names, region, year, sector, inf_tech, reduce_subset = reduce_subset)
+    subset_df_sector, sector_techno = extraction_and_cleaning(extr_str, tag_techno_sector,"DispatchDummy", col_names, region, year, sector, inf_tech, reduce_subset = false)
     fig = AbstractTrace[]
     df_dict = Dict()
     i = 1
@@ -667,7 +626,7 @@ function plot_price_and_dummy(extr_str, tag_techno_sector,region, year, sector, 
         end 
     end
 
-    prices = plot_duals([extr_str], region, considered_dual = considered_dual, display_plot=false)
+    prices = plot_duals([extr_str], region, year, considered_dual = considered_dual, display_plot=false)
     for (fuel, price) in prices
         push!(fig, PlotlyJS.scatter(x=timeslices, y = price.Value*(31.536/8760)*1000, name="Dual $(fuel)", yaxis="y2"))
     end
@@ -895,6 +854,50 @@ function plot_emissions(extr_str_list, sectors, years; name_list=nothing)
         ))
 
     display(PlotlyJS.plot(fig, Layout(title="Annual CO2 emissions in Europe in $(years)",
+    xaxis_title="Taxation scenario",
+    yaxis_title="Annual CO2 emissions (MtCO2 eq)",
+    barmode="relative"
+    ),
+    config=PlotConfig(scrollZoom=true)))
+
+
+end
+
+function plot_accumulated_emissions(extr_str_list, sectors; name_list=nothing)
+    col_names = ["Year", "Emissions", "Sector", "Region", "Value"]
+    fig = AbstractTrace[]
+    in_data_dict = Dict()
+    for extr_str in extr_str_list
+        in_data = CSV.read("test\\TestData\\Results\\AnnualSectoralEmissions_minimal_MinimalExample_globalLimit_$(extr_str).csv", DataFrame, header=col_names, skipto=2)
+        in_data_dict[extr_str] = in_data
+    end
+    if isnothing(name_list)
+        name_list = extr_str_list
+    end
+    for sector in sectors
+        y = []
+        for extr_str in extr_str_list
+            in_data = in_data_dict[extr_str]
+            in_data_sector = in_data[(in_data.Sector .== sector),:]
+            push!(y, sum(in_data_sector.Value))
+        end
+        push!(fig, PlotlyJS.bar(x = name_list,
+        y = y,
+        name=sector
+        ))
+    end
+    y = []
+    for extr_str in extr_str_list
+        in_data = in_data_dict[extr_str]
+        in_data_other_sectors = in_data[.!in.(in_data.Sector,Ref(sectors)),:]
+        push!(y, sum(in_data_other_sectors.Value))
+    end
+    push!(fig, PlotlyJS.bar(x = name_list,
+        y = y,
+        name="Other"
+        ))
+
+    display(PlotlyJS.plot(fig, Layout(title="Annual CO2 emissions in Europe from 2018 to 2050",
     xaxis_title="Taxation scenario",
     yaxis_title="Annual CO2 emissions (MtCO2 eq)",
     barmode="relative"
