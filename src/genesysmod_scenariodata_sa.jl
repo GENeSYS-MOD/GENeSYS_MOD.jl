@@ -47,8 +47,9 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #####
 
 
-  ############################### Settings 2025 ###############################################
+  ############################### Settings Coal production ###############################################
   ### Coal min production to be in line with IRP and current ressearc
+
   @constraint(model, 
     sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 770, 
     base_name="JH_Coal_MinProd_Total_2025")
@@ -59,7 +60,20 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     sum(Vars.ProductionByTechnologyAnnual[2030,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 300, 
     base_name="JH_Coal_MinProd_Total_2030")
   #####
+  ###########################################Coal production lowerlimit in BAU Scenario#########
+  if Switch.switch_2degree == 0
+      ### Coal min production to be in line with IRP and current ressearc
+    @constraint(model, 
+    sum(Vars.ProductionByTechnologyAnnual[2030,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) >= 680, 
+    base_name="JH_Coal_MinProd_Total_2030")
+    @constraint(model, 
+    sum(Vars.ProductionByTechnologyAnnual[2025,"P_Coal_Hardcoal","Power", r] for r in Sets.Region_full) <= 750, 
+    base_name="JH_Coal_MaxProd_Total_2025")
+  end
 
+
+
+  ############################### Settings 2025 ###############################################
   #####  CHP Biomass Capacity Cap for 2025
   @constraint(model, 
     sum(Vars.ProductionByTechnologyAnnual[2025,"CHP_Biomass_Solid","Power", r] for r in Sets.Region_full) <= 16, 
@@ -183,14 +197,14 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
     Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2018] = 0
     Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2018] = 0
     Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2018] = 0
-    Params.AvailabilityFactor[r,"RES_PV_Utility_HSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_PV_Utility_THSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_PV_Utility_VSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_PV_Utility_DAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2025] = 0
-    Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_PV_Utility_HSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_PV_Utility_THSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_PV_Utility_VSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_PV_Utility_DAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_BPV_Utility_HSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_BPV_Utility_THSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_BPV_Utility_VSAT",2025] = 0
+    #Params.AvailabilityFactor[r,"RES_BPV_Utility_DAT",2025] = 0
   end
   
   #bifacial not allowed
