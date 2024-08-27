@@ -44,8 +44,32 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #@constraint(model, 
   #sum(Vars.AccumulatedNewCapacity[2018,t,r] for r in Sets.Region_full, t in Sets.Technology) <= 200, 
   #base_name="JH_RES_MAX_CAP_2025")
-  #####
+  ##################TEST for WIND###############
+  ################################################
+  ##########################################
+  #@constraint(model, 
+  #  sum(Vars.TotalCapacityAnnual[2030,"RES_Wind_Onshore_Opt", r] for r in Sets.Region_full) >= 25, #13
+  #  base_name="JH_Windpush_Total_2030")
+  ######
 
+  #@constraint(model, 
+  #  sum(Vars.TotalCapacityAnnual[2035,"RES_Wind_Onshore_Opt", r] for r in Sets.Region_full) >= 32, #13
+  #  base_name="JH_Windpush_Total_2035")
+  ######
+
+  #@constraint(model, 
+  #  sum(Vars.TotalCapacityAnnual[2040,"RES_Wind_Onshore_Opt", r] for r in Sets.Region_full) >= 40, #13
+  #  base_name="JH_Windpush_Total_2040")#
+
+  #@constraint(model, 
+  #  sum(Vars.TotalCapacityAnnual[2045,"RES_Wind_Onshore_Opt", r] for r in Sets.Region_full) >= 50, #13
+  #  base_name="JH_Windpush_Total_2045")
+  ######
+  #@constraint(model, 
+  #  sum(Vars.TotalCapacityAnnual[2050,"RES_Wind_Onshore_Opt", r] for r in Sets.Region_full) >= 60, #13
+  #  base_name="JH_Windpush_Total_2050")
+  ###############################################################################
+  #############################################################################
 
   ############################### Settings Coal production ###############################################
   ### Coal min production to be in line with IRP and current research
@@ -87,7 +111,7 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #####
   #####  Wind Capacity Cap for 2025
   @constraint(model, 
-    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Wind"]) <= 15,  #9
+    sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Wind"]) <= 8,  #9
     base_name="JH_WindRestriction_Total_2025")
   #####
 

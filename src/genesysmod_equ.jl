@@ -1182,7 +1182,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       
       if Switch.switch_peaking_minrun == 1
         for t ∈ 𝓣
-          if (Params.TagTechnologyToSector[t,"Power"]==1 && Params.AvailabilityFactor[r,t,y]<=1 && 
+          if ((Params.TagTechnologyToSector[t,"Power"]==1 || Params.TagTechnologyToSector[t,"CHP"]==1)  && Params.AvailabilityFactor[r,t,y]<=1 && 
             Params.TagDispatchableTechnology[t]==1 && Params.AvailabilityFactor[r,t,y] > 0 && 
             Params.TotalAnnualMaxCapacity[r,t,y] > 0 && Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0 && 
             ((((JuMP.has_upper_bound(Vars.TotalCapacityAnnual[y,t,r])) && (JuMP.upper_bound(Vars.TotalCapacityAnnual[y,t,r]) > 0)) ||
