@@ -105,7 +105,7 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #####
 
   #####  Solar Capacity Cap for 2025
-  @constraint(model, 
+   @constraint(model, 
     sum(Vars.TotalCapacityAnnual[2025, t, r] for r in Sets.Region_full, t in Params.TagTechnologyToSubsets["Solar"]) <= 15, #13
     base_name="JH_PvRestriction_Total_2025")
   #####
