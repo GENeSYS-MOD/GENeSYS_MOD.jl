@@ -175,6 +175,28 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
 
   ######################Caps for 2030##############
   ###### P_Gas_OCGT Cap for 2030
+
+  #@constraint(model,
+  #sum(Vars.TotalCapacityAnnual[2030, tech, r] for tech in ["P_Gas_OCGT", "P_Gas_CCGT", "P_Gas_Engines"], r in Sets.Region_full) <= 12, 
+  #base_name="JH_Gas_Combined_Restriction_Total_All_Years")
+
+  #@constraint(model,
+  #sum(Vars.TotalCapacityAnnual[2035, tech, r] for tech in ["P_Gas_OCGT", "P_Gas_CCGT", "P_Gas_Engines"], r in Sets.Region_full) <= 13, 
+  #base_name="JH_Gas_Combined_Restriction_Total_All_Years")
+
+  #@constraint(model,
+  #sum(Vars.TotalCapacityAnnual[2040, tech, r] for tech in ["P_Gas_OCGT", "P_Gas_CCGT", "P_Gas_Engines"], r in Sets.Region_full) <= 14, 
+  #base_name="JH_Gas_Combined_Restriction_Total_All_Years")
+
+  #@constraint(model,
+  #sum(Vars.TotalCapacityAnnual[2045, tech, r] for tech in ["P_Gas_OCGT", "P_Gas_CCGT", "P_Gas_Engines"], r in Sets.Region_full) <= 15, 
+  #base_name="JH_Gas_Combined_Restriction_Total_All_Years")
+
+  #@constraint(model,
+  #sum(Vars.TotalCapacityAnnual[2050, tech, r] for tech in ["P_Gas_OCGT", "P_Gas_CCGT", "P_Gas_Engines"], r in Sets.Region_full) <= 20, 
+  #base_name="JH_Gas_Combined_Restriction_Total_All_Years")
+
+
   @constraint(model, 
   sum(Vars.TotalCapacityAnnual[2030,"P_Gas_OCGT", r] for r in Sets.Region_full) <= 12, 
   base_name="JH_Gas_1_Restriction_Total_2030")
