@@ -300,11 +300,10 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   end
 
   #hydrogen demand
-  if Switch.switch_highH2 == 1
-    for y ∈ Sets.Year for r ∈ Sets.Region_full
-      Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
-    end end
-  end
+ 
+  for y ∈ Sets.Year for r ∈ Sets.Region_full
+    Params.AvailabilityFactor[r,"Z_Import_H2",y] = 0
+  end end
 
   #tracking not allowed
   if Switch.switch_PVtracking == 0
