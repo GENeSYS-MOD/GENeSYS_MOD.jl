@@ -154,6 +154,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         #set_optimizer_attribute(model, "Names", "no")
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
+        set_optimizer_attribute(model, "Crossover", 0)
         set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
         file = open("gurobi.opt","w")
         write(file,"threads $threads ")
