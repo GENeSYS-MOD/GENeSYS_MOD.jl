@@ -201,7 +201,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
             error("Model infeasible. Turn on 'switch_iis' to compute and write the iis file")
         end
 
-    elseif termination_status(model) == MOI.OPTIMAL
+    elseif termination_status(model) == MOI.OPTIMAL || termination_status(model) == MOI.LOCALLY_SOLVED
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
