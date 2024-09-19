@@ -39,6 +39,7 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   end
 
 
+
   ####################Capacity in 2025 Constraint ##############################################
   ### max cap to stop studden build-up
   #@constraint(model, 
@@ -70,7 +71,10 @@ function genesysmod_scenariodata(model, Sets, Params, Vars, Settings, Switch)
   #  base_name="JH_Windpush_Total_2050")
   ###############################################################################
   #############################################################################
-
+  @constraint(model, 
+  sum(Vars.ProductionByTechnologyAnnual[2025,"P_Gas_OCGT","Power", r] for r in Sets.Region_full) >= 15, 
+  base_name="JH_Gas_MinProd_Total_2025")
+#####
   ############################### Settings Coal production ###############################################
   ### Coal min production to be in line with IRP and current research
 
