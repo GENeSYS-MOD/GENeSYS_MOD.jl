@@ -160,11 +160,9 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #CapacityFactor(r,Heat,l,y)$(sum(ll,CapacityFactor(r,Heat,ll,y)) = 0) = 1;
     #Params.CapacityFactor[[x ∈ Subsets.Heat for x ∈ Params.CapacityFactor[!,:Technology]], :Value] .= 1
 
-    for r ∈ Sets.Region_full for l ∈ Sets.Timeslice for y ∈ Sets.Year
-        Params.CapacityFactor[r,"HLI_Solar_Thermal",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-        Params.CapacityFactor[r,"HLR_Solar_Thermal",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-        Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-    end end end
+    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Residential"])
+        Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
+    end
     #
     # ####### No new capacity construction in 2015 #############
     #
@@ -224,11 +222,11 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(Params.TagTechnologyToSubsets["Solar"], Params.TagTechnologyToSubsets["Wind"], ["RES_Hydro_Small"])
+    subs = vcat(intersect(Sets.Technology, Params.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.TagTechnologyToSubsets["Wind"]), ["RES_Hydro_Small"])
     Params.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
     Params.CurtailmentCostFactor == 0.1
 
-    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Solar"]
+    for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["Solar"])
     Params.AvailabilityFactor[r,t,:] .= 1
     end end
 
@@ -343,11 +341,19 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
             end
         end
-    Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"HLR_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-    Params.CapacityFactor[r,"HLI_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        if "RES_CSP" ∈ Sets.Technology
+            try
+                Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
+            catch e
+                if isa(e, KeyError)
+                    Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+                end
+            end
+        end
+
+        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Commercial", "RES_PV_Rooftop_Residential"])
+            Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        end
     end end end
 
 end
