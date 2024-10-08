@@ -51,12 +51,10 @@ function genesysmod_dataload(Switch)
     Sets=GENeSYS_MOD.Sets(Timeslice_full,Emission,Technology,Fuel,
         Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
 
-#=     tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
+    tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
     DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
-    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets") =#
-    TagTechnologyToSubsets = read_subsets(in_data, "Par_TagTechnologyToSubsets")
-    TagFuelToSubsets = read_subsets(in_data, "Par_TagFuelToSubsets")
+    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
 
     if Switch.switch_infeasibility_tech == 1
         TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
