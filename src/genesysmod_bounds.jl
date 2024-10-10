@@ -87,14 +87,23 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.TagTechnologyToSector[Params.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
         Params.AvailabilityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
-        Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+        output_activity_dict = Dict(
+            "Infeasibility_HLI" => "Heat_Low_Industrial",
+            "Infeasibility_HMI" => "Heat_Medium_Industrial",
+            "Infeasibility_HHI" => "Heat_High_Industrial",
+            "Infeasibility_HRI" => "Heat_Low_Residential",
+            "Infeasibility_Power" => "Power",
+            "Infeasibility_Mob_Passenger" => "Mobility_Passenger",
+            "Infeasibility_Mob_Freight" => "Mobility_Freight")
 
+        for (k,v) ∈ output_activity_dict
+            try
+                Params.OutputActivityRatio[:,k,v,1,:] .= 1
+            catch
+               # Error is ignored intentionally
+            end
+        end
+        
         Params.CapacityToActivityUnit[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         Params.TotalAnnualMaxCapacity[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         Params.FixedCost[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
@@ -104,6 +113,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.CapacityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
         Params.OperationalLife[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         Params.EmissionActivityRatio[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
+
     end
 
     #
@@ -202,7 +212,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     ### Adds (negligible) variable costs to transport technologies, since they only had fuel costs before
     ### This is to combat strange "curtailment" effects of some transportation technologies
-    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Transport"]
+    for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["Transport"])
         Params.VariableCost[r,t,:,:] .= 0.09
     end end
 
@@ -256,7 +266,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.EmissionActivityRatio[Sets.Region_full,["X_DAC_HT","X_DAC_LT"],:,:,:] .= -1
 
     else
-        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["CCS"]
+        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["CCS"])
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
             for f ∈ Sets.Fuel

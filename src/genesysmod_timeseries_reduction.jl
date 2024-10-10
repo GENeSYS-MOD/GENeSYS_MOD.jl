@@ -156,11 +156,13 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
         CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
 
-        if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Timeslice) != 0 
-            AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+        if "HEAT_LOW" ∈ Country_Data_Entries
+            if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Timeslice) != 0 
+                AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+            end
+            CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
         end
-        CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
-
+        
         for cde ∈ Country_Data_Entries
             if sum(CountryData[cde][l,r] for l ∈ Timeslice) != 0 
                 AverageCapacityFactor[cde][1,r] = sum(CountryData[cde][:,r])/8760
@@ -351,17 +353,14 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
     end
 
     tmp=Dict()
-    tmp["MOBILITY_PSNG"] = ScaledCountryData["MOBILITY_PSNG"] ./ combine(ScaledCountryData["MOBILITY_PSNG"], names(ScaledCountryData["MOBILITY_PSNG"]) .=> sum, renamecols=false)
-    tmp["HEAT_LOW"] = ScaledCountryData["HEAT_LOW"] ./ combine(ScaledCountryData["HEAT_LOW"], names(ScaledCountryData["HEAT_LOW"]) .=> sum, renamecols=false)
-    tmp["HEAT_HIGH"] = ScaledCountryData["HEAT_HIGH"] ./ combine(ScaledCountryData["HEAT_HIGH"], names(ScaledCountryData["HEAT_HIGH"]) .=> sum, renamecols=false)
+    for t ∈ intersect(Country_Data_Entries, ["MOBILITY_PSNG", "HEAT_LOW", "HEAT_HIGH"])
+        tmp[t] = ScaledCountryData[t] ./ combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+    end
 
-    for r ∈ Sets.Region_full 
-        SpecifiedDemandProfile[r,"Mobility_Passenger",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Mobility_Freight",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Heat_Low_Residential",:,Sets.Year[1]] = tmp["HEAT_LOW"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Heat_Low_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Heat_Medium_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
-        SpecifiedDemandProfile[r,"Heat_High_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Timeslice,r]
+    for r ∈ Sets.Region_full, (k,v) ∈ Dict("Mobility_Passenger" => "MOBILITY_PSNG", "Mobility_Freight" => "MOBILITY_PSNG", "Heat_Low_Residential" => "HEAT_LOW", "Heat_Low_Industrial"=>"HEAT_HIGH", "Heat_Medium_Industrial"=>"HEAT_HIGH","Heat_High_Industrial"=>"HEAT_HIGH") 
+        if k ∈ sdp_list
+            SpecifiedDemandProfile[r,k,:,Sets.Year[1]] = tmp[v][Timeslice,r]
+        end
     end
 
     for r ∈ Sets.Region_full for f ∈ Sets.Fuel for y ∈ Sets.Year[2:end]
@@ -379,17 +378,25 @@ function timeseries_reduction(Sets, TagTechnologyToSubsets, Switch, SpecifiedAnn
         end
         for r ∈ Sets.Region_full 
             if length(Timeslice) < 8760
-                CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
-                CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
-                TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HP_AIRSOURCE"][Timeslice,r]
-                TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HP_GROUNDSOURCE"][Timeslice,r]
+                if "HLR_Heatpump_Aerial" ∈ capf_list
+                    CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
+                    TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HP_AIRSOURCE"][Timeslice,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list
+                    CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
+                    TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HP_GROUNDSOURCE"][Timeslice,r]
+                end
 
                 for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
                     CapacityFactor[r,t,:,y] = ScaledCountryData[keys_mapping[t]][Timeslice,r]
                 end
             else
-                CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HP_AIRSOURCE"][:,r]
-                CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = CountryData["HP_GROUNDSOURCE"][:,r]
+                if "HLR_Heatpump_Aerial" ∈ capf_list
+                    CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HP_AIRSOURCE"][:,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list
+                    CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = CountryData["HP_GROUNDSOURCE"][:,r]
+                end
 
                 for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
                     CapacityFactor[r,t,:,y] = ScaledCountryData[keys_mapping[t]][:,r]

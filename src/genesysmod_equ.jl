@@ -931,8 +931,8 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 
   for r ∈ 𝓡 for s ∈ 𝓢 for i ∈ eachindex(𝓨)
     @constraint(model,
-    sum((sum(Vars.RateOfActivity[𝓨[i],l,t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] for t ∈ Params.TagTechnologyToSubsets["StorageDummies"]  for m ∈ Maps.Tech_MO[t] if Params.TechnologyToStorage[t,s,m,𝓨[i]]>0)
-              - sum(Vars.RateOfActivity[𝓨[i],l,t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t] if Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0)) for l ∈ 𝓛) == 0,
+    sum((sum(Vars.RateOfActivity[𝓨[i],l,t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["StorageDummies"])  for m ∈ Maps.Tech_MO[t] if Params.TechnologyToStorage[t,s,m,𝓨[i]]>0)
+              - sum(Vars.RateOfActivity[𝓨[i],l,t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["StorageDummies"]) for m ∈ Maps.Tech_MO[t] if Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0)) for l ∈ 𝓛) == 0,
               base_name="S3_StorageRefilling|$(r)|$(s)|$(𝓨[i])")
 
     @constraint(model, Vars.StorageLevelYearStart[s,𝓨[i],r] ==  Vars.StorageLevelYearFinish[s,𝓨[i],r],
@@ -941,8 +941,8 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     for j ∈ eachindex(𝓛)
       @constraint(model,
       (j>1 ? Vars.StorageLevelTSStart[s,𝓨[i],𝓛[j-1],r] + 
-      (sum((Params.TechnologyToStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] : 0) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t])
-        - sum((Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] : 0 ) for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t])) * Params.YearSplit[𝓛[j-1],𝓨[i]] : 0)
+      (sum((Params.TechnologyToStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] * Params.TechnologyToStorage[t,s,m,𝓨[i]] : 0) for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["StorageDummies"]) for m ∈ Maps.Tech_MO[t])
+        - sum((Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0 ? Vars.RateOfActivity[𝓨[i],𝓛[j-1],t,m,r] / Params.TechnologyFromStorage[t,s,m,𝓨[i]] : 0 ) for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["StorageDummies"]) for m ∈ Maps.Tech_MO[t])) * Params.YearSplit[𝓛[j-1],𝓨[i]] : 0)
         + (j == 1 ? Vars.StorageLevelYearStart[s,𝓨[i],r] : 0)   == Vars.StorageLevelTSStart[s,𝓨[i],𝓛[j],r],
         base_name="S2_StorageLevelTSStart|$(r)|$(s)|$(𝓨[i])|$(𝓛[j])")
       @constraint(model,
@@ -989,7 +989,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         end
       end
     end
-    for t ∈ Params.TagTechnologyToSubsets["StorageDummies"] for m ∈ Maps.Tech_MO[t]
+    for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["StorageDummies"]) for m ∈ Maps.Tech_MO[t]
       if Params.TechnologyFromStorage[t,s,m,𝓨[i]]>0
         for r ∈ 𝓡 for j ∈ eachindex(𝓛)
           @constraint(model,
@@ -1004,7 +1004,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   ######### Transportation Equations #############
   start=Dates.now()
   for r ∈ 𝓡 for y ∈ 𝓨
-    for f ∈ Params.TagFuelToSubsets["TransportFuels"]
+    for f ∈ intersect(Sets.Fuel, Params.TagFuelToSubsets["TransportFuels"])
       if Params.SpecifiedAnnualDemand[r,f,y] != 0
         for l ∈ 𝓛 for mt ∈ 𝓜𝓽  
           @constraint(model,
