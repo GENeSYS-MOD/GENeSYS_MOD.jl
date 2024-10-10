@@ -21,7 +21,7 @@
 Internal function used in the run process after solving to compute aggregated versions of the rate of activity,
     rate of use and demand, on mode of operation, timeslice and technology.
 """
-function genesysmod_variable_parameter(model, Sets, Params)
+function genesysmod_variable_parameter(model, Sets, Params, Vars)
     RateOfTotalActivity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Region_full)
     RateOfProductionByTechnologyByMode = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Mode_of_operation), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Mode_of_operation, Sets.Fuel, Sets.Region_full)
     RateOfUseByTechnologyByMode = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Mode_of_operation), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Mode_of_operation, Sets.Fuel, Sets.Region_full)
@@ -48,28 +48,24 @@ function genesysmod_variable_parameter(model, Sets, Params)
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         for l ∈ Sets.Timeslice
             for t ∈ Sets.Technology
-                RateOfTotalActivity[y,l,t,r] = sum(JuMP.value.(model[:RateOfActivity][y,l,t,:,r]))
+                RateOfTotalActivity[y,l,t,r] = sum(JuMP.value.(Vars.RateOfActivity[y,l,t,:,r]))
             end
             for f ∈ Sets.Fuel
                 for (t,m) ∈ LoopSetOutput[(r,f,y)]
-                    RateOfProductionByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
-                    RateOfProductionByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
-                    ProductionByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y]
-                    CurtailedEnergy[y,f,r,l] += JuMP.value(model[:CurtailedCapacity][r,l,t,y]) * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[t]
+                    RateOfProductionByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
+                    RateOfProductionByTechnology[y,l,t,f,r] += JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y]
+                    ProductionByTechnology[y,l,t,f,r] += JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y]
+                    CurtailedEnergy[y,f,r,l] += JuMP.value(Vars.CurtailedCapacity[r,l,t,y]) * Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] * Params.CapacityToActivityUnit[t]
                 end
                 for (t,m) ∈ LoopSetInput[(r,f,y)]
-                    RateOfUseByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y]*Params.TimeDepEfficiency[r,t,l,y]
-                    RateOfUseByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y]*Params.TimeDepEfficiency[r,t,l,y]
-                    UseByTechnology[y,l,t,f,r] += JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y]*Params.TimeDepEfficiency[r,t,l,y]
+                    RateOfUseByTechnologyByMode[y,l,t,m,f,r] = JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y]*Params.TimeDepEfficiency[r,t,l,y]
+                    RateOfUseByTechnology[y,l,t,f,r] += JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y]*Params.TimeDepEfficiency[r,t,l,y]
+                    UseByTechnology[y,l,t,f,r] += JuMP.value(Vars.RateOfActivity[y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y]*Params.TimeDepEfficiency[r,t,l,y]
                 end
         
-                #RateOfProduction[y,l,f,r] = sum(JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)] )
                 RateOfProduction[y,l,f,r] = sum(RateOfProductionByTechnology[y,l,:,f,r])
-                #RateOfUse[y,l,f,r] = sum(JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetInput[(r,f,y)] )
                 RateOfUse[y,l,f,r] = sum(RateOfUseByTechnology[y,l,:,f,r])
-                #Production[y,l,f,r] = sum(JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)] )*Params.YearSplit[l,y]
                 Production[y,l,f,r] = sum(ProductionByTechnology[y,l,:,f,r])
-                #Use[y,l,f,r] = sum(JuMP.value(model[:RateOfActivity][y,l,t,m,r])*Params.InputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetInput[(r,f,y)] )*Params.YearSplit[l,y]
                 Use[y,l,f,r] = sum(UseByTechnology[y,l,:,f,r])
             end
         end
@@ -80,7 +76,7 @@ function genesysmod_variable_parameter(model, Sets, Params)
     end end
 
     for r ∈ Sets.Region_full
-        ModelPeriodCostByRegion[r] = sum(JuMP.value.(model[:TotalDiscountedCost][:,r]))
+        ModelPeriodCostByRegion[r] = sum(JuMP.value.(Vars.TotalDiscountedCost[:,r]))
     end
 
     VarPar = Variable_Parameters(RateOfTotalActivity, RateOfProductionByTechnologyByMode, RateOfUseByTechnologyByMode, RateOfProductionByTechnology, RateOfUseByTechnology,
