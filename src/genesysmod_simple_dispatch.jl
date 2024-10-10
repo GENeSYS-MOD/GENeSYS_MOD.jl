@@ -38,10 +38,9 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     elmod_starthour = 1
     switch_dispatch = 1
     switch_infeasibility_tech = 1
-    
-    if !isdir(resultdir)
-        mkdir(resultdir)
-    end
+    set_symmetric_transmission = 0
+    set_peaking_min_thermal = 0
+    switch_base_year_bounds_debugging = 0
 
     Switch = GENeSYS_MOD.Switch(year,
     solver,
@@ -61,12 +60,15 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     switch_ccs,
     switch_ramping,
     switch_weighted_emissions,
+    set_symmetric_transmission,
     switch_intertemporal,
     switch_base_year_bounds,
+    switch_base_year_bounds_debugging,
     switch_peaking_capacity,
     set_peaking_slack,
     set_peaking_minrun_share,
     set_peaking_res_cf,
+    set_peaking_min_thermal,
     set_peaking_startyear,
     switch_peaking_with_storages,
     switch_peaking_with_trade,
@@ -87,45 +89,34 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
 
     starttime= Dates.now()
     model= JuMP.Model()
+    Sets, Params, Emp_Sets = genesysmod_dataload(Switch);
+    Maps = make_mapping(Sets,Params)
+    println("maps")
+    Vars=genesysmod_dec(model,Sets,Params,Switch,Maps)
+    println("vars")
+    Settings=genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
+    genesysmod_bounds(model,Sets,Params,Vars,Settings,Switch,Maps)
+    genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
 
-    #
-    # ####### Load data from provided excel files and declarations #############
-    #
-    println(Dates.now()-starttime)
-    Sets, Params, Emp_Sets = GENeSYS_MOD.genesysmod_dataload(Switch);
-    println(Dates.now()-starttime)
-    GENeSYS_MOD.genesysmod_dec(model,Sets,Params,Switch,Maps)
-    println(Dates.now()-starttime)
-    #
-    # ####### Settings for model run (Years, Regions, etc) #############
-    #
-
-    Settings=GENeSYS_MOD.genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
-    println(Dates.now()-starttime)
-    #
-    # ####### apply general model bounds #############
-    #
-
-    GENeSYS_MOD.genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
-    println(Dates.now()-starttime)
-    #
-    # ####### Including Equations #############
-    #
-
-    GENeSYS_MOD.genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
-    println(Dates.now()-starttime)
     #
     # ####### Fix Investment Variables #############
     #
     # read investment results for relevant variables
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-    tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-    tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-    tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
-    #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
-    tmp_NetTradeAnnual = GENeSYS_MOD.create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
+    if endswith(Switch.resultdir, ".txt")
+        tmp_TotalCapacityAnnual = GENeSYS_MOD.read_capacities(file=Switch.resultdir, nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=Sets.Region_full)
+        println(tmp_TotalCapacityAnnual)
+        tmp_TotalTradeCapacity = GENeSYS_MOD.read_trade_capacities(file=Switch.resultdir, nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=Sets.Region_full)
+        tmp_NewStorageCapacity = GENeSYS_MOD.read_storage_capacities(file=Switch.resultdir, nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=Sets.Region_full)
+    else
+        in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
+        tmp_TotalCapacityAnnual = GENeSYS_MOD.create_daa(in_data, "Par_TotalCapacityAnnual", data_base_region, Sets.Year, Sets.Technology, Sets.Region_full)
+        in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
+        tmp_TotalTradeCapacity = GENeSYS_MOD.create_daa(in_data, "Par_TotalTradeCapacity", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
+        in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
+        tmp_NewStorageCapacity = GENeSYS_MOD.create_daa(in_data, "Par_NewStorageCapacity", data_base_region, Sets.Storage, Sets.Year, Sets.Region_full)
+    end
+
+
     # make constraints fixing investments
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         for t ∈ setdiff(Sets.Technology, Params.TagTechnologyToSubsets["DummyTechnology"])
@@ -161,9 +152,15 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
     elseif string(solver) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
-        set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
+        set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", 1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
+        set_optimizer_attribute(model, "CPX_PARAM_DPRIIND", 1)
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
+        file = open("cplex.opt","w")
+        write(file,"threads $threads ")
+        write(file,"parallelmode 1")
+        write(file,"lpmethod 4 ")
+        close(file)
     end
 
 
@@ -214,8 +211,39 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
         
         elapsed = (Dates.now() - starttime)#24#3600;
-
         println(elapsed)
+
+
+        if endswith(Switch.resultdir, ".txt")
+            resultdir = dirname(Switch.resultdir)
+        else
+            resultdir = Switch.resultdir
+        end
+
+        open(joinpath(resultdir, "result_$(basename(Switch.resultdir)).txt"), "w") do file
+            objective = objective_value(model)
+            println(file, "Objective = $objective")
+            for v in all_variables(model)
+                if value.(v) > 0
+                    val = value.(v)
+                    str = string(v)
+                    println(file, "$str = $val")
+                end
+            end
+            for y ∈ axes(VarPar.ProductionByTechnology)[1], l ∈ axes(VarPar.ProductionByTechnology)[2], t ∈ axes(VarPar.ProductionByTechnology)[3], f ∈ axes(VarPar.ProductionByTechnology)[4], r ∈ axes(VarPar.ProductionByTechnology)[5]
+                value = VarPar.ProductionByTechnology[y,l,t,f,r]
+                if value > 0
+                    println(file, "ProductionByTechnology[$y,$l,$t,$f,$r] = $value")
+                end
+            end
+            for y ∈ axes(Params.RateOfDemand)[1], l ∈ axes(Params.RateOfDemand)[2], f ∈ axes(Params.RateOfDemand)[3], r ∈ axes(Params.RateOfDemand)[4]
+                value = Params.Demand[y,l,f,r] *  Params.YearSplit[l,y]
+                if value > 0
+                    println(file, "RateOfDemand[$y,$l,$f,$r] = $value")
+                    println(file, "Demand[$y,$l,$f,$r] = $(Params.Demand[y,l,f,r])")
+                end
+            end
+        end
 
         if switch_processed_results == 1
             GENeSYS_MOD.genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, elapsed,"dispatch")
