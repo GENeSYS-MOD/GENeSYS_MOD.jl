@@ -204,10 +204,13 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL || termination_status(model) == MOI.LOCALLY_SOLVED
         VarPar = genesysmod_variable_parameter(model, Sets, Params)
         if switch_processed_results == 1
+            before_results=Dates.now()
             GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
-             Settings, elapsed,(switch_dispatch == 1 ? "dispatch" : ""))
+             Settings, Maps, elapsed,(switch_dispatch == 1 ? "dispatch" : ""))
+            println(Dates.now()-before_results)
             # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
             #  Settings, elapsed,"dispatch")
+        
         end
         if switch_raw_results == 1
             GENeSYS_MOD.genesysmod_results_raw(model, Switch,(switch_dispatch == 1 ? "dispatch" : ""))
