@@ -60,15 +60,24 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     ############### Activity Variables #############
 
-    @variable(model, RateOfActivity[𝓨,𝓛,𝓣,𝓜,𝓡] >= 0)
+    RateOfActivity = def_daa(𝓨,𝓛,𝓣,𝓜,𝓡)
+    TotalAnnualTechnologyActivityByMode = def_daa(𝓨,𝓣,𝓜,𝓡)
+    ProductionByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
+    UseByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
+    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
+        for m ∈ Maps.Tech_MO[t]
+            for l ∈ 𝓛
+                RateOfActivity[y,l,t,m,r] = @variable(model, lower_bound = 0, base_name= "RateOfActivity[$y,$l,$t,$m,$r]")
+            end
+            TotalAnnualTechnologyActivityByMode[y,t,m,r] = @variable(model, lower_bound = 0, base_name= "TotalAnnualTechnologyActivityByMode[$y,$t,$m,$r]")
+        end 
+        for f ∈ Maps.Tech_Fuel[t]
+            ProductionByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "ProductionByTechnologyAnnual[$y,$t,$f,$r]")
+            UseByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "UseByTechnologyAnnual[$y,$t,$f,$r]")
+        end
+    end end end 
     @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
-    
-    @variable(model, TotalAnnualTechnologyActivityByMode[𝓨,𝓣,𝓜,𝓡] >= 0)
-    
-    @variable(model, ProductionByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
-    
-    @variable(model, UseByTechnologyAnnual[𝓨,𝓣,𝓕,𝓡] >= 0)
-    
+                
     @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
     @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
     @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
@@ -158,14 +167,24 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     
 
     ######### Trade #############
-
-    Import = @variable(model, Import[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-    Export = @variable(model, Export[𝓨,𝓛,𝓕,𝓡,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-
-    NewTradeCapacity = @variable(model, NewTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-    TotalTradeCapacity = @variable(model, TotalTradeCapacity[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-    NewTradeCapacityCosts = @variable(model, NewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-    DiscountedNewTradeCapacityCosts = @variable(model, DiscountedNewTradeCapacityCosts[𝓨, 𝓕, 𝓡, 𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
+    Import = def_daa(𝓨,𝓛,𝓕,𝓡,𝓡)
+    Export = def_daa(𝓨,𝓛,𝓕,𝓡,𝓡)
+    NewTradeCapacity = def_daa(𝓨,𝓕,𝓡,𝓡)
+    TotalTradeCapacity = def_daa(𝓨,𝓕,𝓡,𝓡)
+    NewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
+    DiscountedNewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
+    for y ∈ 𝓨 for f ∈ 𝓕 for r1 ∈ 𝓡 for r2 ∈ 𝓡
+        if Params.TradeRoute[r1,r2,f,y] != 0
+            for l ∈ 𝓛
+                Import[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Import[$y,$l,$f,$r1,$r2]") 
+                Export[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Export[$y,$l,$f,$r1,$r2]") 
+            end
+            NewTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacity[$y,$f,$r1,$r2]") 
+            TotalTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="TotalTradeCapacity[$y,$f,$r1,$r2]") 
+            NewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacityCosts[$y,$f,$r1,$r2]") 
+            DiscountedNewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="DiscountedNewTradeCapacityCosts[$y,$f,$r1,$r2]") 
+        end
+    end end end end
 
     NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
     NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
