@@ -520,7 +520,7 @@ end
 function read_storage_capacities(; file, nam, year, technology, region)
     A = JuMP.Containers.DenseAxisArray(
         zeros(length(technology), length(year), length(region)), 
-        technology,year, region)
+        technology, [2050], region)
 
     open(file, "r") do f
         while !eof(f)
@@ -532,9 +532,9 @@ function read_storage_capacities(; file, nam, year, technology, region)
                 tech = split(parts[2],",")[1]
                 r = split(split(parts[2],",")[3],"]")[1]
     
-                if y ∈ year && r ∈ region && tech ∈ technology
+                if r ∈ region && tech ∈ technology
                     value = parse(Float64, split(split(line, "]")[2], "= ")[2])
-                    A[tech, y, r] = value
+                    A[tech, 2050, r] += value
                 end
             end
         end
