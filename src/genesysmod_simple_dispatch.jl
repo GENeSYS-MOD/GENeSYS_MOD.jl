@@ -161,6 +161,8 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         write(file,"parallelmode 1")
         write(file,"lpmethod 4 ")
         close(file)
+    elseif string(solver) == "HiGHS.Optimizer"
+        set_optimizer_attribute(model, "solver", "pdlp")
     end
 
 
@@ -196,8 +198,9 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     println("data_file = $data_file")
     println("solver = $solver")
     optimize!(model)
+    println(string(termination_status(model)))
 
-    if termination_status(model) == MOI.INFEASIBLE
+    if occursin("INFEASIBLE",string(termination_status(model)))
         println("Model Infeasible! Computing IIS")
         compute_conflict!(model)
         println("Saving IIS to file")
