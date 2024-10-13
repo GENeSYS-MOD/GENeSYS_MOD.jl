@@ -272,18 +272,23 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   end end end
 
   start=Dates.now()
-  for y ∈ 𝓨 for t ∈ 𝓣 for r ∈ 𝓡 for l ∈ 𝓛 for m ∈ Maps.Tech_MO[t]
-    if ((Params.CapacityFactor[r,t,l,y] == 0)) ||
-      (Params.AvailabilityFactor[r,t,y] == 0) ||
+  for y ∈ 𝓨, t ∈ 𝓣, r ∈ 𝓡, m ∈ Maps.Tech_MO[t]
+    if (Params.AvailabilityFactor[r,t,y] == 0) ||
       (Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] == 0) ||
       (Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] == 0) ||
       (Params.TotalAnnualMaxCapacity[r,t,y] == 0) ||
       ((JuMP.has_upper_bound(Vars.TotalCapacityAnnual[y,t,r])) && (JuMP.upper_bound(Vars.TotalCapacityAnnual[y,t,r]) == 0)) ||
       ((JuMP.is_fixed(Vars.TotalCapacityAnnual[y,t,r])) && (JuMP.fix_value(Vars.TotalCapacityAnnual[y,t,r]) == 0)) ||
       (sum(Params.OutputActivityRatio[r,t,f,m,y] for f ∈ 𝓕) == 0 && sum(Params.InputActivityRatio[r,t,f,m,y] for f ∈ 𝓕) == 0)
-        JuMP.fix(Vars.RateOfActivity[y,l,t,m,r], 0; force=true)
+        JuMP.fix.(Vars.RateOfActivity[y,:,t,m,r], 0; force=true)
+    else
+      for l ∈ 𝓛
+        if Params.CapacityFactor[r,t,l,y] == 0
+          JuMP.fix(Vars.RateOfActivity[y,l,t,m,r], 0; force=true)
+        end
+      end
     end
-  end end end end end
+  end
   print("Cstr: Cap Adequacy A2 : ",Dates.now()-start,"\n")
 
   start=Dates.now()
@@ -302,16 +307,16 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
     end end end end
 
   else
-    for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for l ∈ 𝓛
+    for y ∈ 𝓨, t ∈ 𝓣, r ∈ 𝓡, l ∈ 𝓛
       if (Params.CapacityFactor[r,t,l,y] > 0) &&
         (Params.AvailabilityFactor[r,t,y] > 0) &&
         (Params.TotalAnnualMaxCapacity[r,t,y] > 0) &&
         (Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] > 0)
-          @constraint(model, 
-          sum(Vars.RateOfActivity[y,l,t,m,r] for m ∈ Maps.Tech_MO[t]) == Vars.TotalCapacityAnnual[y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[t] * Params.AvailabilityFactor[r,t,y] - Vars.DispatchDummy[r,l,t,y] * Params.TagDispatchableTechnology[t] - Vars.CurtailedCapacity[r,l,t,y] * Params.CapacityToActivityUnit[t],
-          base_name="CA3b_RateOfTotalActivity|$(r)|$(l)|$(t)|$(y)")
+        @constraint(model, 
+        sum(Vars.RateOfActivity[y,l,t,m,r] for m ∈ Maps.Tech_MO[t]) == Vars.TotalCapacityAnnual[y,t,r] * Params.CapacityFactor[r,t,l,y] * Params.CapacityToActivityUnit[t] * Params.AvailabilityFactor[r,t,y] - Vars.DispatchDummy[r,l,t,y] * Params.TagDispatchableTechnology[t] - Vars.CurtailedCapacity[r,l,t,y] * Params.CapacityToActivityUnit[t],
+        base_name="CA3b_RateOfTotalActivity|$(r)|$(l)|$(t)|$(y)")
       end
-    end end end end
+    end
   end
 
   for y ∈ 𝓨 for t ∈ 𝓣 for  r ∈ 𝓡 for l ∈ 𝓛
