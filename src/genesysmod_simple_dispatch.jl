@@ -41,6 +41,9 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     set_symmetric_transmission = 0
     set_peaking_min_thermal = 0
     switch_base_year_bounds_debugging = 0
+    set_symmetric_transmission = 0
+    set_peaking_min_thermal = 0
+    switch_base_year_bounds_debugging = 0
 
     Switch = GENeSYS_MOD.Switch(year,
     solver,
@@ -61,13 +64,16 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     switch_ramping,
     switch_weighted_emissions,
     set_symmetric_transmission,
+    set_symmetric_transmission,
     switch_intertemporal,
     switch_base_year_bounds,
+    switch_base_year_bounds_debugging,
     switch_base_year_bounds_debugging,
     switch_peaking_capacity,
     set_peaking_slack,
     set_peaking_minrun_share,
     set_peaking_res_cf,
+    set_peaking_min_thermal,
     set_peaking_min_thermal,
     set_peaking_startyear,
     switch_peaking_with_storages,
@@ -150,7 +156,9 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     elseif string(solver) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", 1)
+        set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", 1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
+        set_optimizer_attribute(model, "CPX_PARAM_DPRIIND", 1)
         set_optimizer_attribute(model, "CPX_PARAM_DPRIIND", 1)
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
         file = open("cplex.opt","w")
@@ -212,6 +220,38 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
         
         elapsed = (Dates.now() - starttime)#24#3600;
         println(elapsed)
+
+
+        if endswith(Switch.resultdir, ".txt")
+            resultdir = dirname(Switch.resultdir)
+        else
+            resultdir = Switch.resultdir
+        end
+
+        open(joinpath(resultdir, "result_$(basename(Switch.resultdir)).txt"), "w") do file
+            objective = objective_value(model)
+            println(file, "Objective = $objective")
+            for v in all_variables(model)
+                if value.(v) > 0
+                    val = value.(v)
+                    str = string(v)
+                    println(file, "$str = $val")
+                end
+            end
+            for y ∈ axes(VarPar.ProductionByTechnology)[1], l ∈ axes(VarPar.ProductionByTechnology)[2], t ∈ axes(VarPar.ProductionByTechnology)[3], f ∈ axes(VarPar.ProductionByTechnology)[4], r ∈ axes(VarPar.ProductionByTechnology)[5]
+                value = VarPar.ProductionByTechnology[y,l,t,f,r]
+                if value > 0
+                    println(file, "ProductionByTechnology[$y,$l,$t,$f,$r] = $value")
+                end
+            end
+            for y ∈ axes(Params.RateOfDemand)[1], l ∈ axes(Params.RateOfDemand)[2], f ∈ axes(Params.RateOfDemand)[3], r ∈ axes(Params.RateOfDemand)[4]
+                value = Params.Demand[y,l,f,r] *  Params.YearSplit[l,y]
+                if value > 0
+                    println(file, "RateOfDemand[$y,$l,$f,$r] = $value")
+                    println(file, "Demand[$y,$l,$f,$r] = $(Params.Demand[y,l,f,r])")
+                end
+            end
+        end
 
 
         if endswith(Switch.resultdir, ".txt")
