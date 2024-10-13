@@ -51,7 +51,7 @@ function genesysmod_dataload(Switch)
         "Infeasibility_Mob_Freight" => "Mobility_Freight")
 
     if Switch.switch_infeasibility_tech == 1
-        append!(Technology, [k for (k,v) ∈ output_activity_dict if v ∈ Sector])
+        append!(Technology, [k for (k,v) ∈ output_activity_dict if v ∈ Fuel])
         push!(Sector,"Infeasibility")
     end
     
