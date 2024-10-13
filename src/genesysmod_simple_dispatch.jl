@@ -91,9 +91,7 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     model= JuMP.Model()
     Sets, Params, Emp_Sets = genesysmod_dataload(Switch);
     Maps = make_mapping(Sets,Params)
-    println("maps")
     Vars=genesysmod_dec(model,Sets,Params,Switch,Maps)
-    println("vars")
     Settings=genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
     genesysmod_bounds(model,Sets,Params,Vars,Settings,Switch,Maps)
     genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
@@ -104,7 +102,6 @@ function genesysmod_simple_dispatch(; solver, DNLPsolver, year=2018,
     # read investment results for relevant variables
     if endswith(Switch.resultdir, ".txt")
         tmp_TotalCapacityAnnual = GENeSYS_MOD.read_capacities(file=Switch.resultdir, nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=Sets.Region_full)
-        println(tmp_TotalCapacityAnnual)
         tmp_TotalTradeCapacity = GENeSYS_MOD.read_trade_capacities(file=Switch.resultdir, nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=Sets.Region_full)
         tmp_NewStorageCapacity = GENeSYS_MOD.read_storage_capacities(file=Switch.resultdir, nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=Sets.Region_full)
     else
