@@ -782,7 +782,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   
   ############### Reserve Margin Constraint ############## NTS: Should change demand for production
   
-  if Switch.switch_dispatch == 0 && Switch.switch_reserve == 1
+  if Switch.switch_dispatch == 0 || Switch.switch_reserve == 1
     for r ∈ 𝓡, y ∈ 𝓨, l ∈ 𝓛
       @constraint(model,
       sum((Vars.RateOfActivity[y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] *Params.ReserveMarginTagTechnology[r,t,y] * Params.ReserveMarginTagFuel[r,f,y]) for f ∈ 𝓕 for (t,m) ∈ LoopSetOutput[(r,f,y)]) == Vars.TotalActivityInReserveMargin[r,y,l],
