@@ -336,8 +336,6 @@ struct Variables
     StorageLevelYearStart ::JuMP.Containers.DenseAxisArray
     StorageLevelYearFinish ::JuMP.Containers.DenseAxisArray
     StorageLevelTSStart ::JuMP.Containers.DenseAxisArray
-    StorageLowerLimit ::JuMP.Containers.DenseAxisArray
-    StorageUpperLimit ::JuMP.Containers.DenseAxisArray
     AccumulatedNewStorageCapacity ::JuMP.Containers.DenseAxisArray
     NewStorageCapacity ::JuMP.Containers.DenseAxisArray
     CapitalInvestmentStorage ::JuMP.Containers.DenseAxisArray
