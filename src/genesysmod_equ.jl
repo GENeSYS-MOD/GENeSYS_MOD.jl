@@ -908,17 +908,17 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   
   ################ Sectoral Emissions Accounting ##############
   start=Dates.now()
+  for y ∈ 𝓨, e ∈ 𝓔, se ∈ 𝓢𝓮
+    if Params.AnnualSectoralEmissionLimit[e,se,y] < 999999
+      for r ∈ 𝓡
+        @constraint(model,
+        sum(Vars.AnnualTechnologyEmission[y,t,e,r] for t ∈ 𝓣 if Params.TagTechnologyToSector[t,se] != 0) == Vars.AnnualSectoralEmissions[y,e,se,r],
+        base_name="E12_AnnualSectorEmissions|$(y)|$(e)|$(se)|$(r)")
+      end
 
-  for y ∈ 𝓨 for e ∈ 𝓔 for se ∈ 𝓢𝓮
-    for r ∈ 𝓡
       @constraint(model,
-      sum(Vars.AnnualTechnologyEmission[y,t,e,r] for t ∈ 𝓣 if Params.TagTechnologyToSector[t,se] != 0) == Vars.AnnualSectoralEmissions[y,e,se,r],
-      base_name="E12_AnnualSectorEmissions|$(y)|$(e)|$(se)|$(r)")
-    end
-
-    @constraint(model,
-    sum(Vars.AnnualSectoralEmissions[y,e,se,r] for r ∈ 𝓡 ) <= Params.AnnualSectoralEmissionLimit[e,se,y],
-    base_name="E13_AnnualSectorEmissionsLimit|$(y)|$(e)|$(se)")
+      sum(Vars.AnnualSectoralEmissions[y,e,se,r] for r ∈ 𝓡 ) <= Params.AnnualSectoralEmissionLimit[e,se,y],
+      base_name="E13_AnnualSectorEmissionsLimit|$(y)|$(e)|$(se)")
   end end end
 
   print("Cstr: ES: ",Dates.now()-start,"\n")
