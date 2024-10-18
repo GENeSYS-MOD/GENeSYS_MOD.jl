@@ -110,8 +110,6 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     StorageLevelYearStart = @variable(model, StorageLevelYearStart[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     StorageLevelYearFinish = @variable(model, StorageLevelYearFinish[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     StorageLevelTSStart = @variable(model, StorageLevelTSStart[𝓢,𝓨,𝓛,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
-    StorageLowerLimit = @variable(model, StorageLowerLimit[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
-    StorageUpperLimit = @variable(model, StorageUpperLimit[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     AccumulatedNewStorageCapacity = @variable(model, AccumulatedNewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     NewStorageCapacity = @variable(model, NewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     CapitalInvestmentStorage = @variable(model, CapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
@@ -124,7 +122,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     ######## Reserve Margin #############
 
-    if Switch.switch_dispatch == 0
+    if Switch.switch_dispatch == 0 || Switch.switch_reserve == 1
         TotalActivityInReserveMargin=@variable(model, TotalActivityInReserveMargin[𝓡,𝓨,𝓛] >= 0, container=JuMP.Containers.DenseAxisArray)
         DemandNeedingReserveMargin=@variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     else
@@ -258,7 +256,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     SalvageValue,DiscountedSalvageValue,OperatingCost,DiscountedOperatingCost,AnnualVariableOperatingCost,
     AnnualFixedOperatingCost,VariableOperatingCost,TotalDiscountedCost,TotalDiscountedCostByTechnology,
     ModelPeriodCostByRegion,AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
-    StorageLevelYearStart,StorageLevelYearFinish,StorageLevelTSStart,StorageLowerLimit,StorageUpperLimit,AccumulatedNewStorageCapacity,NewStorageCapacity,
+    StorageLevelYearStart,StorageLevelYearFinish,StorageLevelTSStart,AccumulatedNewStorageCapacity,NewStorageCapacity,
     CapitalInvestmentStorage,DiscountedCapitalInvestmentStorage,SalvageValueStorage,
     DiscountedSalvageValueStorage,TotalDiscountedStorageCost,TotalActivityInReserveMargin,
     DemandNeedingReserveMargin,TotalREProductionAnnual,RETotalDemandOfTargetFuelAnnual,

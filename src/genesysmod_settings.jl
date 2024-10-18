@@ -33,7 +33,7 @@ function genesysmod_settings(Sets, Params, socialdiscountrate)
         for t ∈ setdiff(Sets.Technology,Params.TagTechnologyToSubsets["Households"])
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
-        for t ∈ Params.TagTechnologyToSubsets["Households"]
+        for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["Households"])
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
         SocialDiscountRate[r] = socialdiscountrate

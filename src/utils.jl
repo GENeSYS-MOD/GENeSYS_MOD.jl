@@ -468,3 +468,75 @@ function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=
         end
     end
 end
+
+
+function read_capacities(; file, nam, year, technology, region)
+    A = JuMP.Containers.DenseAxisArray(
+        zeros(length(year), length(technology), length(region)), 
+        year, technology, region)
+
+    open(file, "r") do f
+        while !eof(f)
+            line = readline(f)
+            if startswith(line, nam)
+                y = parse(Int, split(split(line, "[")[2], ",")[1])
+                tech = split(split(line, "[")[2], ",")[2]
+                r = split(split(split(line, "[")[2], ",")[3], "]")[1]
+                if tech ∈ technology && y ∈ year && r ∈ region
+                    A[y, tech, r] = parse(Float64, split(split(split(split(line, "[")[2], ",")[3], "]")[2], "= ")[2])
+                end
+            end
+        end
+    end  
+    return A
+end
+
+function read_trade_capacities(; file, nam, year, technology, region)
+    A = JuMP.Containers.DenseAxisArray(
+        zeros(length(year), length(technology), length(region), length(region)), 
+        year, technology, region, region)
+
+    open(file, "r") do f
+        while !eof(f)
+            line = readline(f)
+            if startswith(line, nam)
+                parts = split(line, "[")[2]
+                y = parse(Int, split(parts, ",")[1])
+                tech = split(parts, ",")[2]
+                region1 = split(parts, ",")[3]
+                region2 = split(split(parts, ",")[4], "]")[1]
+                value = parse(Float64, split(split(line, "]")[2], "= ")[2])
+        
+                if y ∈ year && region1 ∈ region && region2 ∈ region && tech ∈ technology
+                    A[y, tech, region1, region2] = value
+                end
+            end
+        end
+    end
+    return A 
+end
+
+function read_storage_capacities(; file, nam, year, technology, region)
+    A = JuMP.Containers.DenseAxisArray(
+        zeros(length(technology), length(year), length(region)), 
+        technology, [2050], region)
+
+    open(file, "r") do f
+        while !eof(f)
+            line = readline(f)
+            if startswith(line, nam)
+                parts = split(line, "[")
+    
+                y = parse(Int, split(parts[2], ",")[2])
+                tech = split(parts[2],",")[1]
+                r = split(split(parts[2],",")[3],"]")[1]
+    
+                if r ∈ region && tech ∈ technology
+                    value = parse(Float64, split(split(line, "]")[2], "= ")[2])
+                    A[tech, 2050, r] += value
+                end
+            end
+        end
+    end
+    return A
+end
