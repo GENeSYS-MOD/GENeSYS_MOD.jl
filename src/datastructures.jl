@@ -667,6 +667,7 @@ The raw results dumps the content of all variables into CSVs.\n
 additional metrics not part of the raw results.\n
 - **`write_reduced_timeserie ::Int8`** Used to enable the writing of a file containing the
  results of the time reduction algorithm.\n
+ - **`switch_reserve ::Int16`** Used to enable reserve margin constraints\n 
 """
 struct Switch <: InputClass
     StartYear :: Int16
@@ -713,6 +714,7 @@ struct Switch <: InputClass
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     switch_LCOE_calc ::Int8
+    switch_reserve ::Int16
 end
 
 """

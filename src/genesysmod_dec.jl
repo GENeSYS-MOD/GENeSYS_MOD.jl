@@ -113,7 +113,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     ######## Reserve Margin #############
 
-    if Switch.switch_dispatch == 0
+    if Switch.switch_dispatch == 0 && Switch.switch_reserve == 1
         TotalActivityInReserveMargin=@variable(model, TotalActivityInReserveMargin[𝓡,𝓨,𝓛] >= 0, container=JuMP.Containers.DenseAxisArray)
         DemandNeedingReserveMargin=@variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray) 
     else
