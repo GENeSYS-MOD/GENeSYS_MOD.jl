@@ -32,6 +32,8 @@ using XLSX
 using CSV
 using Statistics
 
+const DenseArray = JuMP.Containers.DenseAxisArray
+
 include("datastructures.jl")
 include("utils.jl")
 include("genesysmod.jl")
@@ -45,11 +47,12 @@ include("genesysmod_employment.jl")
 include("genesysmod_variable_parameter.jl")
 include("genesysmod_results_raw.jl")
 include("genesysmod_results.jl")
-include("genesysmod_results_old.jl")
 include("genesysmod_levelizedcosts.jl")
 include("genesysmod_emissionintensity.jl")
-include("genesysmod_simple_dispatch.jl")
+include("genesysmod_dispatch.jl")
 
-export genesysmod, genesysmod_simple_dispatch
+export genesysmod, genesysmod_dispatch
+export NoInfeasibilityTechs, WithInfeasibilityTechs # for use with the switch infeasibility_techs
+export OneNodeSimple, TwoNodes, OneNodeStorage
 
 end

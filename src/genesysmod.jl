@@ -28,7 +28,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022",
     threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit", 
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\", 
-    switch_infeasibility_tech = 0, switch_investLimit=1, switch_ccs=0,
+    switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=0,
     switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
     switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025, 
@@ -36,7 +36,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
     elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 1,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0, switch_LCOE_calc=0)
+    switch_iis = 1, switch_base_year_bounds_debugging = 0, switch_LCOE_calc=0,
+    extr_str_results = "inv_run", extr_str_dispatch="dispatch_run")
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
         @warn "Both elmod_nthhour and elmod_daystep/elmod_hourstep are defined.
@@ -56,9 +57,9 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     end
 
     elmod_nthhour = Int64(elmod_daystep * 24 + elmod_hourstep)
-    switch_dispatch = 0
+    switch_dispatch = NoDispatch()
 
-    Switch = GENeSYS_MOD.Switch(year,
+    switch = Switch(year,
     solver,
     DNLPsolver,
     model_region,
@@ -101,7 +102,9 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_raw_results,
     switch_processed_results,
     write_reduced_timeserie,
-    switch_LCOE_calc)
+    switch_LCOE_calc,
+    extr_str_results,
+    extr_str_dispatch)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -110,21 +113,21 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Load data from provided excel files and declarations #############
     #
 
-    Sets, Params, Emp_Sets = genesysmod_dataload(Switch);
+    Sets, Params, Emp_Sets = genesysmod_dataload(switch);
     Maps = make_mapping(Sets,Params)
-    Vars=genesysmod_dec(model,Sets,Params,Switch,Maps)
+    Vars=genesysmod_dec(model,Sets,Params,switch,Maps)
     #
     # ####### Settings for model run (Years, Regions, etc) #############
     #
 
-    Settings=genesysmod_settings(Sets, Params, Switch.socialdiscountrate)
+    Settings=genesysmod_settings(Sets, Params, switch.socialdiscountrate)
 
     #end
     #
     # ####### apply general model bounds #############
     #
 
-    genesysmod_bounds(model,Sets,Params,Vars,Settings,Switch,Maps)
+    genesysmod_bounds(model,Sets,Params,Vars,Settings,switch,Maps)
 
     # create tech, fuel and mode of operation mapping
     
@@ -132,7 +135,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     # ####### Including Equations #############
     #
 
-    genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,Switch,Maps)
+    considered_duals = genesysmod_equ(model,Sets,Params,Vars,Emp_Sets,Settings,switch,Maps)
     #
     # ####### CPLEX Options #############
     #
@@ -193,13 +196,13 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = genesysmod_variable_parameter(model, Sets, Params, Vars)
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, Switch,
-             Settings, Maps, elapsed,(switch_dispatch == 1 ? "dispatch" : ""))
+            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, switch,
+             Settings, Maps, elapsed, switch.extr_str_results)
             # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
             #  Settings, elapsed,"dispatch")
         end
         if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, Switch,(switch_dispatch == 1 ? "dispatch" : ""))
+            GENeSYS_MOD.genesysmod_results_raw(model, switch,switch.extr_str_results)
         end
         if string(solver) == "CPLEX.Optimizer"
             file = open(joinpath(resultdir, "cplex.sol"), "w")
@@ -212,10 +215,11 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
                 end
             end
         end
+        genesysmod_getspecifiedduals(model,switch,switch.extr_str_results, considered_duals)
     else
         println("Termination status:", termination_status(model), ".")
     end
 
     return model, Dict("Sets" => Sets, "Params" => Params,
-     "Switch" => Switch)
+     "Switch" => switch)
 end

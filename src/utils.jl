@@ -42,13 +42,18 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
     tup_dim = (dim_names...,)
     var_val  = value.(var)
 
-    # With a product over all axis sets of size M, form an Mx1 Array of all indices to the JuMP container `var`
-    indices = collect(Base.Iterators.product(var.axes...))
-    data = [NamedTuple{tup_dim}(ind) for ind in indices if var_val[ind...] != 0]
-    values = [var_val[ind...] for ind in indices if var_val[ind...] != 0]
-    
-    df = DataFrame(data)
-    df[!, value_col] = values
+    if sum(var_val) != 0
+        # With a product over all axis sets of size M, form an Mx1 Array of all indices to the JuMP container `var`
+        indices = collect(Base.Iterators.product(var.axes...))
+        data = [NamedTuple{tup_dim}(ind) for ind in indices if var_val[ind...] != 0]
+        values = [var_val[ind...] for ind in indices if var_val[ind...] != 0]
+        
+        df = DataFrame(data)
+        df[!, value_col] = values
+    else
+        push!(dim_names, :Value)
+        df = DataFrame([[] for i in dim_names],dim_names)
+    end
     return df
 end
 
@@ -61,7 +66,7 @@ values are intialized to 0. If copy world is true, the value for the region worl
 If inherit_base_world is 1, missing data will be fetched from the base region if they exist
 and again from the world region if necessary.
 """
-function create_daa(in_data::XLSX.XLSXFile, tab_name, base_region="DE", els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
+function create_daa(in_data::XLSX.XLSXFile, tab_name, els...;inherit_base_world=false,copy_world=false, base_region="DE") # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
@@ -124,7 +129,7 @@ function read_subsets(in_data::XLSX.XLSXFile, tab_name)
     return A
 end
 
-function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims) 
+#= function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims) 
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
 
     # Initialize all combinations to zero:
@@ -139,9 +144,9 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims)
         end
     end
     return A
-end
+end =#
 
-function create_daa(in_data::DataFrame, tab_name, base_region="DE", els...) # els contains the Sets, col_names is the name of the columns in the df as symbols
+function create_daa(in_data::DataFrame, tab_name, els...) # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = in_data
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
@@ -160,7 +165,7 @@ end
 """
 Create dense axis array initialized at a given value. 
 """
-function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els...;inherit_base_world=false,copy_world=false) # els contains the Sets, col_names is the name of the columns in the df as symbols
+function create_daa_init(in_data, tab_name,init_value=0, els...;inherit_base_world=false,copy_world=false, base_region="DE") # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
     # Initialize all combinations to zero:
     A = JuMP.Containers.DenseAxisArray(
@@ -213,7 +218,7 @@ function create_daa_init(in_data, tab_name, base_region="DE",init_value=0, els..
     return A
 end
 
-function specified_demand_profile(time_series_data,Sets,base_region="DE")
+function specified_demand_profile(time_series_data,Sets)
 
     # Read table from Excel to DataFrame
     # Tbl = XLSX.gettable(time_series_data["Par_SpecifiedDemandProfile"];first_row=1)
@@ -244,7 +249,7 @@ function specified_demand_profile(time_series_data,Sets,base_region="DE")
     return A
 end
 
-function year_split(time_series_data,Sets,base_region="DE")
+function year_split(time_series_data,Sets)
 
     # Read table from Excel to DataFrame
     # Tbl = XLSX.gettable(time_series_data["Par_SpecifiedDemandProfile"];first_row=1)
@@ -275,7 +280,7 @@ function year_split(time_series_data,Sets,base_region="DE")
     return A
 end
 
-function capacity_factor(time_series_data,Sets,base_region="DE")
+function capacity_factor(time_series_data,Sets)
 
     # Read table from Excel to DataFrame
     # Tbl = XLSX.gettable(time_series_data["Par_SpecifiedDemandProfile"];first_row=1)
@@ -306,7 +311,7 @@ function capacity_factor(time_series_data,Sets,base_region="DE")
     return A
 end
 
-function read_x_peakingDemand(time_series_data,Sets,base_region="DE")
+function read_x_peakingDemand(time_series_data,Sets)
 
     # Read table from Excel to DataFrame
     # Tbl = XLSX.gettable(time_series_data["Par_SpecifiedDemandProfile"];first_row=1)
@@ -467,4 +472,51 @@ function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=
             write(file, string(r)*"\n")
         end
     end
+end
+
+# assumption: the region is the first axe (otherwise do not use this function)
+function aggregate_daa(full_daa, considered_region, full_region, mode::Sum, els...)
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length.(els)...), considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        new_daa[considered_region[1],x...] = full_daa[considered_region[1],x...]
+        new_daa[considered_region[2],x...] = sum(full_daa[r,x...] for r in full_region) - full_daa[considered_region[1],x...]
+        if length(considered_region) >2
+            new_daa[considered_region[3],x...] = full_daa[considered_region[3],x...]
+        end
+    end
+    return new_daa
+end
+
+function aggregate_daa(full_daa, considered_region, full_region, mode::Mean, els...)
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length.(els)...), considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        new_daa[considered_region[1],x...] = full_daa[considered_region[1],x...]
+        new_daa[considered_region[2],x...] = (sum(full_daa[r,x...] for r in full_region) - full_daa[considered_region[1],x...])/(length(full_region)-1)
+        if length(considered_region) >2
+            new_daa[considered_region[3],x...] = full_daa[considered_region[3],x...]
+        end
+    end
+    return new_daa
+end
+
+function aggregate_cross_daa(full_daa, considered_region, full_region, mode::Sum, els...)
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length(considered_region),length.(els)...), considered_region, considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        new_daa[considered_region[1],considered_region[2],x...] = sum(full_daa[considered_region[1],r,x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...]
+        new_daa[considered_region[2],considered_region[1],x...] = sum(full_daa[r,considered_region[1],x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...]
+    end
+    return new_daa
+end
+
+function aggregate_cross_daa(full_daa, considered_region, full_region, mode::Mean, els...)
+    new_daa = JuMP.Containers.DenseAxisArray(
+        zeros(length(considered_region),length(considered_region),length.(els)...), considered_region, considered_region, els...)
+    for x in Base.Iterators.product(els...)
+        new_daa[considered_region[1],considered_region[2],x...] = (sum(full_daa[considered_region[1],r,x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...])/(length(full_region)-1)
+        new_daa[considered_region[2],considered_region[1],x...] = (sum(full_daa[r,considered_region[1],x...] for r in full_region) - full_daa[considered_region[1],considered_region[1],x...])/(length(full_region)-1)
+    end
+    return new_daa
 end

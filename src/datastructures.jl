@@ -23,6 +23,38 @@ InputClass - Abstract type for the inputs
 """
 abstract type InputClass end
 
+struct Tags <: InputClass
+    TagTechnologyToSubsets::Dict{String,Array{String}}
+    TagFuelToSubsets::Dict{String,Array{String}}
+    TagDemandFuelToSector::JuMP.Containers.DenseAxisArray
+    TagElectricTechnology::JuMP.Containers.DenseAxisArray
+    TagTechnologyToModalType::JuMP.Containers.DenseAxisArray
+    TagTechnologyToSector::JuMP.Containers.DenseAxisArray
+    RETagTechnology::JuMP.Containers.DenseAxisArray
+    RETagFuel::JuMP.Containers.DenseAxisArray
+    TagDispatchableTechnology::JuMP.Containers.DenseAxisArray
+end
+
+abstract type AbstractDispatchType end
+struct NoDispatch <: AbstractDispatchType end
+struct OneNodeSimple <: AbstractDispatchType
+    considered_region::String
+end
+struct TwoNodes <: AbstractDispatchType
+    considered_region::String
+end
+struct OneNodeStorage <: AbstractDispatchType
+    considered_region::String
+end
+
+abstract type AbstractInfeasibilityTechs end
+struct WithInfeasibilityTechs <: AbstractInfeasibilityTechs end
+struct NoInfeasibilityTechs <: AbstractInfeasibilityTechs end
+
+abstract type AbstractAggregationMode end
+struct Sum <: AbstractAggregationMode end
+struct Mean <: AbstractAggregationMode end
+
 """
 All the parameters read for a model run
 
@@ -191,8 +223,9 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     considered to be "direct electrification".\n 
 """
 struct Parameters <: InputClass
-    StartYear ::Int64
     YearSplit ::JuMP.Containers.DenseAxisArray
+
+    Tags ::Tags
 
     SpecifiedAnnualDemand ::JuMP.Containers.DenseAxisArray
     SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray
@@ -206,7 +239,6 @@ struct Parameters <: InputClass
     ResidualCapacity ::JuMP.Containers.DenseAxisArray
     InputActivityRatio ::JuMP.Containers.DenseAxisArray
     OutputActivityRatio ::JuMP.Containers.DenseAxisArray
-    TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray
     RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray
     TimeDepEfficiency ::JuMP.Containers.DenseAxisArray
 
@@ -229,7 +261,6 @@ struct Parameters <: InputClass
     TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray
     TotalAnnualMinCapacity ::JuMP.Containers.DenseAxisArray
 
-    TagTechnologyToSector ::JuMP.Containers.DenseAxisArray
     AnnualSectoralEmissionLimit ::JuMP.Containers.DenseAxisArray
 
     TotalAnnualMaxCapacityInvestment ::JuMP.Containers.DenseAxisArray
@@ -244,8 +275,6 @@ struct Parameters <: InputClass
     ReserveMarginTagFuel ::JuMP.Containers.DenseAxisArray
     ReserveMargin ::JuMP.Containers.DenseAxisArray
 
-    RETagTechnology ::JuMP.Containers.DenseAxisArray
-    RETagFuel ::JuMP.Containers.DenseAxisArray
     REMinProductionTarget ::JuMP.Containers.DenseAxisArray
 
     EmissionActivityRatio ::JuMP.Containers.DenseAxisArray
@@ -280,7 +309,6 @@ struct Parameters <: InputClass
     MinActiveProductionPerTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
     ModalSplitByFuelAndModalType ::JuMP.Containers.DenseAxisArray
-    TagTechnologyToModalType ::JuMP.Containers.DenseAxisArray
 
     EFactorConstruction ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     EFactorOM ::Union{Nothing,JuMP.Containers.DenseAxisArray}
@@ -294,11 +322,6 @@ struct Parameters <: InputClass
     DeclineRate ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     
-    TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray
-    TagElectricTechnology ::JuMP.Containers.DenseAxisArray
-
-    TagTechnologyToSubsets ::Dict{String,Array}
-    TagFuelToSubsets ::Dict{String,Array}
     StorageE2PRatio ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 end
 
@@ -478,7 +501,7 @@ Sets used for the model run
     aggregation and accounting purposes.\n
 """
 struct Sets <: InputClass
-    Timeslice_full ::UnitRange{Int64}
+    Timeslice_full ::Vector{Int64}
     Emission ::Vector{String}
     Technology ::Vector{String}
     Fuel ::Vector{String}
@@ -491,6 +514,11 @@ struct Sets <: InputClass
     Sector ::Vector{String}
 end
 
+#= Base.copy(s::Sets) = Sets(deepcopy(s.Timeslice_full), deepcopy(s.Emission), deepcopy(s.Technology),
+deepcopy(s.Fuel), deepcopy(s.Year), deepcopy(s.Timeslice), deepcopy(s.Mode_of_operation),
+deepcopy(s.Region_full), deepcopy(s.Storage), deepcopy(s.ModalType), deepcopy(s.Sector))
+ =#
+Base.copy(s::Sets) = Sets(map(field -> deepcopy(getfield(s, field)), fieldnames(Sets))...)
 """
 Sets necessary for the employment calculations. The set elements may be different from
 the sets in the model.
@@ -669,6 +697,9 @@ The raw results dumps the content of all variables into CSVs.\n
 additional metrics not part of the raw results.\n
 - **`write_reduced_timeserie ::Int8`** Used to enable the writing of a file containing the
  results of the time reduction algorithm.\n
+- **`extr_str_results ::String`** Final name of the result files written by the model.\n 
+- **`extr_str_dispatch ::String`**  If switch_dispatch = 1, final name of the result file form the investment 
+run that will be read to fix some decision variables.\n 
 """
 struct Switch <: InputClass
     StartYear :: Int16
@@ -684,7 +715,7 @@ struct Switch <: InputClass
     socialdiscountrate ::Float64
     inputdir ::String
     resultdir ::String
-    switch_infeasibility_tech ::Int8
+    switch_infeasibility_tech ::AbstractInfeasibilityTechs
     switch_investLimit ::Int16
     switch_ccs ::Int16
     switch_ramping ::Int16
@@ -705,7 +736,7 @@ struct Switch <: InputClass
     switch_employment_calculation ::Int16
     switch_endogenous_employment ::Int16
     employment_data_file ::String
-    switch_dispatch ::Int8
+    switch_dispatch ::AbstractDispatchType
     elmod_nthhour ::Int16
     elmod_starthour ::Int16
     elmod_dunkelflaute ::Int16
@@ -715,6 +746,8 @@ struct Switch <: InputClass
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     switch_LCOE_calc ::Int8
+    extr_str_results ::String
+    extr_str_dispatch ::String
 end
 
 """
@@ -749,3 +782,4 @@ struct Maps <: InputClass
     Tech_MO ::Dict
     Fuel_Tech ::Dict
 end
+

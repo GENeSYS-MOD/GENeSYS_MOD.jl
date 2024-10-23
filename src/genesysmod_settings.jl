@@ -30,10 +30,10 @@ function genesysmod_settings(Sets, Params, socialdiscountrate)
     for r ∈ Sets.Region_full
         DepreciationMethod[r] = 1
         GeneralDiscountRate[r] = Float64(0.05)
-        for t ∈ setdiff(Sets.Technology,Params.TagTechnologyToSubsets["Households"])
+        for t ∈ setdiff(Sets.Technology,Params.Tags.TagTechnologyToSubsets["Households"])
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
-        for t ∈ Params.TagTechnologyToSubsets["Households"]
+        for t ∈ Params.Tags.TagTechnologyToSubsets["Households"]
             TechnologyDiscountRate[r,t] = Float64(0.05)
         end
         SocialDiscountRate[r] = socialdiscountrate
@@ -43,7 +43,7 @@ function genesysmod_settings(Sets, Params, socialdiscountrate)
     NewRESCapacity = Float64(0.1)
     ProductionGrowthLimit=JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel)), Sets.Year, Sets.Fuel)
     for y ∈ Sets.Year for f ∈ Sets.Fuel
-        if f ∈ vcat(["Power"],Params.TagFuelToSubsets["HeatFuels"],Params.TagFuelToSubsets["TransportFuels"])
+        if f ∈ vcat(["Power"],Params.Tags.TagFuelToSubsets["HeatFuels"],Params.Tags.TagFuelToSubsets["TransportFuels"])
             ProductionGrowthLimit[y,f] = Float64(0.05)
         end
         if f == "Air"
