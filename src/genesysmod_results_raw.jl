@@ -27,7 +27,7 @@ end
 """
 Write the values of each variable in the model to CSV files.
 """
-function genesysmod_results_raw(model, Switch,extr_str)
+function genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, s_rawresults::CSVResult)
     vars = _registered_variables(model)
     Threads.@threads for v in vars
         if v ∉ [:cost, :z]
@@ -35,6 +35,50 @@ function genesysmod_results_raw(model, Switch,extr_str)
             fn = joinpath(Switch.resultdir, string(v) * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
             CSV.write(fn, JuMP.Containers.rowtable(value, model[v])) 
+        end
+    end
+    for field in fieldnames(typeof(VarPar))
+        daa = getfield(VarPar, field)
+        if isa(daa, DenseArray)
+            fn = joinpath(Switch.resultdir, string(field) * "_" * Switch.model_region * "_" *
+                          Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+            CSV.write(fn, JuMP.Containers.rowtable(value, daa))
+        end
+    end
+    fn = joinpath(Switch.resultdir, "RateOfDemand_" * Switch.model_region * "_" *
+                          Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+    CSV.write(fn, JuMP.Containers.rowtable(value, Params.RateOfDemand))
+    fn = joinpath(Switch.resultdir, "Demand_" * Switch.model_region * "_" *
+            Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
+    CSV.write(fn, JuMP.Containers.rowtable(value, Params.Demand))
+end
+
+function genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, s_rawresults::NoRawResult)
+end
+
+function genesysmod_results_raw(model, VarPar, Params, Switch, extr_str, s_rawresults::TXTResult)
+    open(joinpath(Switch.resultdir, "$(s_rawresults.filename)_$(extr_str).txt"), "w") do file
+        objective = objective_value(model)
+        println(file, "Objective = $objective")
+        for v in all_variables(model)
+            if value.(v) > 0
+                val = value.(v)
+                str = string(v)
+                println(file, "$str = $val")
+            end
+        end
+        for y ∈ axes(VarPar.ProductionByTechnology)[1], l ∈ axes(VarPar.ProductionByTechnology)[2], t ∈ axes(VarPar.ProductionByTechnology)[3], f ∈ axes(VarPar.ProductionByTechnology)[4], r ∈ axes(VarPar.ProductionByTechnology)[5]
+            value = VarPar.ProductionByTechnology[y,l,t,f,r]
+            if value > 0
+                println(file, "ProductionByTechnology[$y,$l,$t,$f,$r] = $value")
+            end
+        end
+        for y ∈ axes(Params.RateOfDemand)[1], l ∈ axes(Params.RateOfDemand)[2], f ∈ axes(Params.RateOfDemand)[3], r ∈ axes(Params.RateOfDemand)[4]
+            value = Params.Demand[y,l,f,r] *  Params.YearSplit[l,y]
+            if value > 0
+                println(file, "RateOfDemand[$y,$l,$f,$r] = $value")
+                println(file, "Demand[$y,$l,$f,$r] = $(Params.Demand[y,l,f,r])")
+            end
         end
     end
 end
