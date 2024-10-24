@@ -184,22 +184,22 @@ function read_tags(in_data, Sets, Switch, s_infeas, s_dispatch)
     tags = Tags(TagTechnologyToSubsets,TagFuelToSubsets,TagDemandFuelToSector,TagElectricTechnology,
     TagTechnologyToModalType,TagTechnologyToSector,RETagTechnology,RETagFuel,TagDispatchableTechnology)
 
-    add_extras_tags!(tags, s_infeas, s_dispatch)
+    add_extras_tags!(tags, Sets, s_infeas, s_dispatch)
 
     return tags
 end
 
-function add_extras_tags!(tags::Tags, s_infeas, s_dispatch)
+function add_extras_tags!(tags::Tags, sets, s_infeas, s_dispatch)
 end
 
-function add_extras_tags!(tags::Tags, s_infeas::WithInfeasibilityTechs, s_dispatch)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"]
+function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch)
+    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
 end
 
-function add_extras_tags!(tags::Tags, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power"]
+function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
+    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power"])
     push!(tags.TagTechnologyToSubsets["StorageDummies"], "D_Trade_Storage_Power")
 end
 
@@ -720,7 +720,7 @@ function aggregate_params(Switch, Sets_full, Params_full, s_dispatch)
     sets = Sets(Sets_full.Timeslice,Sets_full.Emission,Sets_full.Technology,Sets_full.Fuel,
     considered_year,Sets_full.Timeslice,Sets_full.Mode_of_operation,considered_region,
     Sets_full.Storage,Sets_full.ModalType,Sets_full.Sector)
-    return sets, Params_full, nothing, nothing
+    return sets, Params_full, Sets_full.Region_full, nothing
 end
 
 function update_sectors!(sectors,s_infeas)

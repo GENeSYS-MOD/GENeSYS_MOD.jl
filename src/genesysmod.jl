@@ -35,8 +35,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 0,
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8, 
-    elmod_dunkelflaute = 0, switch_raw_results = 0, switch_processed_results = 0, write_reduced_timeserie = 1,
-    switch_iis = 1, switch_base_year_bounds_debugging = 0, switch_LCOE_calc=0,
+    elmod_dunkelflaute = 0, switch_raw_results = NoRawResult(), switch_processed_results = 0, write_reduced_timeserie = 1, switch_LCOE_calc=0,
+    switch_reserve=0,switch_base_year_bounds_debugging=0,
     extr_str_results = "inv_run", extr_str_dispatch="dispatch_run")
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
@@ -104,7 +104,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     write_reduced_timeserie,
     switch_LCOE_calc,
     extr_str_results,
-    extr_str_dispatch)
+    extr_str_dispatch,
+    switch_reserve)
 
     starttime= Dates.now()
     model= JuMP.Model()
@@ -196,25 +197,10 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = genesysmod_variable_parameter(model, Sets, Params, Vars)
         if switch_processed_results == 1
-            GENeSYS_MOD.genesysmod_results(model, Sets, Params, VarPar, Vars, switch,
+            genesysmod_results(model, Sets, Params, VarPar, Vars, switch,
              Settings, Maps, elapsed, switch.extr_str_results)
-            # GENeSYS_MOD.genesysmod_results_old(model, Sets, Params, VarPar, Vars, Switch,
-            #  Settings, elapsed,"dispatch")
         end
-        if switch_raw_results == 1
-            GENeSYS_MOD.genesysmod_results_raw(model, switch,switch.extr_str_results)
-        end
-        if string(solver) == "CPLEX.Optimizer"
-            file = open(joinpath(resultdir, "cplex.sol"), "w")
-            # Write variable names and values to the file
-            for v in all_variables(model)
-                if value.(v) > 0
-                    val = value.(v)
-                    str = string(v)
-                    println(file, "$str = $val")
-                end
-            end
-        end
+        genesysmod_results_raw(model, VarPar, Params, switch,switch.extr_str_results, switch.switch_raw_results)
         genesysmod_getspecifiedduals(model,switch,switch.extr_str_results, considered_duals)
     else
         println("Termination status:", termination_status(model), ".")

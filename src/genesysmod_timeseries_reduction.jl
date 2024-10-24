@@ -61,14 +61,27 @@ function timeseries_reduction!(Params, Sets, Switch)
 
     switch_dunkelflaute = Switch.elmod_dunkelflaute
 
-    Country_Data_Entries=[
-    "LOAD",
-    "PV_AVG", "PV_INF", "PV_OPT",
-    "WIND_ONSHORE_AVG", "WIND_ONSHORE_INF", "WIND_ONSHORE_OPT",
-    "WIND_OFFSHORE","WIND_OFFSHORE_SHALLOW","WIND_OFFSHORE_DEEP",
-    "MOBILITY_PSNG",
-    "HEAT_LOW", "HEAT_HIGH",
-    "HEAT_PUMP_AIR", "HEAT_PUMP_GROUND","HYDRO_ROR","PV_TRACKING"]
+    keys_mapping = Dict(
+        "Power" => "LOAD",
+        "RES_PV_Utility_Avg" => "PV_AVG",
+        "RES_PV_Utility_Inf" => "PV_INF",
+        "RES_PV_Utility_Opt" => "PV_OPT",
+        "RES_PV_Utility_Tracking" => "PV_TRA",
+        "RES_Wind_Onshore_Avg" => "WIND_ONSHORE_AVG",
+        "RES_Wind_Onshore_Inf" => "WIND_ONSHORE_INF",
+        "RES_Wind_Onshore_Opt" => "WIND_ONSHORE_OPT",
+        "RES_Wind_Offshore_Transitional" => "WIND_OFFSHORE",
+        "RES_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP",
+        "RES_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW",
+        "Heat_Low_Residential" => "HEAT_LOW",
+        "HLR_Heatpump_Aerial" => "HP_AIRSOURCE",
+        "HLR_Heatpump_Ground" => "HP_GROUNDSOURCE",
+        "Mobility_Passenger" => "MOBILITY_PSNG",
+        "RES_Hydro_Small" => "HYDRO_ROR",
+        "Heat_High_Industrial" => "HEAT_HIGH",
+    )
+
+    Country_Data_Entries= [keys_mapping[k] for k ∈ intersect(keys(keys_mapping), union(Sets.Fuel, Sets.Technology))]
 
     sector_to_tech = Dict(
         "Industry"=>"HEAT_HIGH",
@@ -78,48 +91,12 @@ function timeseries_reduction!(Params, Sets, Switch)
 
     Timeslice_Full = 1:8760
 
-    CountryData = Dict()
-
     hourly_data = XLSX.readxlsx(joinpath(Switch.inputdir, Switch.hourly_data_file * ".xlsx"))
 
-    CountryData_Load = DataFrame(XLSX.gettable(hourly_data["TS_LOAD"]))
-    CountryData_PV_Avg = DataFrame(XLSX.gettable(hourly_data["TS_PV_AVG"]))
-    CountryData_PV_Inf = DataFrame(XLSX.gettable(hourly_data["TS_PV_INF"]))
-    CountryData_PV_Opt = DataFrame(XLSX.gettable(hourly_data["TS_PV_OPT"]))
-    CountryData_PV_tracking = DataFrame(XLSX.gettable(hourly_data["TS_PV_TRA"]))
-    CountryData_Wind_Onshore_Avg = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_AVG"]))
-    CountryData_Wind_Onshore_Inf = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_INF"]))
-    CountryData_Wind_Onshore_Opt = DataFrame(XLSX.gettable(hourly_data["TS_WIND_ONSHORE_OPT"]))
-    CountryData_Wind_Offshore = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE"]))
-    CountryData_Wind_Offshore_Shallow = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE_SHALLOW"]))
-    CountryData_Wind_Offshore_Deep = DataFrame(XLSX.gettable(hourly_data["TS_WIND_OFFSHORE_DEEP"]))
-    CountryData_Mobility_Psng = DataFrame(XLSX.gettable(hourly_data["TS_MOBILITY_PSNG"]))
-    CountryData_Heat_Low = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_LOW"]))
-    CountryData_Heat_High = DataFrame(XLSX.gettable(hourly_data["TS_HEAT_HIGH"]))
-    CountryData_HeatPump_AirSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_AIRSOURCE"]))
-    CountryData_HeatPump_GroundSource = DataFrame(XLSX.gettable(hourly_data["TS_HP_GROUNDSOURCE"]))
-    CountryData_Hydro_RoR = DataFrame(XLSX.gettable(hourly_data["TS_HYDRO_ROR"]))
-
-    CountryData["LOAD"] = CountryData_Load
-    CountryData["PV_AVG"] = CountryData_PV_Avg
-    CountryData["PV_INF"] = CountryData_PV_Inf
-    CountryData["PV_OPT"] = CountryData_PV_Opt
-    CountryData["PV_TRACKING"] = CountryData_PV_tracking
-    CountryData["WIND_ONSHORE_AVG"] = CountryData_Wind_Onshore_Avg
-    CountryData["WIND_ONSHORE_INF"] = CountryData_Wind_Onshore_Inf
-    CountryData["WIND_ONSHORE_OPT"] = CountryData_Wind_Onshore_Opt
-    CountryData["WIND_OFFSHORE"] = CountryData_Wind_Offshore
-    CountryData["WIND_OFFSHORE_DEEP"] = CountryData_Wind_Offshore_Deep
-    CountryData["WIND_OFFSHORE_SHALLOW"] = CountryData_Wind_Offshore_Shallow
-    CountryData["HEAT_LOW"] = CountryData_Heat_Low
-    CountryData["HEAT_HIGH"] = CountryData_Heat_High
-    CountryData["HEAT_PUMP_AIR"] = CountryData_HeatPump_AirSource
-    CountryData["HEAT_PUMP_GROUND"] = CountryData_HeatPump_GroundSource
-    CountryData["MOBILITY_PSNG"] = CountryData_Mobility_Psng
-    CountryData["HYDRO_ROR"] = CountryData_Hydro_RoR
-
-    for cde ∈ Country_Data_Entries
-        select!(CountryData[cde], Not([:HOUR]))
+    CountryData = Dict()
+    for v ∈ Country_Data_Entries
+        CountryData[v] = DataFrame(XLSX.gettable(hourly_data["TS_" * v]))
+        select!(CountryData[v], Not([:HOUR]))
     end
 
     Dunkelflaute = Dict(x => mapcols(col -> col*0.0, CountryData[x]) for x ∈ Country_Data_Entries)
@@ -150,17 +127,13 @@ function timeseries_reduction!(Params, Sets, Switch)
     while i < 24 && lll < 500 #what is the second condition supposed to be?
         lll = (1+j) * (24*Switch.elmod_daystep+Switch.elmod_hourstep) + Switch.elmod_starthour
         
-        Dunkelflaute["PV_INF"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_INF"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE"][lll,:] .= 0.1
+        for t ∈ intersect(Country_Data_Entries,Params.Tags.TagTechnologyToSubsets["Solar"])
+            Dunkelflaute[t][lll,:] .= 0.5
+        end
 
-        Dunkelflaute["PV_AVG"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_AVG"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE_SHALLOW"][lll,:] .= 0.1
-
-        Dunkelflaute["PV_OPT"][lll,:] .= 0.5
-        Dunkelflaute["WIND_ONSHORE_OPT"][lll,:] .= 0.1
-        Dunkelflaute["WIND_OFFSHORE_DEEP"][lll,:] .= 0.1
+        for t ∈ intersect(Country_Data_Entries, Params.Tags.TagTechnologyToSubsets["Wind"])
+            Dunkelflaute[t][lll,:] .= 0.1
+        end
 
         j+=1
         #Depending on the length of the total time set the length of the dunkelflaute are included
@@ -177,11 +150,13 @@ function timeseries_reduction!(Params, Sets, Switch)
         end
         CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
 
-        if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Sets.Timeslice) != 0 
-            AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+        if "HEAT_LOW" ∈ Country_Data_Entries
+            if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Sets.Timeslice) != 0 
+                AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+            end
+            CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
         end
-        CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
-
+        
         for cde ∈ Country_Data_Entries
             if sum(CountryData[cde][l,r] for l ∈ Sets.Timeslice) != 0 
                 AverageCapacityFactor[cde][1,r] = sum(CountryData[cde][:,r])/8760
@@ -352,10 +327,9 @@ function timeseries_reduction!(Params, Sets, Switch)
         ScaledCountryData[cde] .= round.(ScaledCountryData[cde], digits=6)
     end
 
-    sdp_list=["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"]
-    capf_list=["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
-    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small"]
-
+    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial"])
+    capf_list=intersect(Sets.Technology, ["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
+    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small", "RES_PV_Utility_Avg"])
     tmp = ScaledCountryData["LOAD"] ./ length(Sets.Timeslice)
     for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
@@ -366,9 +340,9 @@ function timeseries_reduction!(Params, Sets, Switch)
     end
 
     tmp=Dict()
-    tmp["MOBILITY_PSNG"] = ScaledCountryData["MOBILITY_PSNG"] ./ combine(ScaledCountryData["MOBILITY_PSNG"], names(ScaledCountryData["MOBILITY_PSNG"]) .=> sum, renamecols=false)
-    tmp["HEAT_LOW"] = ScaledCountryData["HEAT_LOW"] ./ combine(ScaledCountryData["HEAT_LOW"], names(ScaledCountryData["HEAT_LOW"]) .=> sum, renamecols=false)
-    tmp["HEAT_HIGH"] = ScaledCountryData["HEAT_HIGH"] ./ combine(ScaledCountryData["HEAT_HIGH"], names(ScaledCountryData["HEAT_HIGH"]) .=> sum, renamecols=false)
+    for t ∈ intersect(Country_Data_Entries, ["MOBILITY_PSNG", "HEAT_LOW", "HEAT_HIGH"])
+        tmp[t] = ScaledCountryData[t] ./ combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+    end
 
     for r ∈ Sets.Region_full 
         Params.SpecifiedDemandProfile[r,"Mobility_Passenger",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Sets.Timeslice,r]
@@ -384,53 +358,39 @@ function timeseries_reduction!(Params, Sets, Switch)
     end end end
     
     for y ∈ Sets.Year
-        for t ∈ Params.Tags.TagTechnologyToSubsets["Solar"]
+        for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Solar"])
             Params.CapacityFactor[:,t,:,y] .= 0
         end
-        for t ∈ Params.Tags.TagTechnologyToSubsets["Wind"]
+        for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Wind"])
             Params.CapacityFactor[:,t,:,y] .= 0
         end
         for r ∈ Sets.Region_full 
             if length(Sets.Timeslice) < 8760
-                Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
-                Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
-                Params.TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HEAT_PUMP_AIR"][Sets.Timeslice,r]
-                Params.TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HEAT_PUMP_GROUND"][Sets.Timeslice,r]
+                if "HLR_Heatpump_Aerial" ∈ capf_list
+                    Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list
+                    Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
+                end
 
-                Params.CapacityFactor[r,"RES_PV_Utility_Opt",:,y] = ScaledCountryData["PV_OPT"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Opt",:,y] = ScaledCountryData["WIND_ONSHORE_OPT"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Transitional",:,y] = ScaledCountryData["WIND_OFFSHORE"][Sets.Timeslice,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Avg",:,y] = ScaledCountryData["PV_AVG"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Avg",:,y] = ScaledCountryData["WIND_ONSHORE_AVG"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Shallow",:,y] = ScaledCountryData["WIND_OFFSHORE_SHALLOW"][Sets.Timeslice,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Inf",:,y] = ScaledCountryData["PV_INF"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Inf",:,y] = ScaledCountryData["WIND_ONSHORE_INF"][Sets.Timeslice,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Deep",:,y] = ScaledCountryData["WIND_OFFSHORE_DEEP"][Sets.Timeslice,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Tracking",:,y] = ScaledCountryData["PV_TRACKING"][Sets.Timeslice,r]
-
-                Params.CapacityFactor[r,"RES_Hydro_Small",:,y] = ScaledCountryData["HYDRO_ROR"][Sets.Timeslice,r]
+                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
+                    Params.CapacityFactor[r,t,:,y] = ScaledCountryData[keys_mapping[t]][Sets.Timeslice,r]
+                end
             else
-                Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HEAT_PUMP_AIR"][:,r]
-                Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] = CountryData["HEAT_PUMP_GROUND"][:,r]
+                if "HLR_Heatpump_Aerial" ∈ capf_list
+                    Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list
+                    Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = CountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
+                end
 
-                Params.CapacityFactor[r,"RES_PV_Utility_Opt",:,y] = CountryData["PV_OPT"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Opt",:,y] = CountryData["WIND_ONSHORE_OPT"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Transitional",:,y] = CountryData["WIND_OFFSHORE"][:,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Avg",:,y] = CountryData["PV_AVG"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Avg",:,y] = CountryData["WIND_ONSHORE_AVG"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Shallow",:,y] = CountryData["WIND_OFFSHORE_SHALLOW"][:,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Inf",:,y] = CountryData["PV_INF"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Onshore_Inf",:,y] = CountryData["WIND_ONSHORE_INF"][:,r]
-                Params.CapacityFactor[r,"RES_Wind_Offshore_Deep",:,y] = CountryData["WIND_OFFSHORE_DEEP"][:,r]
-
-                Params.CapacityFactor[r,"RES_PV_Utility_Tracking",:,y] = CountryData["PV_TRACKING"][:,r]
-
-                Params.CapacityFactor[r,"RES_Hydro_Small",:,y] = CountryData["HYDRO_ROR"][:,r]
+                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
+                    Params.CapacityFactor[r,t,:,y] = CountryData[keys_mapping[t]][:,r]
+                end
             end
         end
     end

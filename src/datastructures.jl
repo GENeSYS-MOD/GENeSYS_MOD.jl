@@ -55,6 +55,13 @@ abstract type AbstractAggregationMode end
 struct Sum <: AbstractAggregationMode end
 struct Mean <: AbstractAggregationMode end
 
+abstract type RawResultType end
+struct CSVResult <: RawResultType end
+struct TXTResult <: RawResultType
+    filename::String
+end
+struct NoRawResult <: RawResultType end
+
 """
 All the parameters read for a model run
 
@@ -359,8 +366,6 @@ struct Variables
     StorageLevelYearStart ::JuMP.Containers.DenseAxisArray
     StorageLevelYearFinish ::JuMP.Containers.DenseAxisArray
     StorageLevelTSStart ::JuMP.Containers.DenseAxisArray
-    StorageLowerLimit ::JuMP.Containers.DenseAxisArray
-    StorageUpperLimit ::JuMP.Containers.DenseAxisArray
     AccumulatedNewStorageCapacity ::JuMP.Containers.DenseAxisArray
     NewStorageCapacity ::JuMP.Containers.DenseAxisArray
     CapitalInvestmentStorage ::JuMP.Containers.DenseAxisArray
@@ -700,6 +705,7 @@ additional metrics not part of the raw results.\n
 - **`extr_str_results ::String`** Final name of the result files written by the model.\n 
 - **`extr_str_dispatch ::String`**  If switch_dispatch = 1, final name of the result file form the investment 
 run that will be read to fix some decision variables.\n 
+ - **`switch_reserve ::Int16`** Used to enable reserve margin constraints\n 
 """
 struct Switch <: InputClass
     StartYear :: Int16
@@ -742,12 +748,13 @@ struct Switch <: InputClass
     elmod_dunkelflaute ::Int16
     elmod_daystep ::Int16
     elmod_hourstep ::Int16
-    switch_raw_results ::Int8
+    switch_raw_results ::RawResultType
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     switch_LCOE_calc ::Int8
     extr_str_results ::String
     extr_str_dispatch ::String
+    switch_reserve ::Int16
 end
 
 """

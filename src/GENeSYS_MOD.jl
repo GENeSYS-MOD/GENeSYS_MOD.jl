@@ -54,5 +54,6 @@ include("genesysmod_dispatch.jl")
 export genesysmod, genesysmod_dispatch
 export NoInfeasibilityTechs, WithInfeasibilityTechs # for use with the switch infeasibility_techs
 export OneNodeSimple, TwoNodes, OneNodeStorage
+export NoRawResult, CSVResult, TXTResult
 
 end
