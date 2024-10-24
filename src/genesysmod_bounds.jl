@@ -269,7 +269,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["CCS"])
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
-            for f ∈ Sets.Fuel
+            for f ∈ Maps.Tech_Fuel[t]
                 JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r], 0; force = true)
             end
         end end end
