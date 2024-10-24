@@ -305,7 +305,6 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         base_name="CA4_TotalActivityPerYear_Intertemporal|$(r)|$(l)|$(t)|$(y)")
       end
     end end end end
-
   else
     for y ∈ 𝓨, t ∈ 𝓣, r ∈ 𝓡, l ∈ 𝓛
       if (Params.CapacityFactor[r,t,l,y] > 0) &&
@@ -347,7 +346,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         for l ∈ 𝓛
           @constraint(model, Vars.Import[y,l,f,r,rr] == Vars.Export[y,l,f,rr,r], base_name="EB1_TradeBalanceEachTS|$(y)|$(l)|$(f)|$(r)|$(rr)")
         end
-#=       else
+    #=else
         for l ∈ 𝓛
           JuMP.fix(Vars.Import[y,l,f,r,rr], 0; force=true)
           JuMP.fix(Vars.Export[y,l,f,rr,r], 0; force=true)
@@ -472,7 +471,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
 
-#=     for f ∈ 𝓕
+  #=     for f ∈ 𝓕
       if f != "Power" 
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
       end
@@ -782,7 +781,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
   
   ############### Reserve Margin Constraint ############## NTS: Should change demand for production
   
-  if Switch.switch_dispatch == 0 || Switch.switch_reserve == 1
+  if Switch.switch_dispatch == 0 && Switch.switch_reserve == 1 #TODO should this be enabled for dispatch?
     for r ∈ 𝓡, y ∈ 𝓨, l ∈ 𝓛
       @constraint(model,
       sum((Vars.RateOfActivity[y,l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,y] * Params.YearSplit[l,y] *Params.ReserveMarginTagTechnology[r,t,y] * Params.ReserveMarginTagFuel[r,f,y]) for f ∈ 𝓕 for (t,m) ∈ LoopSetOutput[(r,f,y)]) == Vars.TotalActivityInReserveMargin[r,y,l],
@@ -919,7 +918,8 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       @constraint(model,
       sum(Vars.AnnualSectoralEmissions[y,e,se,r] for r ∈ 𝓡 ) <= Params.AnnualSectoralEmissionLimit[e,se,y],
       base_name="E13_AnnualSectorEmissionsLimit|$(y)|$(e)|$(se)")
-  end end end
+    end
+  end
 
   print("Cstr: ES: ",Dates.now()-start,"\n")
   ######### Short-Term Storage Constraints #############
