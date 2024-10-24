@@ -40,9 +40,18 @@ function genesysmod_dataload(Switch)
     Storage = DataFrame(XLSX.gettable(in_data["Sets"],"C";first_row=1))[!,"Storage"]
     ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"ModalType"]
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Sector"]
+
+    output_activity_dict = Dict(
+        "Infeasibility_HLI" => "Heat_Low_Industrial",
+        "Infeasibility_HMI" => "Heat_Medium_Industrial",
+        "Infeasibility_HHI" => "Heat_High_Industrial",
+        "Infeasibility_HRI" => "Heat_Low_Residential",
+        "Infeasibility_Power" => "Power",
+        "Infeasibility_Mob_Passenger" => "Mobility_Passenger",
+        "Infeasibility_Mob_Freight" => "Mobility_Freight")
+
     if Switch.switch_infeasibility_tech == 1
-        append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-         "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
+        append!(Technology, [k for (k,v) ∈ output_activity_dict if v ∈ Fuel])
         push!(Sector,"Infeasibility")
     end
     
@@ -51,16 +60,14 @@ function genesysmod_dataload(Switch)
     Sets=GENeSYS_MOD.Sets(Timeslice_full,Emission,Technology,Fuel,
         Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
 
-#=     tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
+    tag_data = XLSX.readxlsx(joinpath(inputdir, "Tag_Subsets.xlsx"))
     DataFrame(XLSX.gettable(tag_data["Par_TagTechnologyToSubsets"];first_row=1))
     TagTechnologyToSubsets = read_subsets(tag_data, "Par_TagTechnologyToSubsets")
-    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets") =#
-    TagTechnologyToSubsets = read_subsets(in_data, "Par_TagTechnologyToSubsets")
-    TagFuelToSubsets = read_subsets(in_data, "Par_TagFuelToSubsets")
+    TagFuelToSubsets = read_subsets(tag_data, "Par_TagFuelToSubsets")
 
     if Switch.switch_infeasibility_tech == 1
-        TagTechnologyToSubsets["DummyTechnology"] = ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-        "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"]
+        TagTechnologyToSubsets["DummyTechnology"] = intersect(Sets.Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
+        "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
     end
     
     # Step 2: Read parameters from regional file  -> now includes World values
@@ -286,14 +293,12 @@ function genesysmod_dataload(Switch)
     if Switch.switch_infeasibility_tech == 1
         TagTechnologyToSector[TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
         AvailabilityFactor[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 0
-
-        OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-        OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-        OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+        
+        for (k,v) ∈ output_activity_dict
+            if v ∈ 𝓕
+                OutputActivityRatio[:,k,v,1,:] .= 1
+            end
+        end
 
         CapacityToActivityUnit[TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         TotalAnnualMaxCapacity[:,TagTechnologyToSubsets["DummyTechnology"],:] .= 999999

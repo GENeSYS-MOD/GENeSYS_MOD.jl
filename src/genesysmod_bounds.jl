@@ -87,14 +87,23 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.TagTechnologyToSector[Params.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
         Params.AvailabilityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
-        Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-        Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+        output_activity_dict = Dict(
+            "Infeasibility_HLI" => "Heat_Low_Industrial",
+            "Infeasibility_HMI" => "Heat_Medium_Industrial",
+            "Infeasibility_HHI" => "Heat_High_Industrial",
+            "Infeasibility_HRI" => "Heat_Low_Residential",
+            "Infeasibility_Power" => "Power",
+            "Infeasibility_Mob_Passenger" => "Mobility_Passenger",
+            "Infeasibility_Mob_Freight" => "Mobility_Freight")
 
+        for (k,v) ∈ output_activity_dict
+            try
+                Params.OutputActivityRatio[:,k,v,1,:] .= 1
+            catch
+               # Error is ignored intentionally
+            end
+        end
+        
         Params.CapacityToActivityUnit[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         Params.TotalAnnualMaxCapacity[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         Params.FixedCost[:,Params.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
@@ -104,6 +113,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.CapacityFactor[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
         Params.OperationalLife[Params.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
         Params.EmissionActivityRatio[:,Params.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
+
     end
 
     #
@@ -158,11 +168,9 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #CapacityFactor(r,Heat,l,y)$(sum(ll,CapacityFactor(r,Heat,ll,y)) = 0) = 1;
     #Params.CapacityFactor[[x ∈ Subsets.Heat for x ∈ Params.CapacityFactor[!,:Technology]], :Value] .= 1
 
-    for r ∈ Sets.Region_full for l ∈ Sets.Timeslice for y ∈ Sets.Year
-        Params.CapacityFactor[r,"HLI_Solar_Thermal",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-        Params.CapacityFactor[r,"HLR_Solar_Thermal",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-        Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
-    end end end
+    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Residential"])
+        Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
+    end
     #
     # ####### No new capacity construction in 2015 #############
     #
@@ -204,20 +212,20 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     ### Adds (negligible) variable costs to transport technologies, since they only had fuel costs before
     ### This is to combat strange "curtailment" effects of some transportation technologies
-    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Transport"]
+    for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["Transport"])
         Params.VariableCost[r,t,:,:] .= 0.09
     end end
 
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(Params.TagTechnologyToSubsets["Solar"], Params.TagTechnologyToSubsets["Wind"], ["RES_Hydro_Small"])
+    subs = vcat(intersect(Sets.Technology, Params.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.TagTechnologyToSubsets["Wind"]), ["RES_Hydro_Small"])
     Params.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
     Params.CurtailmentCostFactor == 0.1
 
-    for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["Solar"]
-    Params.AvailabilityFactor[r,t,:] .= 1
-    end end
+    for r ∈ Sets.Region_full, t ∈ intersect(Sets.Technology,Params.TagTechnologyToSubsets["Solar"])
+        Params.AvailabilityFactor[r,t,:] .= 1
+    end
 
     for e ∈ Sets.Emission for s ∈ Sets.Sector for y ∈ Sets.Year
         if Params.AnnualSectoralEmissionLimit[e,s,y] == 0
@@ -258,7 +266,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.EmissionActivityRatio[Sets.Region_full,["X_DAC_HT","X_DAC_LT"],:,:,:] .= -1
 
     else
-        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ Params.TagTechnologyToSubsets["CCS"]
+        for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["CCS"])
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
             for f ∈ Maps.Tech_Fuel[t]
@@ -335,11 +343,19 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
             end =#
         end
-        Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-        Params.CapacityFactor[r,"RES_PV_Rooftop_Residential",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-        Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
-        Params.CapacityFactor[r,"HLR_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
-        Params.CapacityFactor[r,"HLI_Solar_Thermal",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        if "RES_CSP" ∈ Sets.Technology
+            try
+                Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
+            catch e
+                if isa(e, KeyError)
+                    Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+                end
+            end
+        end
+
+        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Commercial", "RES_PV_Rooftop_Residential"])
+            Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        end
     end end end
 
     #for r ∈ Sets.Region_full for s in Sets.Storage for y ∈ Sets.Year
