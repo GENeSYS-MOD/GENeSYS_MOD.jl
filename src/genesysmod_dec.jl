@@ -185,7 +185,6 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
     NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=JuMP.Containers.DenseAxisArray) 
-    TotalTradeCosts = @variable(model, TotalTradeCosts[𝓨,𝓛,𝓡], container=JuMP.Containers.DenseAxisArray) 
     AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
     DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=JuMP.Containers.DenseAxisArray) 
 
@@ -263,7 +262,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AnnualTechnologyEmission,AnnualTechnologyEmissionPenaltyByEmission,AnnualTechnologyEmissionsPenalty,
     DiscountedTechnologyEmissionsPenalty,AnnualEmissions,ModelPeriodEmissions,WeightedAnnualEmissions,
     AnnualSectoralEmissions,Import,Export,NewTradeCapacity,TotalTradeCapacity,NewTradeCapacityCosts,
-    DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
+    DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
     RateOfTotalActivity,BaseYearSlack,BaseYearBounds_TooLow,BaseYearBounds_TooHigh, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
