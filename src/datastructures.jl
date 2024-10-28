@@ -370,7 +370,6 @@ struct Variables
     DiscountedNewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
     NetTrade ::JuMP.Containers.DenseAxisArray
     NetTradeAnnual ::JuMP.Containers.DenseAxisArray
-    TotalTradeCosts ::JuMP.Containers.DenseAxisArray
     AnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
     DiscountedAnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
 
