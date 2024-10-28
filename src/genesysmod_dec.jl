@@ -98,7 +98,6 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     VariableOperatingCost = @variable(model, VariableOperatingCost[𝓨,𝓛,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     TotalDiscountedCost = @variable(model, TotalDiscountedCost[𝓨,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     TotalDiscountedCostByTechnology = @variable(model, TotalDiscountedCostByTechnology[𝓨,𝓣,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
-    ModelPeriodCostByRegion = @variable(model, ModelPeriodCostByRegion[𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
 
     AnnualCurtailmentCost = @variable(model, AnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
     DiscountedAnnualCurtailmentCost = @variable(model, DiscountedAnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=JuMP.Containers.DenseAxisArray)
@@ -255,7 +254,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     CurtailedCapacity,CurtailedEnergy,DispatchDummy,CapitalInvestment,DiscountedCapitalInvestment,
     SalvageValue,DiscountedSalvageValue,OperatingCost,DiscountedOperatingCost,AnnualVariableOperatingCost,
     AnnualFixedOperatingCost,VariableOperatingCost,TotalDiscountedCost,TotalDiscountedCostByTechnology,
-    ModelPeriodCostByRegion,AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
+    AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
     StorageLevelYearStart,StorageLevelYearFinish,StorageLevelTSStart,AccumulatedNewStorageCapacity,NewStorageCapacity,
     CapitalInvestmentStorage,DiscountedCapitalInvestmentStorage,SalvageValueStorage,
     DiscountedSalvageValueStorage,TotalDiscountedStorageCost,TotalActivityInReserveMargin,
