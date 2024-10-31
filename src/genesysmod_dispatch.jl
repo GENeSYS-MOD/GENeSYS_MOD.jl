@@ -19,7 +19,7 @@
 # #############################################################
 
 """
-Run the simple dispatch model. A previous run is necessary to allow to read in investment 
+Run the simple dispatch model. A previous run is necessary to allow to read in investment
 decisions. For information about the switches, refer to the datastructure documentation
 """
 function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
@@ -27,20 +27,20 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
         hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", threads=4, emissionPathway="MinimalExample",
         emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\",resultdir="Results\\",
         switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
-        switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15, 
+        switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15,
         set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
-        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",  
+        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",
         elmod_dunkelflaute = 0, switch_raw_results = CSVResult(), switch_processed_results = 1, switch_LCOE_calc=0,
         switch_dispatch = OneNodeSimple("DE"), extr_str_results = "inv_run", extr_str_dispatch="dispatch_run",
         switch_base_year_bounds_debugging = 0, switch_reserve = 0)
-    
+
     elmod_daystep = 0
     elmod_hourstep = 1
     elmod_nthhour = 1
     elmod_starthour = 1
     switch_infeasibility_tech = WithInfeasibilityTechs()
     write_reduced_timeserie = 0
-    
+
     if !isdir(resultdir)
         mkdir(resultdir)
     end
@@ -134,7 +134,7 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     considered_duals = genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,switch, Maps; storage_ratio = storage_ratio, Params_full= Params_full, Region_Full=Region_full)
     println(Dates.now()-starttime)
 
-    
+
     #
     # ####### Solver Options #############
     #
@@ -176,6 +176,16 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
 
     elapsed = (Dates.now() - starttime)
 
+    #
+    # ####### Results #############
+    #
+    dispatch_str = replace(string(switch.dispatch), '\"' => "")
+    new_resdir = joinpath(switch.resultdir[],string(dispatch_str))
+    if !isdir(new_resdir)
+        mkdir(new_resdir)
+    end
+    switch.resultdir[] = new_resdir #update the value inside the ref with the new directory
+
     if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
             println("Termination status:", termination_status(model), ". Computing IIS")
@@ -190,7 +200,7 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
         VarPar = genesysmod_variable_parameter(model, Sets, Params, Vars)
         if switch_processed_results == 1
             genesysmod_results(model, Sets, Params, VarPar, Vars, switch,
-             Settings, Maps, elapsed,"dispatch")
+             Settings, Maps, elapsed,switch.extr_str_dispatch)
         end
         genesysmod_results_raw(model, VarPar, Params, switch,switch.extr_str_dispatch,switch.switch_raw_results)
         genesysmod_getspecifiedduals(model,switch,switch.extr_str_dispatch, considered_duals)
@@ -206,7 +216,7 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
     tmp_TotalCapacityAnnual, tmp_TotalTradeCapacity, tmp_NewStorageCapacity = read_investments(Sets, Switch, Switch.switch_raw_results)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
     tmp_NetTradeAnnual = create_daa(in_data, "Par_NetTradeAnnual", data_base_region, Sets.Year, Sets.Fuel, Sets.Region_full) =#
-    
+
     # make constraints fixing investments
     for y ∈ Sets.Year for r ∈ Sets.Region_full
         for t ∈ setdiff(Sets.Technology, Params.Tags.TagTechnologyToSubsets["DummyTechnology"])
@@ -276,7 +286,7 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
     # println("Exports ", sum_export)
 
     # storage_ratio = sum_export/max(sum_import,0.001)
-    in_data_net_trade = CSV.read(joinpath(Switch.resultdir, "NetTrade_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_results * ".csv"), DataFrame, header=col_names, skipto=2)
+    in_data_net_trade = CSV.read(joinpath(Switch.resultdir[], "NetTrade_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * Switch.extr_str_results * ".csv"), DataFrame, header=col_names, skipto=2)
     storage_ratio = sum(in_data_net_trade[in.(in_data_net_trade.Year, Ref(Sets.Year)) .& (in_data_net_trade.Fuel .== "Power") .& in.(in_data_net_trade. Region, Ref(Sets.Region_full)),:].Value)
     return storage_ratio
 end
@@ -318,41 +328,41 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
         end
             # @constraint(model, model[:TotalTradeCapacity][y,f,r,rr] == tmp_TotalTradeCapacity[y,f,r,rr],
         # base_name="Fix_TradeConnection_$(y)_$(f)_$(r)_$(rr)")
-    end end 
+    end end
     return 0
 end
 
 function read_investments(Sets, Switch, region_full, s_rawresults::CSVResult)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_TotalCapacityAnnual = create_daa(in_data, "Par_TotalCapacityAnnual", Sets.Year, Sets.Technology, region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_TotalTradeCapacity = create_daa(in_data, "Par_TotalTradeCapacity", Sets.Year, Sets.Fuel, region_full, region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_NewStorageCapacity = create_daa(in_data, "Par_NewStorageCapacity", Sets.Storage, Sets.Year, region_full)
     return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
 end
 
 function read_investments(Sets, Switch, s_rawresults::CSVResult)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "TotalCapacityAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_TotalCapacityAnnual = create_daa(in_data, "Par_TotalCapacityAnnual", Sets.Year, Sets.Technology, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "TotalTradeCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_TotalTradeCapacity = create_daa(in_data, "Par_TotalTradeCapacity", Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    in_data=CSV.read(joinpath(Switch.resultdir, "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
+    in_data=CSV.read(joinpath(Switch.resultdir[], "NewStorageCapacity_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" *Switch.extr_str_results * ".csv"), DataFrame)
     tmp_NewStorageCapacity = create_daa(in_data, "Par_NewStorageCapacity", Sets.Storage, Sets.Year, Sets.Region_full)
     return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
 end
 
 function read_investments(Sets, Switch, region_full, s_rawresults::TXTResult)
-    tmp_TotalCapacityAnnual = read_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=region_full)
-    tmp_TotalTradeCapacity = read_trade_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=region_full)
-    tmp_NewStorageCapacity = read_storage_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=region_full)
+    tmp_TotalCapacityAnnual = read_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=region_full)
+    tmp_TotalTradeCapacity = read_trade_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=region_full)
+    tmp_NewStorageCapacity = read_storage_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=region_full)
     return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
 end
 
 function read_investments(Sets, Switch, s_rawresults::TXTResult)
-    tmp_TotalCapacityAnnual = read_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=Sets.Region_full)
-    tmp_TotalTradeCapacity = read_trade_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=Sets.Region_full)
-    tmp_NewStorageCapacity = read_storage_capacities(file=joinpath(Switch.resultdir,s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=Sets.Region_full)
+    tmp_TotalCapacityAnnual = read_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalCapacityAnnual[", year=Sets.Year, technology=Sets.Technology, region=Sets.Region_full)
+    tmp_TotalTradeCapacity = read_trade_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=Sets.Region_full)
+    tmp_NewStorageCapacity = read_storage_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=Sets.Region_full)
     return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
 end
 

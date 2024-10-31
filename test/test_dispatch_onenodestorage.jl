@@ -26,7 +26,8 @@ switch_employment_calculation = 0,
 switch_endogenous_employment = 0,
 employment_data_file = "",
 elmod_dunkelflaute= 0,
-switch_raw_results = CSVResult(),
+#switch_raw_results = CSVResult(),
+switch_raw_results = TXTResult("result_test"),
 switch_processed_results = 1,
 switch_dispatch = OneNodeStorage("DE")
 );

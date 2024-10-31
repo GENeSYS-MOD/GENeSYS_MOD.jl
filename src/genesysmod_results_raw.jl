@@ -32,23 +32,23 @@ function genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, s_rawres
     Threads.@threads for v in vars
         if v ∉ [:cost, :z]
             @debug "Saving " v
-            fn = joinpath(Switch.resultdir, string(v) * "_" * Switch.model_region * "_"
+            fn = joinpath(Switch.resultdir[], string(v) * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
-            CSV.write(fn, JuMP.Containers.rowtable(value, model[v])) 
+            CSV.write(fn, JuMP.Containers.rowtable(value, model[v]))
         end
     end
     for field in fieldnames(typeof(VarPar))
         daa = getfield(VarPar, field)
         if isa(daa, DenseArray)
-            fn = joinpath(Switch.resultdir, string(field) * "_" * Switch.model_region * "_" *
+            fn = joinpath(Switch.resultdir[], string(field) * "_" * Switch.model_region * "_" *
                           Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
             CSV.write(fn, JuMP.Containers.rowtable(value, daa))
         end
     end
-    fn = joinpath(Switch.resultdir, "RateOfDemand_" * Switch.model_region * "_" *
+    fn = joinpath(Switch.resultdir[], "RateOfDemand_" * Switch.model_region * "_" *
                           Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, JuMP.Containers.rowtable(value, Params.RateOfDemand))
-    fn = joinpath(Switch.resultdir, "Demand_" * Switch.model_region * "_" *
+    fn = joinpath(Switch.resultdir[], "Demand_" * Switch.model_region * "_" *
             Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, JuMP.Containers.rowtable(value, Params.Demand))
 end
@@ -57,7 +57,7 @@ function genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, s_rawres
 end
 
 function genesysmod_results_raw(model, VarPar, Params, Switch, extr_str, s_rawresults::TXTResult)
-    open(joinpath(Switch.resultdir, "$(s_rawresults.filename)_$(extr_str).txt"), "w") do file
+    open(joinpath(Switch.resultdir[], "$(s_rawresults.filename)_$(extr_str).txt"), "w") do file
         objective = objective_value(model)
         println(file, "Objective = $objective")
         for v in all_variables(model)
@@ -92,7 +92,7 @@ function genesysmod_getduals(model,Switch,extr_str)
             end
         end
     end
-    fn = joinpath(Switch.resultdir, "Duals" * "_" * Switch.model_region * "_"
+    fn = joinpath(Switch.resultdir[], "Duals" * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, df)
 end
@@ -106,7 +106,7 @@ function genesysmod_getspecifiedduals(model,Switch,extr_str, specified_constrain
     end
     date = Dates.now()
     formatted_date = Dates.format(date, "mmdd_HHMM")
-    fn = joinpath(Switch.resultdir, "Selected_Duals" * "_" * Switch.model_region * "_"
+    fn = joinpath(Switch.resultdir[], "Selected_Duals" * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, df)
 end
@@ -128,7 +128,7 @@ function genesysmod_getdualsbyname(model,Switch,extr_str, constr_name)
     end
     date = Dates.now()
     formatted_date = Dates.format(date, "mmdd_HHMM")
-    fn = joinpath(Switch.resultdir, constr_name * "_" * Switch.model_region * "_"
+    fn = joinpath(Switch.resultdir[], constr_name * "_" * Switch.model_region * "_"
              * Switch.emissionPathway * "_" * Switch.emissionScenario * "_" * extr_str * ".csv")
     CSV.write(fn, df)
 

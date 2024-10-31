@@ -55,7 +55,7 @@ end
 
 
 """
-Internal function used in the run process to compute results. 
+Internal function used in the run process to compute results.
 It also runs the functions for processing emissions and levelized costs.
 """
 function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, Maps, elapsed, extr_str)
@@ -71,7 +71,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         z_fuelcosts["Hardcoal",y,r] = Params.VariableCost[r,"Z_Import_Hardcoal",1,y]
         z_fuelcosts["Lignite",y,r] = Params.VariableCost[r,"R_Coal_Lignite",1,y]
         z_fuelcosts["Nuclear",y,r] = Params.VariableCost[r,"R_Nuclear",1,y]
-        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Params.Tags.TagTechnologyToSubsets["Biomass"])/length(Params.Tags.TagTechnologyToSubsets["Biomass"]) 
+        z_fuelcosts["Biomass",y,r] = sum(Params.VariableCost[r,f,1,y] for f ∈ Params.Tags.TagTechnologyToSubsets["Biomass"])/length(Params.Tags.TagTechnologyToSubsets["Biomass"])
         z_fuelcosts["Gas_Natural",y,r] = Params.VariableCost[r,"Z_Import_Gas",1,y]
         z_fuelcosts["Oil",y,r] = Params.VariableCost[r,"Z_Import_Oil",1,y]
         z_fuelcosts["H2",y,r] = Params.VariableCost[r,"Z_Import_H2",1,y]
@@ -82,7 +82,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     else
         resourcecosts = resourcecosts_from_duals(model, Sets, Switch, Settings, extr_str)
     end
-    
+
     ### parameter output_energy_balance(*,*,*,*,*,*,*,*,*,*) & parameter output_energy_balance_annual(*,*,*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Mode_of_operation, :Fuel, :Timeslice, :Type, :Unit, :PathwayScenario, :Year, :Value]
     output_energy_balance = DataFrame([name => [] for name in colnames])
@@ -101,9 +101,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     df_energy_balance[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
 
     for se ∈ setdiff(Sets.Sector,"Transportation")
-       
+
         tmp_techs = [t_ for t_ ∈ Sets.Technology if Params.Tags.TagTechnologyToSector[t_,se] >0]
-        
+
         if tmp_techs != []
             subset_df = df_energy_balance[in.(df_energy_balance.Technology, Ref(tmp_techs)),:]
             subset_df[!,:Sector] .= se
@@ -149,9 +149,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     df_dem= convert_jump_container_to_df(Params.Demand[:,:,:,:];dim_names=[:Year, :Timeslice, :Fuel, :Region])
     for se ∈ setdiff(Sets.Sector,"Transportation")
         for f ∈ [f_ for f_ ∈ Sets.Fuel if Params.Tags.TagDemandFuelToSector[f_,se] >0]
-            df_tmp = df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]            
+            df_tmp = df_dem[(df_dem.Fuel .== f) .&& (df_dem.Value .> 0),:]
             df_tmp[:,:Value]= (-1) * df_tmp[:,:Value]
-            
+
             merge_df!(df_tmp, dict_col_value, output_energy_balance, colnames)
             # df_tmp[!,:Sector] .= "Demand"
             # df_tmp[!,:Technology] .= "Demand"
@@ -212,7 +212,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
             PeakCapacityByTechnology[r,t,y] = maximum(CapacityUsedByTechnologyEachTS[y,:,t,r])
         end
     end end end
-    
+
     ### parameter output_capacity(*,*,*,*,*,*)
     colnames = [:Region, :Sector, :Technology, :Type, :PathwayScenario, :Year, :Value]
     output_capacity = DataFrame([name => [] for name ∈ colnames])
@@ -251,7 +251,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
 
             subset_total_capacity = df_total_capacity[in.(df_total_capacity.Technology, Ref(tmp_techs)),:]
             subset_total_capacity[!,:Sector] .= se
-            merge_df!(subset_total_capacity, dict_col_value, output_capacity, colnames)           
+            merge_df!(subset_total_capacity, dict_col_value, output_capacity, colnames)
         end
     end
 
@@ -263,7 +263,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     df_technology_emission[!,:Type] .= "Emissions"
     df_technology_emission[!,:PathwayScenario] .= "$(Switch.emissionPathway)_$(Switch.emissionScenario)"
 
-    for se ∈ Sets.Sector 
+    for se ∈ Sets.Sector
         tmp_techs = [t_ for t_ in Sets.Technology if Params.Tags.TagTechnologyToSector[t_,se] != 0]
         if tmp_techs != []
             subset_df = df_technology_emission[in.(df_technology_emission.Technology, Ref(tmp_techs)),:]
@@ -274,7 +274,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     df_tmp = convert_jump_container_to_df(Params.AnnualExogenousEmission;dim_names=[:Region, :Emission, :Year])
     dict_col_value = Dict(:Sector=>"ExogenousEmissions", :Type=>"ExogenousEmissions",
                             :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"ExogenousEmissions")
-    merge_df!(df_tmp, dict_col_value, output_emissions, colnames) 
+    merge_df!(df_tmp, dict_col_value, output_emissions, colnames)
 
     ### parameter output_model(*,*,*,*)
     colnames = [:Type, :PathwayScenario, :Pathway, :Scenario, :Value]
@@ -304,7 +304,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     lc_tot_st = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year),length(Sets.Fuel)), Sets.Region_full, Sets.Technology, Sets.Year, Sets.Fuel)
 
     for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year
-        for f ∈ Sets.Fuel 
+        for f ∈ Sets.Fuel
             if Params.Tags.TagTechnologyToSector[t,"Power"] != 0 && sum(Params.InputActivityRatio[r,t,f,:,y]) != 0
                 cc[r,t,y,f] = Params.CapitalCost[r,t,y]
                 fc[r,t,y,f] = Params.FixedCost[r,t,y]
@@ -328,7 +328,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
 
     df_tmp = convert_jump_container_to_df(cc;dim_names=[:Region, :Technology, :Year, :Fuel])
     merge_df!(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
-    
+
     setindex!(dict_col_value, "Fixed Costs", :Type)
     df_tmp = convert_jump_container_to_df(fc;dim_names=[:Region, :Technology, :Year, :Fuel])
     merge_df!(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
@@ -341,7 +341,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     setindex!(dict_col_value, "Levelized Costs [Total]", :Type)
     df_tmp = convert_jump_container_to_df(lc_tot_st;dim_names=[:Region, :Technology, :Fuel, :Year])
     merge_df!(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
-    
+
 
     setindex!(dict_col_value, "Variable Costs [incl. Fuel Costs]", :Type)
     df_tmp = convert_jump_container_to_df(vc_w_fc;dim_names=[:Region, :Technology, :Year, :Fuel])
@@ -431,7 +431,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     setindex!(dict_col_value, "Levelized Costs [Capex]", :Type)
     df_tmp = convert_jump_container_to_df(lc_cap;dim_names=[:Region, :Technology, :Year])
     merge_df!(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
-    
+
     setindex!(dict_col_value, "Levelized Costs [Generation]", :Type)
     df_tmp = convert_jump_container_to_df(lc_gen;dim_names=[:Region, :Technology, :Year])
     merge_df!(df_tmp, dict_col_value, output_technology_costs_detailed, colnames)
@@ -516,9 +516,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     ### parameters SelfSufficiencyRate,ElectrificationRate,output_other
     SelfSufficiencyRate = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Year)), Sets.Region_full, Sets.Year)
     ElectrificationRate = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Sector),length(Sets.Year)), Sets.Sector, Sets.Year)
-    
+
     for y ∈ Sets.Year
-        for r ∈ Sets.Region_full 
+        for r ∈ Sets.Region_full
             SelfSufficiencyRate[r,y] = VarPar.ProductionAnnual[y,"Power",r]/(Params.SpecifiedAnnualDemand[r,"Power",y]+VarPar.UseAnnual[y,"Power",r])
         end
         for se ∈ Sets.Sector
@@ -935,14 +935,14 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     #### Excel Output Sheet Definition and Export of GDX
     ####
 
-    CSV.write(joinpath(Switch.resultdir,"output_production_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energy_balance[output_energy_balance.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_annual_production_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energy_balance_annual[output_energy_balance_annual.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_capacity[output_capacity.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_emission_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_emissions[output_emissions.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_other_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_other[output_other.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_model_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_model[output_model.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_technology_costs_detailed_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_technology_costs_detailed[output_technology_costs_detailed.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_exogenous_costs_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_exogenous_costs[output_exogenous_costs.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_trade_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade_capacity[output_trade_capacity.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir,"output_energydemandstatistics_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energydemandstatistics[output_energydemandstatistics.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_production_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energy_balance[output_energy_balance.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_annual_production_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energy_balance_annual[output_energy_balance_annual.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_capacity[output_capacity.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_emission_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_emissions[output_emissions.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_other_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_other[output_other.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_model_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_model[output_model.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_technology_costs_detailed_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_technology_costs_detailed[output_technology_costs_detailed.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_exogenous_costs_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_exogenous_costs[output_exogenous_costs.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_trade_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade_capacity[output_trade_capacity.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_energydemandstatistics_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energydemandstatistics[output_energydemandstatistics.Value .!= 0, :])
 end
