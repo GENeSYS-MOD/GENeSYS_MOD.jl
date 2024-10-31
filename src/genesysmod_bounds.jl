@@ -246,7 +246,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
         for y ∈ Sets.Year for r ∈ Sets.Region_full 
             if (y > 2020) && (Params.RegionalCCSLimit[r] > 0)
-                for t ∈ Params.TagTechnologyToSubsets["CCS"]
+                for t ∈ intersect(Sets.Technology, Params.TagTechnologyToSubsets["CCS"])
                     Params.AvailabilityFactor[r,t,y] = 0.95
                 end
             else 
