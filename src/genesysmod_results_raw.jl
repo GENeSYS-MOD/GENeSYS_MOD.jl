@@ -83,6 +83,11 @@ function genesysmod_results_raw(model, VarPar, Params, Switch, extr_str, s_rawre
     end
 end
 
+function genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, s_rawresults::TXTandCSV)
+    genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, CSVResult())
+    genesysmod_results_raw(model, VarPar, Params, Switch,extr_str, TXTResult(s_rawresults.filename))
+end
+
 function genesysmod_getduals(model,Switch,extr_str)
     df=DataFrames.DataFrame(names=[],values=[])
     for (F, S) in list_of_constraint_types(model)

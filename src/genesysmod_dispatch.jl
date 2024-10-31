@@ -139,6 +139,13 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     # ####### Solver Options #############
     #
 
+    dispatch_str = replace(string(switch.switch_dispatch), '\"' => "")
+    new_resdir = joinpath(switch.resultdir[],string(dispatch_str))
+    if !isdir(new_resdir)
+        mkdir(new_resdir)
+    end
+    switch.resultdir[] = new_resdir #update the value inside the ref with the new directory
+
     set_optimizer(model, solver)
 
     if string(solver) == "Gurobi.Optimizer"
@@ -147,25 +154,20 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
         set_optimizer_attribute(model, "Crossover", 0)
-        set_optimizer_attribute(model, "ResultFile", "Solution_julia.sol")
-        file = open("gurobi.opt","w")
-        write(file,"threads $threads ")
-        write(file,"method 2 ")
-        write(file,"barhomogeneous 1 ")
-        write(file,"crossover 0 ")
-        close(file)
+        set_optimizer_attribute(model, "LogFile", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
     elseif string(solver) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         set_optimizer_attribute(model, "CPX_PARAM_SOLUTIONTYPE", 2)
+        env = model.moi_backend.optimizer.model.env
+        CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
-        file = open("cplex.opt","w")
-        write(file,"threads $threads ")
-        write(file,"parallelmode -1 ")
-        write(file,"lpmethod 4 ")
-        write(file,"solutiontype 2 ")
-        close(file)
+    elseif string(solver) == "HiGHS.Optimizer"
+        set_optimizer_attribute(model, "solver", "ipm")
+        #set_optimizer_attribute(model, "solver", "pdlp")
+        set_optimizer_attribute(model, "run_crossover", "off")
+        set_optimizer_attribute(model, "log_file", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
     end
 
     println("model_region = $model_region")
@@ -179,12 +181,6 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     #
     # ####### Results #############
     #
-    dispatch_str = replace(string(switch.dispatch), '\"' => "")
-    new_resdir = joinpath(switch.resultdir[],string(dispatch_str))
-    if !isdir(new_resdir)
-        mkdir(new_resdir)
-    end
-    switch.resultdir[] = new_resdir #update the value inside the ref with the new directory
 
     if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
@@ -364,6 +360,34 @@ function read_investments(Sets, Switch, s_rawresults::TXTResult)
     tmp_TotalTradeCapacity = read_trade_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="TotalTradeCapacity[", year=Sets.Year, technology=Sets.Fuel, region=Sets.Region_full)
     tmp_NewStorageCapacity = read_storage_capacities(file=joinpath(Switch.resultdir[],s_rawresults.filename* "_" *Switch.extr_str_results * ".txt"), nam="NewStorageCapacity[", year=Sets.Year, technology=Sets.Storage, region=Sets.Region_full)
     return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
+end
+
+function read_investments(Sets, Switch, s_rawresults::TXTandCSV)
+    try
+        tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity = read_investments(Sets, Switch, TXTResult(s_rawresults.filename))
+        return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
+    catch
+        try
+            tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity = read_investments(Sets, Switch, CSVResult())
+            return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
+        catch
+            return println("Error: Missing result investment result files for dispatch.")
+        end
+    end
+end
+
+function read_investments(Sets, Switch, region_full, s_rawresults::TXTandCSV)
+    try
+        tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity = read_investments(Sets, Switch, region_full, TXTResult(s_rawresults.filename))
+        return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
+    catch
+        try
+            tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity = read_investments(Sets, Switch, region_full, CSVResult())
+            return tmp_TotalCapacityAnnual,tmp_TotalTradeCapacity,tmp_NewStorageCapacity
+        catch
+            return println("Error: Missing result investment result files for dispatch.")
+        end
+    end
 end
 
 function read_investments(Sets, Switch, s_rawresults)
