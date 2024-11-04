@@ -151,8 +151,6 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     capacity between nodes.\n
 - **`TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray`** Percentage loss of traded 
     fuel from one region to another. Used to model losses in power transmission networks.\n
-- **`CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray`** Transmission line already 
-    commissioned.\n
 - **`TradeCapacity ::JuMP.Containers.DenseAxisArray`** Initial capacity for trading fuels 
     from one region to another.\n
 - **`TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray`** Costs for adding one unit 
@@ -267,7 +265,6 @@ struct Parameters <: InputClass
     TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray
 
 
-    CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray
     GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray
