@@ -365,7 +365,7 @@ struct Parameters <: InputClass
     TradeLossFactor ::JuMP.Containers.DenseAxisArray
     TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray
     TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray
-
+    CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
 
     TradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray
