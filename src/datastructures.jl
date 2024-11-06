@@ -24,15 +24,118 @@ InputClass - Abstract type for the inputs
 abstract type InputClass end
 
 """
+Tags - The different tags used in the model to map across sets and subsets
+"""
+struct Tags <: InputClass
+    TagTechnologyToSubsets::Dict{String,Array{String}}
+    TagFuelToSubsets::Dict{String,Array{String}}
+    TagDemandFuelToSector::JuMP.Containers.DenseAxisArray
+    TagElectricTechnology::JuMP.Containers.DenseAxisArray
+    TagTechnologyToModalType::JuMP.Containers.DenseAxisArray
+    TagTechnologyToSector::JuMP.Containers.DenseAxisArray
+    RETagTechnology::JuMP.Containers.DenseAxisArray
+    RETagFuel::JuMP.Containers.DenseAxisArray
+    TagDispatchableTechnology::JuMP.Containers.DenseAxisArray
+end
+
+"""
+AbstractDispatchType - Type of dispatch to be used in the dispatch run.
+"""
+abstract type AbstractDispatchType end
+"""
+NoDispatch - No dispatch to be run. The type is used for investment runs.
+"""
+struct NoDispatch <: AbstractDispatchType end
+"""
+OneNodeSimple - The dispatch is conducted for the `considered_region` in isolation from bordering regions.
+"""
+struct OneNodeSimple <: AbstractDispatchType
+    considered_region::String
+end
+"""
+TwoNodes - The dispatch is conducted for the `considered_region` and another dummy region consisting of an aggregation of the other regions.
+"""
+struct TwoNodes <: AbstractDispatchType
+    considered_region::String
+end
+"""
+OneNodeStorage - The dispatch is conducted for the `considered_region` while the interaction with the rest of the system is modeled as storages.
+"""
+struct OneNodeStorage <: AbstractDispatchType
+    considered_region::String
+end
+
+"""
+AbstractInfeasibilityTechs - abstract type for switch_infeasibility_tech.
+"""
+abstract type AbstractInfeasibilityTechs end
+"""
+WithInfeasibilityTechs - type to use when infeasibility techs are desired in the model.
+Typically they are used to help troubleshoot infeasibility as they provide a relaxation that
+allow the model to solve and to find the origin of theinfeasibility in the results.
+"""
+struct WithInfeasibilityTechs <: AbstractInfeasibilityTechs end
+"""
+NoInfeasibilityTechs - type to use when the infeasibility techs are not needed.
+"""
+struct NoInfeasibilityTechs <: AbstractInfeasibilityTechs end
+
+"""
+AbstractAggregationMode - Abstract type for the methode of aggregation used in the dispatch.
+"""
+abstract type AbstractAggregationMode end
+"""
+Sum - aggregation method summing all values
+"""
+struct Sum <: AbstractAggregationMode end
+"""
+Mean - aggregation method taking the mean of the values.
+"""
+struct Mean <: AbstractAggregationMode end
+
+"""
+RawResultType - abstract type for the format of raw results desired.
+"""
+abstract type RawResultType end
+"""
+CSVResult - Raw results will be printed in CSV format. Each variable will have its CSV file named after the variable.
+"""
+struct CSVResult <: RawResultType end
+"""
+TXTResult - Raw results will be printed in TXT format. A single txt file containing all
+values will be printed. This type as an argument `filename` used to define the name to
+use for the txt file. By default the argument takes the value "results".
+"""
+struct TXTResult <: RawResultType
+    filename::String
+end
+function TXTResult()
+    return TXTResult("results")
+end
+"""
+TXTandCSV - Raw results will be printed in both TXT and CSV formats.
+"""
+struct TXTandCSV <: RawResultType
+    filename::String
+end
+function TXTandCSV()
+    return TXTandCSV("results")
+end
+"""
+NoRawResult - The raw results will not be printed.
+"""
+struct NoRawResult <: RawResultType end
+
+"""
 All the parameters read for a model run
 
 # Extended
 # Fields
 - **`StartYear ::Int64`** First year of the study horizon.\n
 - **`YearSplit ::JuMP.Containers.DenseAxisArray`** Weighting factors of the each timeslice,
-     i.e. how much of the whole year is represented by a given tiomeslice. \n 
+     i.e. how much of the whole year is represented by a given tiomeslice. \n
 - **`SpecifiedAnnualDemand ::JuMP.Containers.DenseAxisArray`** Total specified demand for a year.\n
-- **`SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray`** Annual fraction of 
+- **`SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray`** Annual fraction of
     energy-service or commodity demand that is required in each time slice. For each
     year, all the defined SpecifiedDemandProfile input values should sum up to 1.\n
 - **`RateOfDemand ::JuMP.Containers.DenseAxisArray`** Rate of Demand in each timeslice.\n
@@ -53,9 +156,9 @@ existing in the system in the start year to remain in the given year.\n
     technology, as a ratio of the rate of activity. Used to express technology efficiencies.\n
 - **`OutputActivityRatio ::JuMP.Containers.DenseAxisArray`** Rate of fuel output from a
     technology, as a ratio of the rate of activity.\n
-- **`TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray`** Tag defining if a technology 
-can be dispatched.\n 
-- **`RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray`** Amount of energy produced by 
+- **`TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray`** Tag defining if a technology
+can be dispatched.\n
+- **`RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray`** Amount of energy produced by
 technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
 - **`RegionalCCSLimit ::JuMP.Containers.DenseAxisArray`** Total amount of storeable emissions
     in a certain region over the entire modelled period.\n
@@ -72,23 +175,23 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     The storage facility cannot be emptied below this level.\n
 - **`OperationalLifeStorage ::JuMP.Containers.DenseAxisArray`** Useful lifetime of the
     storage facility.\n
-- **`CapitalCostStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a 
+- **`CapitalCostStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a
     technology to the storage facility it charges. It has value 0 if the technology and the
     storage facility are not linked, 1 if they are.\n
 - **`ResidualStorageCapacity ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a
     storage facility to the technology it feeds. It has value 0 if the technology and the
     storage facility are not linked, 1 if they are.\n
-- **`TechnologyToStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a 
+- **`TechnologyToStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a
     technology to the storage facility it charges. It has value 1 if the technology and the
     storage facility are linked, 0 otherwise.\n
 - **`TechnologyFromStorage ::JuMP.Containers.DenseAxisArray`** Binary parameter linking a
     storage facility to the technology it feeds. It has value 1 if the technology and the
     storage facility are linked, 0 otherwise.\n
 - **`StorageMaxCapacity ::JuMP.Containers.DenseAxisArray`** Maximum storage capacity.\n
-- **`TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray`** Total maximum existing 
+- **`TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray`** Total maximum existing
     (residual plus cumulatively installed) capacity allowed for a technology in a specified
     year.\n
-- **`TotalAnnualMinCapacity ::JuMP.Containers.DenseAxisArray`** Total minimum existing 
+- **`TotalAnnualMinCapacity ::JuMP.Containers.DenseAxisArray`** Total minimum existing
     (residual plus cumulatively installed) capacity allowed for a technology in a specified
     year.\n
 - **`TagTechnologyToSector ::JuMP.Containers.DenseAxisArray`** Links technologies to sectors. \n
@@ -100,29 +203,29 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     a technology, expressed in power units.\n
 - **`TotalTechnologyAnnualActivityUpperLimit ::JuMP.Containers.DenseAxisArray`** Total maximum
     level of activity allowed for a technology in one year.\n
-- **`TotalTechnologyAnnualActivityLowerLimit ::JuMP.Containers.DenseAxisArray`** Total minimum 
+- **`TotalTechnologyAnnualActivityLowerLimit ::JuMP.Containers.DenseAxisArray`** Total minimum
     level of activity allowed for a technology in one year.\n
-- **`TotalTechnologyModelPeriodActivityUpperLimit ::JuMP.Containers.DenseAxisArray`** Total 
+- **`TotalTechnologyModelPeriodActivityUpperLimit ::JuMP.Containers.DenseAxisArray`** Total
     maximum level of activity allowed for a technology in the entire modelled period.\n
-- **`TotalTechnologyModelPeriodActivityLowerLimit ::JuMP.Containers.DenseAxisArray`** Total 
+- **`TotalTechnologyModelPeriodActivityLowerLimit ::JuMP.Containers.DenseAxisArray`** Total
     minimum level of activity allowed for a technology in the entire modelled period.\n
 - **`ReserveMarginTagTechnology ::JuMP.Containers.DenseAxisArray`** Binary parameter tagging
-    the technologies that are allowed to contribute to the reserve margin. It has value 1 
+    the technologies that are allowed to contribute to the reserve margin. It has value 1
     for the technologies allowed, 0 otherwise.\n
 - **`ReserveMarginTagFuel ::JuMP.Containers.DenseAxisArray`** Binary parameter tagging the
     fuels to which the reserve margin applies. It has value 1 if the reserve margin applies
     to the fuel, 0 otherwise.\n
 - **`ReserveMargin ::JuMP.Containers.DenseAxisArray`** Minimum level of the reserve margin
-    required to be provided for all the tagged commodities, by the tagged technologies. 
+    required to be provided for all the tagged commodities, by the tagged technologies.
     If no reserve margin is required, the parameter will have value 1; if, for instance, 20%
     reserve margin is required, the parameter will have value 1.2.\n
 - **`RETagTechnology ::JuMP.Containers.DenseAxisArray`** Tag to identify renewable technologies.\n
 - **`RETagFuel ::JuMP.Containers.DenseAxisArray`** Tag to identify renewable fuels.\n
 - **`REMinProductionTarget ::JuMP.Containers.DenseAxisArray`** Minimum production from renewable
     technologies.\n
-- **`EmissionActivityRatio ::JuMP.Containers.DenseAxisArray`** Emission factor of a 
+- **`EmissionActivityRatio ::JuMP.Containers.DenseAxisArray`** Emission factor of a
     technology per unit of activity, per mode of operation.\n
-- **`EmissionContentPerFuel ::JuMP.Containers.DenseAxisArray`** Defines the emission contents 
+- **`EmissionContentPerFuel ::JuMP.Containers.DenseAxisArray`** Defines the emission contents
     per fuel.\n
 - **`EmissionsPenalty ::JuMP.Containers.DenseAxisArray`** Monetary penalty per unit of emission.\n
 - **`EmissionsPenaltyTagTechnology ::JuMP.Containers.DenseAxisArray`** Activates or deactivates
@@ -133,9 +236,9 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     emission generated in the whole modelled region.\n
 - **`RegionalAnnualEmissionLimit ::JuMP.Containers.DenseAxisArray`** Annual upper limit for
     a specific emission generated in a certain modelled region.\n
-- **`ModelPeriodExogenousEmission ::JuMP.Containers.DenseAxisArray`** Additional emissions 
+- **`ModelPeriodExogenousEmission ::JuMP.Containers.DenseAxisArray`** Additional emissions
     over the entire modelled period, on top of those computed endogenously by the model.\n
-- **`ModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray`** Total model period upper 
+- **`ModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray`** Total model period upper
     limit for a specific emission generated in the whole modelled region.\n
 - **`RegionalModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray`** Total model period
     upper limit for a specific emission generated in a certain modelled region.\n
@@ -147,30 +250,32 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     one region to another.\n
 - **`TradeLossFactor ::JuMP.Containers.DenseAxisArray`** Factor for the amount of losses per
     kilometer of a given fuel\n
-- **`TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray`** Installed transmission 
+- **`TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray`** Installed transmission
     capacity between nodes.\n
-- **`TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray`** Percentage loss of traded 
+- **`TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray`** Percentage loss of traded
     fuel from one region to another. Used to model losses in power transmission networks.\n
-- **`TradeCapacity ::JuMP.Containers.DenseAxisArray`** Initial capacity for trading fuels 
+- **`CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray`** Transmission line already
+    commissioned.\n
+- **`TradeCapacity ::JuMP.Containers.DenseAxisArray`** Initial capacity for trading fuels
     from one region to another.\n
-- **`TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray`** Costs for adding one unit 
+- **`TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray`** Costs for adding one unit
     of additional trade capacity per km from one region to another.\n
-- **`GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray`** Upper limit for adding 
+- **`GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray`** Upper limit for adding
     additional trade capacities. Given as maximal percentage increase of installed capacity.\n
-- **`SelfSufficiency ::JuMP.Containers.DenseAxisArray`** Lower bound that limits the imports 
+- **`SelfSufficiency ::JuMP.Containers.DenseAxisArray`** Lower bound that limits the imports
     of fuels in as specific year and region.\n
-- **`RampingUpFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Defines how much of 
+- **`RampingUpFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Defines how much of
     the built capacity can be activated each timeslice.\n
-- **`RampingDownFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Defines how much 
+- **`RampingDownFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Defines how much
     of the built capacity can be deactivated each timeslice.\n
-- **`ProductionChangeCost ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Cost per unit 
+- **`ProductionChangeCost ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Cost per unit
     of activated or deactivated capacity per timeslice.\n
-- **`MinActiveProductionPerTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** 
-    Minimum fuel production from specific technologies in a certain timeslice. Represents 
+- **`MinActiveProductionPerTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}`**
+    Minimum fuel production from specific technologies in a certain timeslice. Represents
     minimum active capacity requirements.\n
-- **`ModalSplitByFuelAndModalType ::JuMP.Containers.DenseAxisArray`** Lower bound of 
+- **`ModalSplitByFuelAndModalType ::JuMP.Containers.DenseAxisArray`** Lower bound of
     production of certain fuels by specific modal types.\n
-- **`TagTechnologyToModalType ::JuMP.Containers.DenseAxisArray`** Links technology production 
+- **`TagTechnologyToModalType ::JuMP.Containers.DenseAxisArray`** Links technology production
     by mode of operation to modal stype.\n
 - **`EFactorConstruction ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
 - **`EFactorOM ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
@@ -182,15 +287,16 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
 - **`RegionalAdjustmentFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
 - **`LocalManufacturingFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
 - **`DeclineRate ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** \n TODO
-- **`x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Peak demand in the 
+- **`x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}`** Peak demand in the
     original timeseries. Used for the peaking constraints.\n
 - **`TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray`** Tag to link fuels to sectors.\n
 - **`TagElectricTechnology ::JuMP.Containers.DenseAxisArray`** Indicate if a technology is
-    considered to be "direct electrification".\n 
+    considered to be "direct electrification".\n
 """
 struct Parameters <: InputClass
-    StartYear ::Int64
     YearSplit ::JuMP.Containers.DenseAxisArray
+
+    Tags ::Tags
 
     SpecifiedAnnualDemand ::JuMP.Containers.DenseAxisArray
     SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray
@@ -204,7 +310,6 @@ struct Parameters <: InputClass
     ResidualCapacity ::JuMP.Containers.DenseAxisArray
     InputActivityRatio ::JuMP.Containers.DenseAxisArray
     OutputActivityRatio ::JuMP.Containers.DenseAxisArray
-    TagDispatchableTechnology ::JuMP.Containers.DenseAxisArray
     RegionalBaseYearProduction ::JuMP.Containers.DenseAxisArray
     TimeDepEfficiency ::JuMP.Containers.DenseAxisArray
 
@@ -227,7 +332,6 @@ struct Parameters <: InputClass
     TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray
     TotalAnnualMinCapacity ::JuMP.Containers.DenseAxisArray
 
-    TagTechnologyToSector ::JuMP.Containers.DenseAxisArray
     AnnualSectoralEmissionLimit ::JuMP.Containers.DenseAxisArray
 
     TotalAnnualMaxCapacityInvestment ::JuMP.Containers.DenseAxisArray
@@ -242,8 +346,6 @@ struct Parameters <: InputClass
     ReserveMarginTagFuel ::JuMP.Containers.DenseAxisArray
     ReserveMargin ::JuMP.Containers.DenseAxisArray
 
-    RETagTechnology ::JuMP.Containers.DenseAxisArray
-    RETagFuel ::JuMP.Containers.DenseAxisArray
     REMinProductionTarget ::JuMP.Containers.DenseAxisArray
 
     EmissionActivityRatio ::JuMP.Containers.DenseAxisArray
@@ -277,7 +379,6 @@ struct Parameters <: InputClass
     MinActiveProductionPerTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
     ModalSplitByFuelAndModalType ::JuMP.Containers.DenseAxisArray
-    TagTechnologyToModalType ::JuMP.Containers.DenseAxisArray
 
     EFactorConstruction ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     EFactorOM ::Union{Nothing,JuMP.Containers.DenseAxisArray}
@@ -290,12 +391,7 @@ struct Parameters <: InputClass
     LocalManufacturingFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     DeclineRate ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     x_peakingDemand ::Union{Nothing,JuMP.Containers.DenseAxisArray}
-    
-    TagDemandFuelToSector ::JuMP.Containers.DenseAxisArray
-    TagElectricTechnology ::JuMP.Containers.DenseAxisArray
 
-    TagTechnologyToSubsets ::Dict{String,Array}
-    TagFuelToSubsets ::Dict{String,Array}
     StorageE2PRatio ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 end
 
@@ -408,7 +504,7 @@ Model settings necessary for running the model
 - **`StorageLimitOffset  ::Float64`** TODO.\n
 - **`Trajectory2020UpperLimit ::Float64`** TODO.\n
 - **`Trajectory2020LowerLimit ::Float64`** TODO.\n
-- **`BaseYearSlack`** The allowed slack from the defined RegionalBaseYearProduction. 
+- **`BaseYearSlack`** The allowed slack from the defined RegionalBaseYearProduction.
     Value between 0 and 1. Used only if switch_base_year_bounds is set to 1.\n
 - **`PhaseIn ::Dict`** TODO.\n
 - **`PhaseOut ::Dict`** TODO.\n
@@ -431,7 +527,7 @@ struct Settings <: InputClass
     PhaseOut ::Dict
     StorageLevelYearStartUpperLimit ::Float64
     StorageLevelYearStartLowerLimit ::Float64
-end 
+end
 
 """
 Sets used for the model run
@@ -444,7 +540,7 @@ Sets used for the model run
     of certain Technologies. Typically this includes atmospheric emissions, such as CO2.\n
 - **`Technology ::Array`** Represents the main elements of the energy system that produce,
     convert, or transform energy (carriers) and their proxies. Technologies can represent
-    specific individual technology options, such as a "Natural Gas CCGT". They can also 
+    specific individual technology options, such as a "Natural Gas CCGT". They can also
     represent abstracted or aggregated collection of technologies used for accounting purposes
     (e.g., stock of cars).\n
 - **`Fuel ::Array`** Represents energy carriers, energy services, or proxies that are
@@ -453,7 +549,7 @@ Sets used for the model run
     carried out.\n
 - **`Year ::Array`** Represents the time-frame of the model. This set contains all years
     to be considered in the corresponding analysis.\n
-- **`Timeslice ::Array`** Represents the temporal resolution within a Year of the 
+- **`Timeslice ::Array`** Represents the temporal resolution within a Year of the
     analysis. This set contains (reduced) consecutive hourly time-series. Each Year has the
     same amount of timeslices assigned.\n
 - **`Mode_of_operation ::Array`** Represents the different modes in which a technologies can be
@@ -467,11 +563,11 @@ Sets used for the model run
 - **`ModalType ::Array`** Represents a modal type (e.g., rail-transportation) used in the
     transportation sector of the model. These are used to control modal shifting to a
     certain degree.\n
-- **`Sector ::Array`** Represents different sectors in the energy system. Used for 
+- **`Sector ::Array`** Represents different sectors in the energy system. Used for
     aggregation and accounting purposes.\n
 """
 struct Sets <: InputClass
-    Timeslice_full ::UnitRange{Int64}
+    Timeslice_full ::Vector{Int64}
     Emission ::Vector{String}
     Technology ::Vector{String}
     Fuel ::Vector{String}
@@ -484,6 +580,11 @@ struct Sets <: InputClass
     Sector ::Vector{String}
 end
 
+#= Base.copy(s::Sets) = Sets(deepcopy(s.Timeslice_full), deepcopy(s.Emission), deepcopy(s.Technology),
+deepcopy(s.Fuel), deepcopy(s.Year), deepcopy(s.Timeslice), deepcopy(s.Mode_of_operation),
+deepcopy(s.Region_full), deepcopy(s.Storage), deepcopy(s.ModalType), deepcopy(s.Sector))
+ =#
+Base.copy(s::Sets) = Sets(map(field -> deepcopy(getfield(s, field)), fieldnames(Sets))...)
 """
 Sets necessary for the employment calculations. The set elements may be different from
 the sets in the model.
@@ -505,7 +606,7 @@ Subsets of the Sets used to define in more detail the characteristics of some me
 - **`CCS`** Technologies linked to varbon capture and storage (CCS).\n
 - **`Transformation`** TODO.\n
 - **`RenewableTransformation`** TODO.\n
-- **`FossilFuelGeneration`** Sources of fossil fuel.\n 
+- **`FossilFuelGeneration`** Sources of fossil fuel.\n
 - **`FossilFuels`** \n
 - **`FossilPower`** Technology using fossil fuels to produce power.\n
 - **`CHPs`** Combined heat and power technologies.\n
@@ -513,7 +614,7 @@ Subsets of the Sets used to define in more detail the characteristics of some me
 - **`Transport`** Transportation technologies.\n
 - **`Passenger`** Transportation technologies for passengers.\n
 - **`Freight`** Transportation technologies for freight.\n
-- **`TransportFuels`** Elements of the Fuel set corresponding to transport demand.\n 
+- **`TransportFuels`** Elements of the Fuel set corresponding to transport demand.\n
 - **`ImportTechnology`** Technologies corresponding to the import of resources.\n
 - **`Heat`** Technologies producing heat.\n
 - **`PowerSupply`** Technologies producing power.\n
@@ -522,20 +623,20 @@ Subsets of the Sets used to define in more detail the characteristics of some me
 - **`Lignite`** Technologies consuming lignite.\n
 - **`Gas`** Technologies consuming gas.\n
 - **`StorageDummies`** Technologies corresponding to the defined storages.\n
-- **`SectorCoupling`** TODO.\n 
+- **`SectorCoupling`** TODO.\n
 - **`HeatFuels`** Elements of the Fuel set corresponding to heat demand.\n
 - **`ModalGroups`** Overarching groups of modal types.\n
 - **`PhaseInSet`** Technologies that can be subject to a phase in constraint, i.e. for which
-    the production in a given year must be at least as much as the production from the 
+    the production in a given year must be at least as much as the production from the
     previous year times a factor combining the evolution of demand and user input (<1).\n
 - **`PhaseOutSet`** Technologies that can be subject to a phase out constraint, i.e. for which
-    the production in a given year must be at most equal to the production from the 
+    the production in a given year must be at most equal to the production from the
     previous year times a factor combining the evolution of demand and user factor (>1).\n
 - **`HeatSlowRamper`** Heating technologies with long ramp up time.\n
 - **`HeatQuickRamper`** Heating technologies with short ramp up time.\n
 - **`Hydro`** Hydropower technologies.\n
 - **`Geothermal`** Geothermal technologies.\n
-- **`Onshore`** Onshore wind technologies.\n 
+- **`Onshore`** Onshore wind technologies.\n
 - **`Offshore`** Offshore wind technologies.\n
 - **`SolarUtility`** Utility scale solar technologies.\n
 - **`Oil`** Technologies consuming oil.\n
@@ -556,7 +657,7 @@ struct SubsetsIni <: InputClass
     CCS ::Array
     Transformation ::Array
     RenewableTransformation ::Array
-    FossilFuelGeneration ::Array 
+    FossilFuelGeneration ::Array
     FossilFuels ::Array
     FossilPower ::Array
     CHPs ::Array
@@ -564,7 +665,7 @@ struct SubsetsIni <: InputClass
     Transport ::Array
     Passenger ::Array
     Freight ::Array
-    TransportFuels ::Array 
+    TransportFuels ::Array
     ImportTechnology ::Array
     Heat ::Array
     PowerSupply ::Array
@@ -573,7 +674,7 @@ struct SubsetsIni <: InputClass
     Lignite ::Array
     Gas ::Array
     StorageDummies ::Array
-    SectorCoupling ::Array 
+    SectorCoupling ::Array
     HeatFuels ::Array
     ModalGroups ::Array
     PhaseInSet ::Array
@@ -582,7 +683,7 @@ struct SubsetsIni <: InputClass
     HeatQuickRamper ::Array
     Hydro ::Array
     Geothermal ::Array
-    Onshore ::Array 
+    Onshore ::Array
     Offshore ::Array
     SolarUtility ::Array
     Oil ::Array
@@ -608,27 +709,27 @@ folders, as well as the inclusion or not of various features.
 - **`StartYear :: Int16`** First year of the study horizon.\n
 - **`solver `** Solver to be used to solve the LP. The corresponding package must be called.
  For instance: using Gurobi, then the solver is Gurobi.Optimizer. \n
-- **`DNLPsolver`** Solver used for the time reduction algorithm. The recommended solver 
+- **`DNLPsolver`** Solver used for the time reduction algorithm. The recommended solver
 is Ipopt as it is open but other commercial solvers with a julia integration can be used.\n
 - **`model_region ::String`** Name of the modelled region. It will be used in naming files.\n
 - **`data_base_region ::String`** Default region of the model. The missing data will be copied
 from the default region.\n
 - **`data_file ::String`** Path to the main input data file.\n
 - **`hourly_data_file ::String`** Path to the input data file containing the timeseries.\n
-- **`threads ::Int16`** Number of threads to use for solving the model. Default is 4. To 
+- **`threads ::Int16`** Number of threads to use for solving the model. Default is 4. To
 automatically use th emaximum available number of threads, use the value 0.\n
 - **`emissionPathway ::String`** Name of the emission pathway. Used in naming files.\n
 - **`emissionScenario ::String`** Name of the emission scenario. Used in naming files.\n
 - **`socialdiscountrate ::Float64`** Sets the value of the setting social discount rate.\n
 - **`inputdir ::String`** Directory containing the input files.\n
 - **`resultdir ::String`** Directory where the results files will be written.\n
-- **`switch_infeasibility_tech :: Int8`** Switch used to include the infeasibility 
-technologies in the model. These technologies are used to debug an infeasible model and 
+- **`switch_infeasibility_tech :: Int8`** Switch used to include the infeasibility
+technologies in the model. These technologies are used to debug an infeasible model and
 allow the model to run feasible by relaxing the problem with slack production technologies.\n
 - **`switch_investLimit ::Int16`** Used to enable Investment limits. This activates phase in
-constraints for renewable technologies, phase out constraints for fossil technologies. 
+constraints for renewable technologies, phase out constraints for fossil technologies.
 It also activates a constraint smoothing the investment and to prevent large investment in
-a single period. It also activates a constraint limiting the investment in renewable each year to 
+a single period. It also activates a constraint limiting the investment in renewable each year to
 a percentage of the total technical potential.\n
 - **`switch_ccs ::Int16`** Used to enable CCS technologies.\n
 - **`switch_ramping ::Int16`** Used to enable ramping constraints.\n
@@ -652,21 +753,24 @@ annual production of the different technologies in the start year.\n
 The default is 0 since the preferred method is to define daystep and hourstep instead.
 It corresponds to 24*daystep + hourstep.\n
 - **`elmod_starthour ::Int16`** Starting hour for the sampling in the time reduction algorithm.\n
-- **`elmod_dunkelflaute ::Int16`** Enables the addition of a period with very low wind and 
+- **`elmod_dunkelflaute ::Int16`** Enables the addition of a period with very low wind and
 sun in the winter during the time reduction algorithm.\n
 - **`elmod_daystep ::Int16`** Number of days between each sample during the time reduction algorithm.\n
 - **`elmod_hourstep ::Int16`** Number of hours in addition tothe day step between each sample.\n
 - **`switch_raw_results ::Int8`** Used to enable the writing of raw results after a model run.
 The raw results dumps the content of all variables into CSVs.\n
-- **`switch_processed_results ::Int8`** Used to produce processed result files containing 
+- **`switch_processed_results ::Int8`** Used to produce processed result files containing
 additional metrics not part of the raw results.\n
 - **`write_reduced_timeserie ::Int8`** Used to enable the writing of a file containing the
  results of the time reduction algorithm.\n
- - **`switch_reserve ::Int16`** Used to enable reserve margin constraints\n 
+- **`extr_str_results ::String`** Final name of the result files written by the model.\n
+- **`extr_str_dispatch ::String`**  If switch_dispatch = 1, final name of the result file form the investment
+run that will be read to fix some decision variables.\n
+ - **`switch_reserve ::Int16`** Used to enable reserve margin constraints\n
 """
 struct Switch <: InputClass
     StartYear :: Int16
-    solver 
+    solver
     DNLPsolver
     model_region ::String
     data_base_region ::String
@@ -677,8 +781,8 @@ struct Switch <: InputClass
     emissionScenario ::String
     socialdiscountrate ::Float64
     inputdir ::String
-    resultdir ::String
-    switch_infeasibility_tech ::Int8
+    resultdir ::Ref{String}
+    switch_infeasibility_tech ::AbstractInfeasibilityTechs
     switch_investLimit ::Int16
     switch_ccs ::Int16
     switch_ramping ::Int16
@@ -699,16 +803,18 @@ struct Switch <: InputClass
     switch_employment_calculation ::Int16
     switch_endogenous_employment ::Int16
     employment_data_file ::String
-    switch_dispatch ::Int8
+    switch_dispatch ::AbstractDispatchType
     elmod_nthhour ::Int16
     elmod_starthour ::Int16
     elmod_dunkelflaute ::Int16
     elmod_daystep ::Int16
     elmod_hourstep ::Int16
-    switch_raw_results ::Int8
+    switch_raw_results ::RawResultType
     switch_processed_results ::Int8
     write_reduced_timeserie ::Int8
     switch_LCOE_calc ::Int8
+    extr_str_results ::String
+    extr_str_dispatch ::String
     switch_reserve ::Int16
 end
 
@@ -733,7 +839,7 @@ struct Variable_Parameters <: InputClass
     ProductionAnnual ::JuMP.Containers.DenseAxisArray
     UseAnnual ::JuMP.Containers.DenseAxisArray
     CurtailedEnergy ::JuMP.Containers.DenseAxisArray
-    ModelPeriodCostByRegion ::JuMP.Containers.DenseAxisArray 
+    ModelPeriodCostByRegion ::JuMP.Containers.DenseAxisArray
 end
 
 """
