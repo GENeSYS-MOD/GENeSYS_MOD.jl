@@ -365,9 +365,8 @@ struct Parameters <: InputClass
     TradeLossFactor ::JuMP.Containers.DenseAxisArray
     TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray
     TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray
-
-
     CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
+
     TradeCapacity ::JuMP.Containers.DenseAxisArray
     TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray
     GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray
@@ -423,7 +422,6 @@ struct Variables
     VariableOperatingCost ::JuMP.Containers.DenseAxisArray
     TotalDiscountedCost ::JuMP.Containers.DenseAxisArray
     TotalDiscountedCostByTechnology ::JuMP.Containers.DenseAxisArray
-    ModelPeriodCostByRegion ::JuMP.Containers.DenseAxisArray
     AnnualCurtailmentCost ::JuMP.Containers.DenseAxisArray
     DiscountedAnnualCurtailmentCost ::JuMP.Containers.DenseAxisArray
 
@@ -465,7 +463,6 @@ struct Variables
     DiscountedNewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
     NetTrade ::JuMP.Containers.DenseAxisArray
     NetTradeAnnual ::JuMP.Containers.DenseAxisArray
-    TotalTradeCosts ::JuMP.Containers.DenseAxisArray
     AnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
     DiscountedAnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
 

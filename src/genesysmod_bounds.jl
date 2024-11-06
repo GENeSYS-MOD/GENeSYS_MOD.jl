@@ -41,7 +41,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
     # ####### Default Values #############
     #
-    
+
     for r ∈ Sets.Region_full
         for t ∈ Sets.Technology
             for y ∈ Sets.Year
@@ -77,7 +77,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 for y ∈ Sets.Year
                     if Params.VariableCost[r,t,m,y]==0
                         Params.VariableCost[r,t,m,y] = 0.01
-    end end end end end 
+    end end end end end
 
     #
     # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
@@ -103,15 +103,15 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                # Error is ignored intentionally
             end
         end
-        
+
         Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
         Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
         Params.FixedCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         Params.CapitalCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
         Params.VariableCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
         Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 1
-        Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-        Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+        Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1
+        Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1
         Params.EmissionActivityRatio[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
 
     end
@@ -147,7 +147,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     for r ∈ Sets.Region_full
         for t ∈ Params.Tags.TagTechnologyToSubsets["ImportTechnology"]
-                Params.OperationalLife[t] = 1    
+                Params.OperationalLife[t] = 1
         end
     end
 
@@ -188,7 +188,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         end
 
         if "CHP" ∈ Sets.Sector
-            for t ∈ Sets.Technology 
+            for t ∈ Sets.Technology
                 if Params.Tags.TagTechnologyToSector[t,"CHP"] == 1
                     for r ∈ Sets.Region_full
                         if JuMP.is_fixed(model[:NewCapacity][Switch.StartYear,t,r])
@@ -201,7 +201,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     end
 
 
-    ### ReserveMargin initialization 
+    ### ReserveMargin initialization
 
     for r ∈ Sets.Region_full for t ∈ Sets.Technology for y ∈ Sets.Year
         if ((max(Params.TotalAnnualMaxCapacity[r,t,y], Params.ResidualCapacity[r,t,y]) >0 )
@@ -238,32 +238,34 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
 
     if Switch.switch_ccs == 1
-        for r ∈ Sets.Region_full for t ∈ Params.Tags.TagTechnologyToSubsets["CCS"]
+        for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
             Params.AvailabilityFactor[r,t,:] .= 0
             Params.TotalAnnualMaxCapacity[r,t,:] .= 99999
             Params.TotalTechnologyAnnualActivityUpperLimit[r,t,:] .= 99999
         end end
 
-        for y ∈ Sets.Year for r ∈ Sets.Region_full 
+        for y ∈ Sets.Year for r ∈ Sets.Region_full
             if (y > 2020) && (Params.RegionalCCSLimit[r] > 0)
-                for t ∈ Params.Tags.TagTechnologyToSubsets["CCS"]
+                for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
                     Params.AvailabilityFactor[r,t,y] = 0.95
                 end
-            else 
-                for t ∈ Params.Tags.TagTechnologyToSubsets["CCS"]
+            else
+                for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
                     Params.TotalAnnualMaxCapacity[r,t,y] = 0
                     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] = 0
                     for f ∈ Maps.Tech_Fuel[t]
                         JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r],0; force=true)
                     end
-                end 
+                end
             end
-        end end 
+        end end
 
         Params.TotalAnnualMaxCapacity[Sets.Region_full,"A_Air",:] .= 99999
         Params.TotalTechnologyAnnualActivityUpperLimit[Sets.Region_full,"A_Air",:] .= 99999
 
-        Params.EmissionActivityRatio[Sets.Region_full,["X_DAC_HT","X_DAC_LT"],:,:,:] .= -1
+        for t ∈ intersect(Sets.Technology, ["X_DAC_HT","X_DAC_LT"])
+            Params.EmissionActivityRatio[Sets.Region_full,t,:,:,:] .= -1
+        end
 
     else
         for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
@@ -369,7 +371,7 @@ function YearlyDifferenceMultiplier(y,Sets);
     i = findfirst(Sets.Year.== y)
     if i < length(Sets.Year)
         return max(1,Sets.Year[i+1]-Sets.Year[i])
-    else 
+    else
         return 1
     end
 end

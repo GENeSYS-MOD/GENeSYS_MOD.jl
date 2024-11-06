@@ -44,7 +44,7 @@ function genesysmod_dataload(Switch)
 
     # Step 2: Read parameters from regional file  -> now includes World values
 
-    Params, emp_Sets = read_params(in_data, copy(Sets), Switch, Tags) # copy sets to avoid problems when removing from the sets used to indexed the DAA 
+    Params, emp_Sets = read_params(in_data, copy(Sets), Switch, Tags) # copy sets to avoid problems when removing from the sets used to indexed the DAA
 
     # delete world region from region set
     remove_dummy_regions!(𝓡, Switch.switch_dispatch)
@@ -58,7 +58,7 @@ function genesysmod_dataload(Switch)
     #
     # ####### Load from hourly Data #############
     #
-    
+
     GENeSYS_MOD.timeseries_reduction!(Params, Sets, Switch)
 
     for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡
@@ -215,8 +215,8 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
 
     Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
     Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -224,8 +224,8 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.CapitalCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
     Params.VariableCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
     Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 1
-    Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-    Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+    Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1
+    Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1
     Params.EmissionActivityRatio[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
 
     Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_ROAD"] .= 1
@@ -245,8 +245,8 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1 
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1 
+    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
 
     Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
     Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -254,8 +254,8 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.CapitalCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
     Params.VariableCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
     Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 1
-    Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1 
-    Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1 
+    Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1
+    Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1
     Params.EmissionActivityRatio[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
 
     Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_ROAD"] .= 1
@@ -318,7 +318,7 @@ function read_params(in_data, Sets, Switch, Tags)
     SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand", 𝓡, 𝓕, 𝓨)
 
     AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit", 𝓔, 𝓨)
-    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", 𝓡, 𝓔, 𝓨)             
+    AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", 𝓡, 𝓔, 𝓨)
     AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit", 𝓔, 𝓢𝓮, 𝓨)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel", 𝓕, 𝓔)
     RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", 𝓡, 𝓔, 𝓨)
@@ -353,7 +353,7 @@ function read_params(in_data, Sets, Switch, Tags)
 
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel", 𝓡, 𝓕, 𝓨, 𝓜𝓽)
 
-    
+
     StorageE2PRatio = nothing
     #StorageE2PRatio = create_daa(in_data, "Par_StorageE2PRatio",dbr, 𝓢)
 
@@ -390,7 +390,7 @@ function read_params(in_data, Sets, Switch, Tags)
         RampingDownFactor = create_daa(in_data, "Par_RampingDownFactor",𝓣,𝓨)
         ProductionChangeCost = create_daa(in_data, "Par_ProductionChangeCost",𝓣,𝓨)
         MinActiveProductionPerTimeslice = DenseArray(zeros(length(𝓨), length(𝓛), length(𝓕), length(𝓣), length(𝓡)), 𝓨, 𝓛, 𝓕, 𝓣, 𝓡)
-    
+
         MinActiveProductionPerTimeslice[:,:,"Power","RES_Hydro_Large",:] .= 0.1
         MinActiveProductionPerTimeslice[:,:,"Power","RES_Hydro_Small",:] .= 0.05
     else
@@ -510,7 +510,7 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     SpecifiedAnnualDemand = aggregate_daa(Params_Full.SpecifiedAnnualDemand, 𝓡, 𝓡_full, Sum(), 𝓕, 𝓨)
 
     AnnualEmissionLimit = Params_Full.AnnualEmissionLimit[:,𝓨]
-    AnnualExogenousEmission = aggregate_daa(Params_Full.AnnualExogenousEmission, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)             
+    AnnualExogenousEmission = aggregate_daa(Params_Full.AnnualExogenousEmission, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)
     AnnualSectoralEmissionLimit = Params_Full.AnnualSectoralEmissionLimit[:,:,𝓨]
     EmissionContentPerFuel = Params_Full.EmissionContentPerFuel
     RegionalAnnualEmissionLimit = aggregate_daa(Params_Full.RegionalAnnualEmissionLimit, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)
@@ -619,7 +619,7 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
     ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
-    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,CommissionedTradeCapacity,
+    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
     TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
     RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
     ModalSplitByFuelAndModalType,EFactorConstruction, EFactorOM,
@@ -681,7 +681,7 @@ function aggregate_params(Switch, Sets_full, Params_full, s_dispatch::TwoNodes)
     for f in 𝓕 for l in 𝓛 for y in 𝓨
         sum_demand = sum(Params_full.SpecifiedAnnualDemand[r,f,y] for r in 𝓡_full if r!=considered_regions[1])
         if sum_demand!=0
-            Params.SpecifiedDemandProfile[considered_regions[2],f,l,y] = 
+            Params.SpecifiedDemandProfile[considered_regions[2],f,l,y] =
             sum(Params_full.SpecifiedDemandProfile[r,f,l,y]*Params_full.SpecifiedAnnualDemand[r,f,y] for r in 𝓡_full if r!=considered_regions[1])/sum_demand
         end
         Params.SpecifiedDemandProfile[considered_regions[1],f,l,y] = Params_full.SpecifiedDemandProfile[considered_regions[1],f,l,y]

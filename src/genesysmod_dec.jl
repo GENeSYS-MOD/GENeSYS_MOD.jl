@@ -25,7 +25,7 @@ function def_daa(sets...)
 #=     for i in eachindex(sets...)
         if sets...[i] == Sets.Technology & any(x -> x == Sets.Mode_of_operation, sets...[i:end])
             M = findfirst(x -> x == Sets.Mode_of_operation, sets...[i:end])
-            
+
     end
     for x... in sets... =#
 
@@ -53,7 +53,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     #####################
 
     ############### Capacity Variables ############
-    
+
     NewCapacity = @variable(model, NewCapacity[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
     AccumulatedNewCapacity = @variable(model, AccumulatedNewCapacity[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
     TotalCapacityAnnual = @variable(model, TotalCapacityAnnual[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
@@ -70,26 +70,26 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
                 RateOfActivity[y,l,t,m,r] = @variable(model, lower_bound = 0, base_name= "RateOfActivity[$y,$l,$t,$m,$r]")
             end
             TotalAnnualTechnologyActivityByMode[y,t,m,r] = @variable(model, lower_bound = 0, base_name= "TotalAnnualTechnologyActivityByMode[$y,$t,$m,$r]")
-        end 
+        end
         for f ∈ Maps.Tech_Fuel[t]
             ProductionByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "ProductionByTechnologyAnnual[$y,$t,$f,$r]")
             UseByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "UseByTechnologyAnnual[$y,$t,$f,$r]")
         end
-    end end end 
+    end end end
     model[:RateOfActivity] = RateOfActivity
     model[:TotalAnnualTechnologyActivityByMode] = TotalAnnualTechnologyActivityByMode
     model[:ProductionByTechnologyAnnual] = ProductionByTechnologyAnnual
     model[:UseByTechnologyAnnual] = UseByTechnologyAnnual
 
     @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
-                
+
     @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
     @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
     @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
     @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
     @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
 
-    
+
     ############### Costing Variables #############
 
     CapitalInvestment = @variable(model, CapitalInvestment[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
@@ -103,73 +103,72 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     VariableOperatingCost = @variable(model, VariableOperatingCost[𝓨,𝓛,𝓣,𝓡] >= 0, container=DenseArray)
     TotalDiscountedCost = @variable(model, TotalDiscountedCost[𝓨,𝓡] >= 0, container=DenseArray)
     TotalDiscountedCostByTechnology = @variable(model, TotalDiscountedCostByTechnology[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
-    ModelPeriodCostByRegion = @variable(model, ModelPeriodCostByRegion[𝓡] >= 0, container=DenseArray)
 
     AnnualCurtailmentCost = @variable(model, AnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=DenseArray)
     DiscountedAnnualCurtailmentCost = @variable(model, DiscountedAnnualCurtailmentCost[𝓨,𝓕,𝓡] >= 0, container=DenseArray)
 
-    
+
 
     ############### Storage Variables #############
 
     StorageLevelYearStart = @variable(model, StorageLevelYearStart[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
     StorageLevelYearFinish = @variable(model, StorageLevelYearFinish[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
     StorageLevelTSStart = @variable(model, StorageLevelTSStart[𝓢,𝓨,𝓛,𝓡] >= 0, container=DenseArray)
-    AccumulatedNewStorageCapacity = @variable(model, AccumulatedNewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    NewStorageCapacity = @variable(model, NewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    CapitalInvestmentStorage = @variable(model, CapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    DiscountedCapitalInvestmentStorage = @variable(model, DiscountedCapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    SalvageValueStorage = @variable(model, SalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    DiscountedSalvageValueStorage = @variable(model, DiscountedSalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
-    TotalDiscountedStorageCost = @variable(model, TotalDiscountedStorageCost[𝓢,𝓨,𝓡] >= 0, container=DenseArray) 
+    AccumulatedNewStorageCapacity = @variable(model, AccumulatedNewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    NewStorageCapacity = @variable(model, NewStorageCapacity[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    CapitalInvestmentStorage = @variable(model, CapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    DiscountedCapitalInvestmentStorage = @variable(model, DiscountedCapitalInvestmentStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    SalvageValueStorage = @variable(model, SalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    DiscountedSalvageValueStorage = @variable(model, DiscountedSalvageValueStorage[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
+    TotalDiscountedStorageCost = @variable(model, TotalDiscountedStorageCost[𝓢,𝓨,𝓡] >= 0, container=DenseArray)
 
-    
+
 
     ######## Reserve Margin #############
 
     if Switch.switch_dispatch isa NoDispatch && Switch.switch_reserve == 1
         TotalActivityInReserveMargin=@variable(model, TotalActivityInReserveMargin[𝓡,𝓨,𝓛] >= 0, container=DenseArray)
-        DemandNeedingReserveMargin=@variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0, container=DenseArray) 
+        DemandNeedingReserveMargin=@variable(model, DemandNeedingReserveMargin[𝓨,𝓛,𝓡] >= 0, container=DenseArray)
     else
         TotalActivityInReserveMargin = nothing
         DemandNeedingReserveMargin = nothing
     end
 
-    
+
 
     ######## RE Gen Target #############
 
-    TotalREProductionAnnual = @variable(model, TotalREProductionAnnual[𝓨,𝓡,𝓕], container=DenseArray) 
-    RETotalDemandOfTargetFuelAnnual = @variable(model, RETotalDemandOfTargetFuelAnnual[𝓨,𝓡,𝓕], container=DenseArray) 
-    TotalTechnologyModelPeriodActivity = @variable(model, TotalTechnologyModelPeriodActivity[𝓣,𝓡], container=DenseArray) 
-    RETargetMin = @variable(model, RETargetMin[𝓨,𝓡] >= 0, container=DenseArray) 
+    TotalREProductionAnnual = @variable(model, TotalREProductionAnnual[𝓨,𝓡,𝓕], container=DenseArray)
+    RETotalDemandOfTargetFuelAnnual = @variable(model, RETotalDemandOfTargetFuelAnnual[𝓨,𝓡,𝓕], container=DenseArray)
+    TotalTechnologyModelPeriodActivity = @variable(model, TotalTechnologyModelPeriodActivity[𝓣,𝓡], container=DenseArray)
+    RETargetMin = @variable(model, RETargetMin[𝓨,𝓡] >= 0, container=DenseArray)
 
-    
+
 
     ######## Emissions #############
 
     AnnualTechnologyEmissionByMode = def_daa(𝓨,𝓣,𝓔,𝓜,𝓡)
-    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔 
+    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔
         for m ∈ Maps.Tech_MO[t]
             AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
         end
-    end end end end 
+    end end end end
     model[:AnnualTechnologyEmissionByMode] = AnnualTechnologyEmissionByMode
 
-    AnnualTechnologyEmission = @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray) 
-    AnnualTechnologyEmissionPenaltyByEmission = @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray) 
-    AnnualTechnologyEmissionsPenalty = @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray) 
-    DiscountedTechnologyEmissionsPenalty = @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray) 
-    AnnualEmissions = @variable(model, AnnualEmissions[𝓨,𝓔,𝓡], container=DenseArray) 
-    ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓔,𝓡], container=DenseArray) 
+    AnnualTechnologyEmission = @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray)
+    AnnualTechnologyEmissionPenaltyByEmission = @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray)
+    AnnualTechnologyEmissionsPenalty = @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray)
+    DiscountedTechnologyEmissionsPenalty = @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray)
+    AnnualEmissions = @variable(model, AnnualEmissions[𝓨,𝓔,𝓡], container=DenseArray)
+    ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓔,𝓡], container=DenseArray)
     WeightedAnnualEmissions = @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡], container=DenseArray)
 
-    
+
     ######### SectoralEmissions #############
 
-    AnnualSectoralEmissions = @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡], container=DenseArray) 
+    AnnualSectoralEmissions = @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡], container=DenseArray)
 
-    
+
 
     ######### Trade #############
     Import = def_daa(𝓨,𝓛,𝓕,𝓡,𝓡)
@@ -181,13 +180,13 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     for y ∈ 𝓨 for f ∈ 𝓕 for r1 ∈ 𝓡 for r2 ∈ 𝓡
         if Params.TradeRoute[r1,r2,f,y] != 0
             for l ∈ 𝓛
-                Import[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Import[$y,$l,$f,$r1,$r2]") 
-                Export[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Export[$y,$l,$f,$r1,$r2]") 
+                Import[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Import[$y,$l,$f,$r1,$r2]")
+                Export[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Export[$y,$l,$f,$r1,$r2]")
             end
-            NewTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacity[$y,$f,$r1,$r2]") 
-            TotalTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="TotalTradeCapacity[$y,$f,$r1,$r2]") 
-            NewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacityCosts[$y,$f,$r1,$r2]") 
-            DiscountedNewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="DiscountedNewTradeCapacityCosts[$y,$f,$r1,$r2]") 
+            NewTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacity[$y,$f,$r1,$r2]")
+            TotalTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="TotalTradeCapacity[$y,$f,$r1,$r2]")
+            NewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacityCosts[$y,$f,$r1,$r2]")
+            DiscountedNewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="DiscountedNewTradeCapacityCosts[$y,$f,$r1,$r2]")
         end
     end end end end
     model[:Import] = Import
@@ -197,11 +196,10 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     model[:NewTradeCapacityCosts] = NewTradeCapacityCosts
     model[:DiscountedNewTradeCapacityCosts] = DiscountedNewTradeCapacityCosts
 
-    NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=DenseArray) 
-    NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=DenseArray) 
-    TotalTradeCosts = @variable(model, TotalTradeCosts[𝓨,𝓛,𝓡], container=DenseArray) 
-    AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=DenseArray) 
-    DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=DenseArray) 
+    NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=DenseArray)
+    NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=DenseArray)
+    AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=DenseArray)
+    DiscountedAnnualTotalTradeCosts = @variable(model, DiscountedAnnualTotalTradeCosts[𝓨,𝓡], container=DenseArray)
 
     ######### Peaking #############
     if Switch.switch_peaking_capacity == 1
@@ -215,15 +213,15 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     ######### Transportation #############
 
 
-    #TrajectoryLowerLimit(𝓨) 
-    #TrajectoryUpperLimit(𝓨) 
+    #TrajectoryLowerLimit(𝓨)
+    #TrajectoryUpperLimit(𝓨)
 
-    DemandSplitByModalType = @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.Tags.TagFuelToSubsets["TransportFuels"],𝓨], container=DenseArray) 
-    ProductionSplitByModalType = @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.Tags.TagFuelToSubsets["TransportFuels"],𝓨], container=DenseArray) 
+    DemandSplitByModalType = @variable(model, DemandSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.Tags.TagFuelToSubsets["TransportFuels"],𝓨], container=DenseArray)
+    ProductionSplitByModalType = @variable(model, ProductionSplitByModalType[𝓜𝓽,𝓛,𝓡,Params.Tags.TagFuelToSubsets["TransportFuels"],𝓨], container=DenseArray)
 
     if Switch.switch_ramping == 1
 
-        ######## Ramping #############    
+        ######## Ramping #############
         ProductionUpChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
         ProductionDownChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
         for y ∈ 𝓨 for r ∈ 𝓡 for f ∈ 𝓕 for l ∈ 𝓛
@@ -231,11 +229,11 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
                 ProductionUpChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionUpChangeInTimeslice[$y,$l,$f,$t,$r]")
                 ProductionDownChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionDownChangeInTimeslice[$y,$l,$f,$t,$r]")
             end
-        end end end end 
+        end end end end
         model[:ProductionUpChangeInTimeslice] = ProductionUpChangeInTimeslice
         model[:ProductionDownChangeInTimeslice] = ProductionDownChangeInTimeslice
-        @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray) 
-        @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray) 
+        @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
+        @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
     else
         ProductionUpChangeInTimeslice=nothing
         ProductionDownChangeInTimeslice=nothing
@@ -249,7 +247,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
         RateOfTotalActivity=nothing
     end
 
-    BaseYearSlack= @variable(model, BaseYearSlack[𝓕], container=DenseArray) 
+    BaseYearSlack= @variable(model, BaseYearSlack[𝓕], container=DenseArray)
     BaseYearBounds_TooLow = def_daa(𝓡,𝓣,𝓕,𝓨)
     BaseYearBounds_TooHigh = def_daa(𝓡,𝓣,𝓕,𝓨)
     for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
@@ -264,15 +262,15 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     end end end
     model[:BaseYearBounds_TooLow] = BaseYearBounds_TooLow
     model[:BaseYearBounds_TooHigh] = BaseYearBounds_TooHigh
-    DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=DenseArray) 
-    
+    DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=DenseArray)
+
     Vars = GENeSYS_MOD.Variables(NewCapacity,AccumulatedNewCapacity,TotalCapacityAnnual,
     RateOfActivity,TotalAnnualTechnologyActivityByMode,ProductionByTechnologyAnnual,
     UseByTechnologyAnnual,TotalTechnologyAnnualActivity,TotalActivityPerYear,CurtailedEnergyAnnual,
     CurtailedCapacity,CurtailedEnergy,DispatchDummy,CapitalInvestment,DiscountedCapitalInvestment,
     SalvageValue,DiscountedSalvageValue,OperatingCost,DiscountedOperatingCost,AnnualVariableOperatingCost,
     AnnualFixedOperatingCost,VariableOperatingCost,TotalDiscountedCost,TotalDiscountedCostByTechnology,
-    ModelPeriodCostByRegion,AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
+    AnnualCurtailmentCost,DiscountedAnnualCurtailmentCost,
     StorageLevelYearStart,StorageLevelYearFinish,StorageLevelTSStart,AccumulatedNewStorageCapacity,NewStorageCapacity,
     CapitalInvestmentStorage,DiscountedCapitalInvestmentStorage,SalvageValueStorage,
     DiscountedSalvageValueStorage,TotalDiscountedStorageCost,TotalActivityInReserveMargin,
@@ -281,11 +279,10 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AnnualTechnologyEmission,AnnualTechnologyEmissionPenaltyByEmission,AnnualTechnologyEmissionsPenalty,
     DiscountedTechnologyEmissionsPenalty,AnnualEmissions,ModelPeriodEmissions,WeightedAnnualEmissions,
     AnnualSectoralEmissions,Import,Export,NewTradeCapacity,TotalTradeCapacity,NewTradeCapacityCosts,
-    DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,TotalTradeCosts,AnnualTotalTradeCosts,
+    DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
     RateOfTotalActivity,BaseYearSlack,BaseYearBounds_TooLow,BaseYearBounds_TooHigh, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
     AnnualProductionChangeCost,DiscountedAnnualProductionChangeCost)
     return Vars
 end
-
