@@ -23,14 +23,14 @@ Internal function used in the run process to define the model constraints.
 function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 
   dbr = Switch.data_base_region
-  𝓡 = Sets.Region_full
-  𝓕 = Sets.Fuel
-  𝓨 = Sets.Year
-  𝓣 = Sets.Technology
-  𝓔 = Sets.Emission
-  𝓜 = Sets.Mode_of_operation
-  𝓛 = Sets.Timeslice
-  𝓢 = Sets.Storage
+  𝓡 = Sets.Region_full # AT, BE, CH, CZ, DE, EE, DI, FR...
+  𝓕 = Sets.Fuel # Area_rooftop_commericial, Area_rooftop_residential, Biomass, hardcoal, H2...
+  𝓨 = Sets.Year #2018, 2020, 2030, 2040, 2050
+  𝓣 = Sets.Technology # A_Air, CHP_biomass_Solid, CHP_Biomass_CSS...
+  𝓔 = Sets.Emission #CO2
+  𝓜 = Sets.Mode_of_operation #1, 2, 3, 4
+  𝓛 = Sets.Timeslice #
+  𝓢 = Sets.Storage #S_Gas_H2, S_Battery_LiIon, ...
   𝓜𝓽 = Sets.ModalType
   𝓢𝓮 = Sets.Sector
 
@@ -402,17 +402,31 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
  
   ############### Trade Capacities & Investments #############
   
-  for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡
-    if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
-      for l ∈ 𝓛
-        @constraint(model, (Vars.Import[𝓨[i],l,"Power",r,rr]) <= Vars.TotalTradeCapacity[𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport|$(𝓨[i])|$(l)_Power|$(r)|$(rr)")
+  for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡 #Iterate per year y in 𝓨 (years), for each export region r in 𝓡 (regions) and and import region rr in 𝓡 (regions)
+    if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0 # export region r, import region rr, power is fuel, y is year
+      for l ∈ 𝓛 #for timeslice l in 𝓛, what is timeslice????
+        @constraint(model, (Vars.Import[𝓨[i],l,"Power",r,rr]) <= Vars.TotalTradeCapacity[𝓨[i],"Power",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityPowerLinesImport|$(𝓨[i])|$(l)_Power|$(r)|$(rr)") #Constraint that the import quantity in year Y, for fuel “Power”, for the import region to the export region must be lower or equal to  the total trade capacity 
       end
-      for f ∈ 𝓕
-        if Params.TradeCapacityGrowthCosts[r,rr,f] != 0
-          @constraint(model, Vars.NewTradeCapacity[𝓨[i],f,r,rr]*Params.TradeCapacityGrowthCosts[r,rr,f]*Params.TradeRoute[r,rr,f,𝓨[i]] == Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC4_NewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)")
-          @constraint(model, Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr]/((1+Settings.GeneralDiscountRate[r])^(𝓨[i]-Switch.StartYear+0.5)) == Vars.DiscountedNewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC5_DiscountedNewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)")
+      for f ∈ 𝓕 #for f in fuels 𝓕
+        if Params.TradeCapacityGrowthCosts[r,rr,f] != 0 #if growth costs for trade capacity is not 0
+          @constraint(model, Vars.NewTradeCapacity[𝓨[i],f,r,rr]*Params.TradeCapacityGrowthCosts[r,rr,f]*Params.TradeRoute[r,rr,f,𝓨[i]] == Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC4_NewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)")#the new trace capacity costs are equal to the new trade capacities times trade capacity growth cost times the trade route in focus
+          @constraint(model, Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr]/((1+Settings.GeneralDiscountRate[r])^(𝓨[i]-Switch.StartYear+0.5)) == Vars.DiscountedNewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC5_DiscountedNewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)") #discounted trade costs to actual year
         end
       end
+    end
+
+    #--------ADDED------------
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 # export region r, import region rr, power is fuel, y is year
+      for l ∈ 𝓛 #for timeslice l in 𝓛, what is timeslice????
+        @constraint(model, (Vars.Import[𝓨[i],l,"H2",r,rr]) <= Vars.TotalTradeCapacity[𝓨[i],"H2",rr,r]*Params.YearSplit[l,𝓨[i]]*31.536 , base_name="TrC1_TradeCapacityH2LinesImport|$(𝓨[i])|$(l)_H2|$(r)|$(rr)") #Constraint that the import quantity in year Y, for fuel “Power”, for the import region to the export region must be lower or equal to  the total trade capacity 
+      end
+      for f ∈ 𝓕 #for f in fuels 𝓕
+        if Params.TradeCapacityGrowthCosts[r,rr,f] != 0 #if growth costs for trade capacity is not 0
+          @constraint(model, Vars.NewTradeCapacity[𝓨[i],f,r,rr]*Params.TradeCapacityGrowthCosts[r,rr,f]*Params.TradeRoute[r,rr,f,𝓨[i]] == Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC4_NewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)")#the new trace capacity costs are equal to the new trade capacities times trade capacity growth cost times the trade route in focus
+          @constraint(model, Vars.NewTradeCapacityCosts[𝓨[i],f,r,rr]/((1+Settings.GeneralDiscountRate[r])^(𝓨[i]-Switch.StartYear+0.5)) == Vars.DiscountedNewTradeCapacityCosts[𝓨[i],f,r,rr], base_name="TrC5_DiscountedNewTradeCapacityCosts|$(𝓨[i])|$(f)|$(r)|$(rr)") #discounted trade costs to actual year
+        end
+      end
+    #-------------------------
     end
     for f ∈ 𝓕
       if Params.TradeRoute[r,rr,f,𝓨[i]] == 0 || Params.TradeCapacityGrowthCosts[r,rr,f] == 0
@@ -420,7 +434,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       end
     end
 
-    if Switch.switch_dispatch == 0
+    if Switch.switch_dispatch == 0 
       for f ∈ 𝓕
         #if Params.TradeRoute[r,rr,f,𝓨[i]] > 0
           if 𝓨[i] == Switch.StartYear
@@ -434,6 +448,15 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
             @constraint(model, (Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],f,r,rr] >= Vars.NewTradeCapacity[𝓨[i],f,r,rr], 
             base_name="TrC3_NewTradeCapacityLimitPowerLines|$(𝓨[i])|Power|$(r)|$(rr)")
           end
+
+          #---------ADDED---------#
+          if f == "H2" && i > 1 && Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] > 0  && Params.TradeCapacity[r,rr,f,Switch.StartYear] > 0
+            @constraint(model, (Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],f,r,rr] >= Vars.NewTradeCapacity[𝓨[i],f,r,rr], 
+            base_name="TrC3_NewTradeCapacityLimitH2pipelines|$(𝓨[i])|H2|$(r)|$(rr)")
+          end
+          #-----------------------
+
+          ## copy 433-436 and add one for TradeInvestments
         #end
       end
     end
@@ -444,10 +467,10 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       @constraint(model, (Params.TradeCapacity[r,rr,"Gas_Natural",𝓨[i]] == 0 ? 100 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"Gas_Natural",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"Gas_Natural",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Gas_Natural",r,rr],
       base_name="TrC4a_NewTradeCapacityLimitNatGas|$(𝓨[i])|Gas_Natural|$(r)|$(rr)")
     end
-    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0 && i > 1
-      @constraint(model, (Params.TradeCapacity[r,rr,"H2",𝓨[i]] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],
-      base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[i])|H2|$(r)|$(rr)")
-    end
+    #if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0 && Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] > 0 && i > 1 #non-zero trade route for hydrogen and There is a positive growth rate for hydrogen trade capacity along the route. The year index i is greater than 1 (i > 1), implying this only applies to periods after the initial year.
+     # @constraint(model, (Params.TradeCapacity[r,rr,"H2",𝓨[i]] == 0 ? 50 : 0)+(Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",r,rr], #adds 50 to the LHS if the current year’s trade capacity is zero (likely a minimum baseline for new capacity), Vars.TotalTradeCapacity[𝓨[i-1],"H2",r,rr] reflects the total trade capacity in the previous year, forming a cumulative effect. Vars.NewTradeCapacity[𝓨[i],"H2",r,rr] represents the new trade capacity to be added in the current year.
+     # base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[i])|H2|$(r)|$(rr)") #his is a naming convention for the constraint to help with identifying it in the model, indicating it applies to new trade capacity constraints for hydrogen in a specific year and trade route.
+   # end
     for f ∈ 𝓕
       if Params.TradeRoute[r,rr,f,𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] == 0 || i == 1
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
@@ -456,16 +479,44 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
         @constraint(model, sum(Vars.Import[𝓨[i],l,f,rr,r] for l ∈ 𝓛) <= Vars.TotalTradeCapacity[𝓨[i],f,r,rr],
         base_name="TrC7_TradeCapacityLimitNonPower$(𝓨[i])|$(f)|$(r)|$(rr)")
       end
+
+      #------ADDED--------
+      if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != "H2"
+        @constraint(model, sum(Vars.Import[𝓨[i],l,f,rr,r] for l ∈ 𝓛) <= Vars.TotalTradeCapacity[𝓨[i],f,r,rr],
+        base_name="TrC7_TradeCapacityLimitNonH2$(𝓨[i])|$(f)|$(r)|$(rr)")
+      end
+      #----------------
+
+
     end
+
+    ##copy 457-460 and add TradeInvestment
 
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
       @constraint(model, Vars.NewTradeCapacity[𝓨[i],"Power",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Power",rr,r] * Switch.set_symmetric_transmission,
       base_name="TrC6_SymmetricalTransmissionExpansion|$(𝓨[i])|$(r)|$(rr)")
     end
 
+    #------ADDED------
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] > 0
+      @constraint(model, Vars.NewTradeCapacity[𝓨[i],"H2",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"H2",rr,r] * Switch.set_symmetric_transmission,
+      base_name="TrC6_SymmetricalTransmissionExpansion|$(𝓨[i])|$(r)|$(rr)")
+    end
+    #-----------------
+
+    ##Why we have symmetric transmission, 465-468 should also appply fro pipeline
+
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0 || i==1
       JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
+
+    #------ADDED------
+    if Params.TradeRoute[r,rr,"H2",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"H2",𝓨[i]] == 0 || i==1
+      JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"H2",r,rr],0; force=true)
+    end
+    #-----------------
+
+    ##472-474 may be relevant for the TradeInvestemnt as well.
 
 #=     for f ∈ 𝓕
       if f != "Power" 

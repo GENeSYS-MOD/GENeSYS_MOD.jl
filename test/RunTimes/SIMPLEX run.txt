@@ -1,0 +1,6 @@
+Solving the original LP from the solution after postsolve
+Model   status      : Optimal
+Simplex   iterations: 258524
+Objective value     :  7.6754411398e+06
+HiGHS run time      :       1099.86
+ | Build Time: 1370954 milliseconds | Solve Time: 5 milliseconds | Obj: 7.675441139819333e6 | Vars: 7935857 | Constr: 9166487

@@ -203,6 +203,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         end
     end
 
+    #Next would be to allow every technology
+
 
     ### ReserveMargin initialization 
 
