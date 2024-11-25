@@ -26,8 +26,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     # ####### Default Values #############
     #
 
-    sub=["Power", "Heat_Low_Residential", "Heat_Low_Industrial", "Heat_Medium_Industrial",
-     "Heat_High_Industrial"]
+    end_uses = union(["Power"], Params.Tags.TagFuelToSubsets["HeatFuels"], Params.Tags.TagFuelToSubsets["TransportFuels"])
+    sub = union(["Power"], Params.Tags.TagFuelToSubsets["HeatFuels"], Params.Tags.TagFuelToSubsets["TransportFuels"])
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
         for t ∈ intersect(Sets.Technology,Params.Tags.TagTechnologyToSubsets["Renewables"])
@@ -87,21 +87,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.Tags.TagTechnologyToSector[Params.Tags.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
         Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
-        output_activity_dict = Dict(
-            "Infeasibility_HLI" => "Heat_Low_Industrial",
-            "Infeasibility_HMI" => "Heat_Medium_Industrial",
-            "Infeasibility_HHI" => "Heat_High_Industrial",
-            "Infeasibility_HRI" => "Heat_Low_Residential",
-            "Infeasibility_Power" => "Power",
-            "Infeasibility_Mob_Passenger" => "Mobility_Passenger",
-            "Infeasibility_Mob_Freight" => "Mobility_Freight")
-
-        for (k,v) ∈ output_activity_dict
-            try
-                Params.OutputActivityRatio[:,k,v,1,:] .= 1
-            catch
-               # Error is ignored intentionally
-            end
+        for end_use ∈ end_uses
+            Params.OutputActivityRatio[:,"Infeasibility_$(end_use)",end_use,1,:] .= 1
         end
 
         Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
