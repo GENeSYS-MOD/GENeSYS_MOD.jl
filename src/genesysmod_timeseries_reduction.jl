@@ -162,7 +162,7 @@ function timeseries_reduction!(Params, Sets, Switch)
         end
 
         if "COOL_LOW" ∈ Country_Data_Entries
-            if sum(CountryData["COOL_LOW"][l,r] for l ∈ Timeslice) != 0
+            if sum(CountryData["COOL_LOW"][l,r] for l ∈ Sets.Timeslice) != 0
                 AverageCapacityFactor["COOL_LOW"][1,r] = sum(CountryData["COOL_LOW"][:,r])/8760
                 CountryData["COOL_LOW"][!,r] = CountryData["COOL_LOW"][!,r] / AverageCapacityFactor["COOL_LOW"][1,r]
             end
