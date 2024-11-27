@@ -74,7 +74,7 @@ function timeseries_reduction!(Params, Sets, Switch)
         "RES_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP",
         "RES_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW",
         "Heat_Low_Residential" => "HEAT_LOW",
-        "Cool_Low_Buildings" => "COOL_LOW",
+        "Cool_Low_Building" => "COOL_LOW",
         "HLR_Heatpump_Aerial" => "HP_AIRSOURCE",
         "HLR_Heatpump_Ground" => "HP_GROUNDSOURCE",
         "Mobility_Passenger" => "MOBILITY_PSNG",
@@ -340,7 +340,7 @@ function timeseries_reduction!(Params, Sets, Switch)
         ScaledCountryData[cde] .= round.(ScaledCountryData[cde], digits=6)
     end
 
-    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial", "Cool_Low_Buildings"])
+    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial", "Cool_Low_Building"])
     capf_list=intersect(Sets.Technology, ["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
     "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small", "RES_PV_Utility_Avg"])
     tmp = ScaledCountryData["LOAD"] ./ length(Sets.Timeslice)
