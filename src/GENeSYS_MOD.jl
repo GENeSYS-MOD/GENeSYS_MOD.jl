@@ -31,11 +31,15 @@ using JuMP
 using XLSX
 using CSV
 using Statistics
+using PyCall
+using LibGit2
+using Conda
 
 const DenseArray = JuMP.Containers.DenseAxisArray
 
 include("datastructures.jl")
 include("utils.jl")
+include("fetch_inputdata.jl")
 include("genesysmod.jl")
 include("genesysmod_dec.jl")
 include("genesysmod_timeseries_reduction.jl")
@@ -55,5 +59,6 @@ export genesysmod, genesysmod_dispatch
 export NoInfeasibilityTechs, WithInfeasibilityTechs # for use with the switch infeasibility_techs
 export OneNodeSimple, TwoNodes, OneNodeStorage
 export NoRawResult, CSVResult, TXTResult, TXTandCSV
+export update_and_process_data
 
 end

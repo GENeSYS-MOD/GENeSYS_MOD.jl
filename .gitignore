@@ -1,5 +1,3 @@
 docs/build/
-test/script.jl
-test/TestData/Results
+test/TestData/
 debug_scripts
-test/test.jl

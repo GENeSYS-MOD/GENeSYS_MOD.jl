@@ -594,7 +594,7 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
     ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
-    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
+    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,CommissionedTradeCapacity,
     TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
     RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
     ModalSplitByFuelAndModalType,EFactorConstruction, EFactorOM,
