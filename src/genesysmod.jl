@@ -160,7 +160,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     elseif string(solver) == "HiGHS.Optimizer"
         set_optimizer_attribute(model, "solver", "ipm")
         #set_optimizer_attribute(model, "solver", "pdlp")
-        set_optimizer_attribute(model, "run_crossover", "off")
+        #set_optimizer_attribute(model, "run_crossover", "off")
         set_optimizer_attribute(model, "log_file", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
     end
 
