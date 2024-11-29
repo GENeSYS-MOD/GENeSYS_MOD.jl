@@ -348,13 +348,19 @@ function timeseries_reduction!(Params, Sets, Switch)
         for f ∈ Sets.Fuel
             if sum(Params.SpecifiedAnnualDemand[r,f,:]) != 0
                 Params.SpecifiedDemandProfile[r,f,:,Sets.Year[1]] = tmp[Sets.Timeslice,r]
+            else
+                Params.SpecifiedDemandProfile[r,f,:,Sets.Year[1]] = [0.0 for i ∈ 1:length(Sets.Timeslice)]
             end
         end
     end
 
     tmp=Dict()
     for t ∈ intersect(Country_Data_Entries, ["MOBILITY_PSNG", "HEAT_LOW", "HEAT_HIGH", "COOL_LOW"])
-        tmp[t] = ScaledCountryData[t] ./ combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+        div = combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+        for col in names(div)
+            replace!(div[!, col], 0 => 1)
+        end
+        tmp[t] = ScaledCountryData[t] ./ div
     end
 
     end_uses = union(["Power"], Params.Tags.TagFuelToSubsets["HeatFuels"], Params.Tags.TagFuelToSubsets["TransportFuels"])
