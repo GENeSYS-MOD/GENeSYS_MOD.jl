@@ -155,8 +155,13 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #CapacityFactor(r,Heat,l,y)$(sum(ll,CapacityFactor(r,Heat,ll,y)) = 0) = 1;
     #Params.CapacityFactor[[x ∈ Subsets.Heat for x ∈ Params.CapacityFactor[!,:Technology]], :Value] .= 1
 
-    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Residential"])
-        Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
+    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "HB_Solar_Thermal", "RES_PV_Rooftop_Residential", "P_PV_Rooftop_Residential"]) # TODO remove when data redundant
+        if "RES_PV_Rooftop_Commercial" in Sets.Technology # TODO remove when data redundant
+            Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
+        end
+        if "P_PV_Rooftop_Commercial" in Sets.Technology 
+            Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"P_PV_Rooftop_Commercial",l,y]
+        end
     end
     #
     # ####### No new capacity construction in 2015 #############
@@ -166,8 +171,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Transformation"],Params.Tags.TagTechnologyToSubsets["PowerSupply"], Params.Tags.TagTechnologyToSubsets["SectorCoupling"], Params.Tags.TagTechnologyToSubsets["StorageDummies"]))
                 JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Biomass"],Params.Tags.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"]))
+            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Biomass"],Params.Tags.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HB_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
+                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"])) # TODO remove when data redundant
                 if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
                     JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                 end
@@ -206,7 +211,13 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Wind"]), ["RES_Hydro_Small"])
+    subs = vcat(intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Wind"]))
+    if "RES_Hydro_Small" in Sets.Technology # TODO remove when data redundant
+        subs = vcat(subs, ["RES_Hydro_Small"])
+    end
+    if "P_Hydro_RoR" in Sets.Technology
+        subs = vcat(subs, ["P_Hydro_RoR"])
+    end
     Params.Tags.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
     Params.CurtailmentCostFactor == 0.1
 
@@ -307,9 +318,17 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 Params.RampingDownFactor[t,y] = 0
                 Params.ProductionChangeCost[r,t,y] = 0
             end =#
-            for l ∈ Sets.Timeslice
-                Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Large",r] = 0.1
-                Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Small",r] = 0.05
+            if "RES_Hydro_Large" in Sets.Technology && "RES_Hydro_Small" in Sets.Technology # TODO remove when data redundant
+                for l ∈ Sets.Timeslice
+                    Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Large",r] = 0.1
+                    Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Small",r] = 0.05
+                end
+            end
+            if "P_Hydro_Reservoir" in Sets.Technology && "P_Hydro_RoR" in Sets.Technology
+                for l ∈ Sets.Timeslice
+                    Params.MinActiveProductionPerTimeslice[y,l,"Power","P_Hydro_Reservoir",r] = 0.1
+                    Params.MinActiveProductionPerTimeslice[y,l,"Power","P_Hydro_RoR",r] = 0.05
+                end
             end
         end end
     end
@@ -324,13 +343,13 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
         if Switch.switch_dispatch==0
-            for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HLR", "S_Heat_HLI"])
+            for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HLR","S_HB_Tank_Small", "S_Heat_HLI"])
                 if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
                     JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
                 end
             end
         end
-        if "RES_CSP" ∈ Sets.Technology
+        if "RES_CSP" ∈ Sets.Technology #TODO remove when data redundant
             try
                 Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
             catch e
@@ -339,9 +358,23 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 end
             end
         end
+        if "P_CSP" ∈ Sets.Technology
+            try
+                Params.CapacityFactor[r,"P_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Opt",Sets.Timeslice[i],y]
+            catch e
+                if isa(e, KeyError)
+                    Params.CapacityFactor[r,"P_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Avg",Sets.Timeslice[i],y]
+                end
+            end
+        end
 
-        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Commercial", "RES_PV_Rooftop_Residential"])
-            Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "HB_Solar_Thermal", "RES_PV_Rooftop_Commercial", "RES_PV_Rooftop_Residential", "P_PV_Rooftop_Commercial", "P_PV_Rooftop_Residential"]) # TODO remove when data redundant
+            if "RES_PV_Utility_Avg" in Sets.Technology # TODO remove when data redundant
+                Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+            end
+            if "P_PV_Utility_Avg" in Sets.Technology
+                Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Avg",Sets.Timeslice[i],y]
+            end
         end
     end end end
 

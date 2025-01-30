@@ -63,25 +63,42 @@ function timeseries_reduction!(Params, Sets, Switch)
 
     keys_mapping = Dict(
         "Power" => "LOAD",
-        "RES_PV_Utility_Avg" => "PV_AVG",
-        "RES_PV_Utility_Inf" => "PV_INF",
-        "RES_PV_Utility_Opt" => "PV_OPT",
-        "RES_PV_Utility_Tracking" => "PV_TRA",
-        "RES_Wind_Onshore_Avg" => "WIND_ONSHORE_AVG",
-        "RES_Wind_Onshore_Inf" => "WIND_ONSHORE_INF",
-        "RES_Wind_Onshore_Opt" => "WIND_ONSHORE_OPT",
-        "RES_Wind_Offshore_Transitional" => "WIND_OFFSHORE",
-        "RES_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP",
-        "RES_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW",
-        "Heat_Low_Residential" => "HEAT_LOW",
+        "RES_PV_Utility_Avg" => "PV_AVG", # TODO remove when data redundant
+        "RES_PV_Utility_Inf" => "PV_INF", # TODO remove when data redundant
+        "RES_PV_Utility_Opt" => "PV_OPT", # TODO remove when data redundant
+        "RES_PV_Utility_Tracking" => "PV_TRA", # TODO remove when data redundant
+        "RES_Wind_Onshore_Avg" => "WIND_ONSHORE_AVG", # TODO remove when data redundant
+        "RES_Wind_Onshore_Inf" => "WIND_ONSHORE_INF", # TODO remove when data redundant
+        "RES_Wind_Onshore_Opt" => "WIND_ONSHORE_OPT", # TODO remove when data redundant
+        "RES_Wind_Offshore_Transitional" => "WIND_OFFSHORE", # TODO remove when data redundant
+        "RES_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP", # TODO remove when data redundant
+        "RES_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW", # TODO remove when data redundant
+        "P_PV_Utility_Avg" => "PV_AVG",
+        "P_PV_Utility_Inf" => "PV_INF",
+        "P_PV_Utility_Opt" => "PV_OPT",
+        "P_PV_Utility_Tracking" => "PV_TRA",
+        "P_Wind_Onshore_Avg" => "WIND_ONSHORE_AVG",
+        "P_Wind_Onshore_Inf" => "WIND_ONSHORE_INF",
+        "P_Wind_Onshore_Opt" => "WIND_ONSHORE_OPT",
+        "P_Wind_Offshore_Transitional" => "WIND_OFFSHORE",
+        "P_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP",
+        "P_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW",
+        "Heat_Low_Residential" => "HEAT_LOW", # TODO remove when data redundant
+        "Heat_Buildings" => "HEAT_LOW",
+        "Heat_District" => "HEAT_LOW",
         "Cool_Low_Building" => "COOL_LOW",
-        "HLR_Heatpump_Aerial" => "HP_AIRSOURCE",
-        "HLR_Heatpump_Ground" => "HP_GROUNDSOURCE",
+        "HLR_Heatpump_Aerial" => "HP_AIRSOURCE", # TODO remove when data redundant
+        "HB_Heatpump_Aerial" => "HP_AIRSOURCE",
+        "HLR_Heatpump_Ground" => "HP_GROUNDSOURCE", # TODO remove when data redundant
+        "HB_Heatpump_Ground" => "HP_GROUNDSOURCE",
         "Mobility_Passenger" => "MOBILITY_PSNG",
         "Mobility_Freight" => "MOBILITY_PSNG",
-        "RES_Hydro_Small" => "HYDRO_ROR",
+        "RES_Hydro_Small" => "HYDRO_ROR", # TODO remove when data redundant
+        "P_Hydro_RoR" => "HYDRO_ROR",
         "Heat_High_Industrial" => "HEAT_HIGH",
-        "Heat_Medium_Industrial" => "HEAT_HIGH",
+        "Heat_Medium_Industrial" => "HEAT_HIGH", # TODO remove when data redundant
+        "Heat_MediumLow_Industrial" => "HEAT_HIGH",
+        "Heat_MediumHigh_Industrial" => "HEAT_HIGH",
         "Heat_Low_Industrial" => "HEAT_HIGH",
     )
 
@@ -340,9 +357,10 @@ function timeseries_reduction!(Params, Sets, Switch)
         ScaledCountryData[cde] .= round.(ScaledCountryData[cde], digits=6)
     end
 
-    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Low_Residential","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial", "Cool_Low_Building"])
-    capf_list=intersect(Sets.Technology, ["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
-    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small", "RES_PV_Utility_Avg"])
+    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Buildings","Heat_District","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_MediumLow_Industrial","Heat_MediumHigh_Industrial","Heat_High_Industrial", "Cool_Low_Building"]) # TODO remove when data redundant
+    capf_list=intersect(Sets.Technology, ["HLR_Heatpump_Aerial","HLR_Heatpump_Ground","HB_Heatpump_Aerial","HB_Heatpump_Ground","RES_PV_Utility_Opt","RES_Wind_Onshore_Opt","RES_Wind_Offshore_Transitional","RES_Wind_Onshore_Avg","RES_Wind_Offshore_Shallow","RES_PV_Utility_Inf",
+    "RES_Wind_Onshore_Inf","RES_Wind_Offshore_Deep","RES_PV_Utility_Tracking","RES_Hydro_Small", "RES_PV_Utility_Avg","P_PV_Utility_Opt","P_Wind_Onshore_Opt","P_Wind_Offshore_Transitional","P_Wind_Onshore_Avg","P_Wind_Offshore_Shallow","P_PV_Utility_Inf",
+    "P_Wind_Onshore_Inf","P_Wind_Offshore_Deep","P_PV_Utility_Tracking","P_Hydro_RoR", "P_PV_Utility_Avg"]) # TODO remove when data redundant
     tmp = ScaledCountryData["LOAD"] ./ length(Sets.Timeslice)
     for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
@@ -383,29 +401,45 @@ function timeseries_reduction!(Params, Sets, Switch)
         end
         for r ∈ Sets.Region_full
             if length(Sets.Timeslice) < 8760
-                if "HLR_Heatpump_Aerial" ∈ capf_list
-                    Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
+                if "HLR_Heatpump_Aerial" in capf_list # TODO remove when data redundant
+                    Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1 
                     Params.TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = ScaledCountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
                 end
-                if "HLR_Heatpump_Ground" ∈ capf_list
+                if "HB_Heatpump_Aerial" in capf_list
+                    Params.CapacityFactor[r,"HB_Heatpump_Aerial",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HB_Heatpump_Aerial",:,y] = ScaledCountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list # TODO remove when data redundant
                     Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
                     Params.TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = ScaledCountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
                 end
+                if "HB_Heatpump_Ground" ∈ capf_list
+                    Params.CapacityFactor[r,"HB_Heatpump_Ground",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HB_Heatpump_Ground",:,y] = ScaledCountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
+                end
 
-                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
+                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground", "HB_Heatpump_Aerial", "HB_Heatpump_Ground"]) # TODO remove when data redundant
                     Params.CapacityFactor[r,t,:,y] = ScaledCountryData[keys_mapping[t]][Sets.Timeslice,r]
                 end
             else
-                if "HLR_Heatpump_Aerial" ∈ capf_list
+                if "HLR_Heatpump_Aerial" ∈ capf_list # TODO remove when data redundant
                     Params.CapacityFactor[r,"HLR_Heatpump_Aerial",:,y] .= 1
                     Params.TimeDepEfficiency[r,"HLR_Heatpump_Aerial",:,y] = CountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
                 end
-                if "HLR_Heatpump_Ground" ∈ capf_list
+                if "HB_Heatpump_Aerial" ∈ capf_list
+                    Params.CapacityFactor[r,"HB_Heatpump_Aerial",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HB_Heatpump_Aerial",:,y] = CountryData["HP_AIRSOURCE"][Sets.Timeslice,r]
+                end
+                if "HLR_Heatpump_Ground" ∈ capf_list # TODO remove when data redundant
                     Params.CapacityFactor[r,"HLR_Heatpump_Ground",:,y] .= 1
                     Params.TimeDepEfficiency[r,"HLR_Heatpump_Ground",:,y] = CountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
                 end
+                if "HB_Heatpump_Ground" ∈ capf_list 
+                    Params.CapacityFactor[r,"HB_Heatpump_Ground",:,y] .= 1
+                    Params.TimeDepEfficiency[r,"HB_Heatpump_Ground",:,y] = CountryData["HP_GROUNDSOURCE"][Sets.Timeslice,r]
+                end
 
-                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground"])
+                for t ∈ setdiff(capf_list, ["HLR_Heatpump_Aerial", "HLR_Heatpump_Ground", "HB_Heatpump_Aerial", "HB_Heatpump_Ground"]) # TODO remove when data redundant
                     Params.CapacityFactor[r,t,:,y] = CountryData[keys_mapping[t]][:,r]
                 end
             end
