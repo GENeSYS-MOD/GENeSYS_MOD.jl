@@ -296,7 +296,7 @@ function read_params(in_data, Sets, Switch, Tags)
     AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", 𝓡, 𝓔, 𝓨)
     AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit", 𝓔, 𝓢𝓮, 𝓨)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel", 𝓕, 𝓔)
-    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", 𝓡, 𝓔, 𝓨)
+    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", 𝓡, 𝓔, 𝓨; inherit_base_world=true, base_region=dbr)
 
     GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
     TradeCapacity = create_daa(in_data,"Par_TradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
