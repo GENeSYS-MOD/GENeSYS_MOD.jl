@@ -1,1 +1,1 @@
-Dict{String, Any}[Dict("Objective" => 7.821862696519163e6, "solve" => Millisecond(5), "building" => Millisecond(1118507), "#Var" => 7935857, "#Constr" => 9184307)]
+Dict{String, Any}[Dict("Objective" => 7.7409713084785575e6, "solve" => DateTime("2025-02-13T15:01:00.530"), "building" => Millisecond(468308), "#Var" => 23642327, "#Constr" => 26787604)]
