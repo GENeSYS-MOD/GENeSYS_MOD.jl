@@ -400,7 +400,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
 
   
  
-  ############### Trade Capacities & Investments #############
+  ############### Trade Capacities & Investments ############# #EDITED
   
   for i ∈ eachindex(𝓨) for r ∈ 𝓡 for rr ∈ 𝓡 #Iterate per year y in 𝓨 (years), for each export region r in 𝓡 (regions) and and import region rr in 𝓡 (regions)
     if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0 # export region r, import region rr, power is fuel, y is year
