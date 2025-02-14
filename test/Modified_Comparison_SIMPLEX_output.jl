@@ -61,7 +61,7 @@ n_constr = []
     switch_endogenous_employment = 0
     employment_data_file = "None"
     switch_dispatch = 0
-    elmod_nthhour = 2000 #granularity at 4 days, try with 1000, 2000, 3000
+    elmod_nthhour = 500 #granularity at 4 days, try with 1000, 2000, 3000
     elmod_starthour = 0
     elmod_dunkelflaute = 0
     elmod_daystep = 0
@@ -169,7 +169,7 @@ n_constr = []
 
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "TradeInvestments_offshore_pipeline.txt"), "w") do file
+        open(joinpath(resultdir, "TradeInvestments_offshore_pipeline_TradeCostsH2_0.01_granularity500.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)

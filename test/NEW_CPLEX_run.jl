@@ -2,7 +2,7 @@ import Pkg
 cd("/cluster/home/fsalenca/Spesialization_project/GENeSYS_MOD.jl/src")
 Pkg.activate(".")
 Pkg.develop(path="/cluster/home/fsalenca/Spesialization_project/GENeSYS_MOD.jl")
-ENV["CPLEX_STUDIO_BINARIES"] = "/cluster/home/fsalenca/cplex/bin/x86-64_linux/"
+ENV["CPLEX_STUDIO_BINARIES"] = "/cluster/home/fsalenca/CPLEX_new_install/cplex/bin/x86-64_linux"
 
 # Z:/cplex/bin/x86-64_linux
 
@@ -67,7 +67,7 @@ n_constr = []
     switch_endogenous_employment=0
     employment_data_file="None"
     switch_dispatch=0
-    elmod_nthhour=1000
+    elmod_nthhour=400
     elmod_starthour=0
     elmod_dunkelflaute=0
     elmod_daystep=0
@@ -167,7 +167,7 @@ n_constr = []
 
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "$(n)_offshore.txt"), "w") do file
+        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_shadow.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)
@@ -216,3 +216,4 @@ for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n
         "#Constr" => c)]
     println(io, string)
 end
+
