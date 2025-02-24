@@ -430,12 +430,10 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
             base_name="TrC2b_TotalTradeCapacity|$(𝓨[i])|$(f)|$(r)|$(rr)")
           end
 
-          #-----------------ADDED-----------------
-          if f == Params.TagFuelToSubsets["TradeInvestments"] && i > 1 && Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] > 0  && Params.TradeCapacity[r,rr,f,Switch.StartYear] > 0
+          if f == "Power" && i > 1 && Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] > 0  && Params.TradeCapacity[r,rr,f,Switch.StartYear] > 0
             @constraint(model, (Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]]*YearlyDifferenceMultiplier(𝓨[i],Sets))*Vars.TotalTradeCapacity[𝓨[i-1],f,r,rr] >= Vars.NewTradeCapacity[𝓨[i],f,r,rr], 
             base_name="TrC3_NewTradeCapacityLimitPowerLines|$(𝓨[i])|Power|$(r)|$(rr)")
           end
-          #-------------------------------------------
 
           ## copy 433-436 and add one for TradeInvestments
         #end
@@ -456,36 +454,24 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps)
       if Params.TradeRoute[r,rr,f,𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] == 0 || i == 1
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
       end
-
-
-      #------------------ADDED------------------
-      if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != Params.TagFuelToSubsets["TradeInvestments"]
+      if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != "Power"
         @constraint(model, sum(Vars.Import[𝓨[i],l,f,rr,r] for l ∈ 𝓛) <= Vars.TotalTradeCapacity[𝓨[i],f,r,rr],
         base_name="TrC7_TradeCapacityLimitNonPower$(𝓨[i])|$(f)|$(r)|$(rr)")
       end
-      #-----------------------------------------
-
-      
-
-
     end
 
     ##copy 457-460 and add TradeInvestment
 
-    if Params.TradeRoute[r,rr, Params.TagFuelToSubsets["TradeInvestments"],𝓨[i]] > 0
-      @constraint(model, Vars.NewTradeCapacity[𝓨[i],Params.TagFuelToSubsets["TradeInvestments"],r,rr] >= Vars.NewTradeCapacity[𝓨[i],Params.TagFuelToSubsets["TradeInvestments"],rr,r] * Switch.set_symmetric_transmission,
+    if Params.TradeRoute[r,rr,"Power",𝓨[i]] > 0
+      @constraint(model, Vars.NewTradeCapacity[𝓨[i],"Power",r,rr] >= Vars.NewTradeCapacity[𝓨[i],"Power",rr,r] * Switch.set_symmetric_transmission,
       base_name="TrC6_SymmetricalTransmissionExpansion|$(𝓨[i])|$(r)|$(rr)")
     end
 
-  
-
     ##Why we have symmetric transmission, 465-468 should also appply fro pipeline
 
-    if Params.TradeRoute[r,rr,Params.TagFuelToSubsets["TradeInvestments"] ,𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,Params.TagFuelToSubsets["TradeInvestments"],𝓨[i]] == 0 || i==1
-      JuMP.fix(Vars.NewTradeCapacity[𝓨[i],Params.TagFuelToSubsets["TradeInvestments"],r,rr],0; force=true)
+    if Params.TradeRoute[r,rr,"Power",𝓨[i]] == 0 || Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0 || i==1
+      JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
     end
-
-   
 
     ##472-474 may be relevant for the TradeInvestemnt as well.
 
