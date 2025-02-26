@@ -44,7 +44,7 @@ n_constr = []
     emissionScenario="globalLimit"
     socialdiscountrate=0.05
     inputdir=joinpath("/cluster/home/fsalenca/oceangrid_case/Input")
-    resultdir = joinpath("/cluster/home/fsalenca/Spesialization_project/dev_jl/","Results", "Spatial")
+    resultdir = joinpath("/cluster/home/fsalenca/Spesialization_project/dev_jl/","Input", "New_CPLEX_Results")
     switch_infeasibility_tech=1
     switch_investLimit=1
     switch_ccs=0
@@ -167,7 +167,7 @@ n_constr = []
 
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_shadow.txt"), "w") do file
+        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_0.001_TradeInvestments_NEW_.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)
