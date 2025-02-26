@@ -167,7 +167,7 @@ n_constr = []
 
     elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_0.001_TradeInvestments_NEW_.txt"), "w") do file
+        open(joinpath(resultdir, "CPLEX_run_H2trade_on_800_test.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)
