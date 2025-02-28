@@ -156,9 +156,17 @@ n_constr = []
 
     s = (n - b)
 
-   
+    if occursin("INFEASIBLE",string(termination_status(model)))
+        if switch_iis == 1
+            println("Termination status:", termination_status(model), ". Computing IIS")
+            compute_conflict!(model)
+            println("Saving IIS to file")
+            print_iis(model)
+        else
+            error("Model infeasible. Turn on 'switch_iis' to compute and write the iis file or use `compute_conflict!`")
+        end
 
-    if termination_status(model) == MOI.OPTIMAL
+    elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
         open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_InfTest.txt"), "w") do file
             objective = objective_value(model)
