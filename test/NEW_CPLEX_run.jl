@@ -68,7 +68,7 @@ n_constr = []
     switch_endogenous_employment=0
     employment_data_file="None"
     switch_dispatch=0
-    elmod_nthhour=400
+    elmod_nthhour=300
     elmod_starthour=0
     elmod_dunkelflaute=0
     elmod_daystep=0
@@ -158,9 +158,9 @@ n_constr = []
 
    
 
-    if termination_status(model) == MOI.OPTIMAL
+
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_InfTest.txt"), "w") do file
+        open(joinpath(resultdir, "TradeInvestments_nth300_editedData.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)
@@ -192,9 +192,7 @@ n_constr = []
         append!(n_var, n_v)
         append!(n_constr, n_c)
         println(b, " ", s," ", objective_value(model)," ", n_v, " ",n_c)
-    else
-        println("Termination status:", termination_status(model), ".")
-    end
+   
 #end
 
 

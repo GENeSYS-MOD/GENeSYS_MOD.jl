@@ -207,6 +207,8 @@ n_constr = []
 
 
 # write everything in a text file
+
+#=
 io = open(joinpath(resultdir, "result_run_all.txt"), "w")
 for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n_constr)
     string = [Dict(
@@ -218,3 +220,4 @@ for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n
     println(io, string)
 end
 
+=#
