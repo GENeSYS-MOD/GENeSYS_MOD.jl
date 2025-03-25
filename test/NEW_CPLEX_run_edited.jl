@@ -37,7 +37,7 @@ n_constr = []
     DNLPsolver=Ipopt.Optimizer
     model_region="minimal"
     data_base_region="DE"
-    data_file="Data_Europe_GradualDevelopment_Input_cleaned_free" # Changed Full_Europe with Data_Europe_GradualDevelopment_Input_cleaned_free
+    data_file="Data_Europe_GradualDevelopment_Input_cleaned_free_original" # Changed Full_Europe with Data_Europe_GradualDevelopment_Input_cleaned_free
     hourly_data_file="Hourly_Data_Europe_v13"
     threads=30
     emissionPathway="MinimalExample"
@@ -45,7 +45,7 @@ n_constr = []
     socialdiscountrate=0.05
     inputdir=joinpath("/cluster/home/fsalenca/oceangrid_case/Input")
     resultdir = joinpath("/cluster/home/fsalenca/Spesialization_project/dev_jl/","Input", "New_CPLEX_Results")
-    switch_infeasibility_tech= 1
+    switch_infeasibility_tech = 1
     switch_investLimit=1
     switch_ccs=0
     switch_ramping=0
@@ -68,7 +68,7 @@ n_constr = []
     switch_endogenous_employment=0
     employment_data_file="None"
     switch_dispatch=0
-    elmod_nthhour=400
+    elmod_nthhour=365
     elmod_starthour=0
     elmod_dunkelflaute=0
     elmod_daystep=0
@@ -156,21 +156,12 @@ n_constr = []
 
     s = (n - b)
 
-    if occursin("INFEASIBLE",string(termination_status(model)))
-        if switch_iis == 1
-            println("Termination status:", termination_status(model), ". Computing IIS")
-            compute_conflict!(model)
-            println("Saving IIS to file")
-            print_iis(model)
-        else
-            error("Model infeasible. Turn on 'switch_iis' to compute and write the iis file or use `compute_conflict!`")
-        end
 
-    elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "CPLEX_run_H2trade_on_400_InfTest.txt"), "w") do file
+        open(joinpath(resultdir, "Newest_nth365_free_originalDataset_TradeInv.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
+
             for v in all_variables(model)
                 if value.(v) > 0
                     val = value.(v)
@@ -191,6 +182,24 @@ n_constr = []
                     println(file, "Demand[$y,$l,$f,$r] = $(Params.Demand[y,l,f,r])")
                 end
             end
+
+            #Curtailed energy
+            for  y ∈ axes(VarPar.CurtailedEnergy)[1], f ∈ axes(VarPar.CurtailedEnergy)[2], r ∈ axes(VarPar.CurtailedEnergy)[3], t ∈ axes(VarPar.CurtailedEnergy)[4],  
+                value = VarPar.CurtailedEnergy[y, f, r, t]
+                if value > 0
+                    println(file, "CurtailedEnergy[$y, $f, $r, $t] = $value")
+                end
+            end
+
+            #Capital Investments
+
+            #ROI_h2 and ROI_OW
+            
+
+          
+
+
+
         end
         append!(building_time,[b])
         append!(solving_time,[s])
@@ -200,15 +209,41 @@ n_constr = []
         append!(n_var, n_v)
         append!(n_constr, n_c)
         println(b, " ", s," ", objective_value(model)," ", n_v, " ",n_c)
-    else
-        println("Termination status:", termination_status(model), ".")
-    end
+   
 #end
 
+#=
+println("### Listing all constraint names in the model ###")
 
-# write everything in a text file
+for (F, S) in list_of_constraint_types(model)
+    for con in all_constraints(model, F, S)
+        println("Constraint Name: ", name(con))
+    end
+end
+
+println("### End of constraint list ###")
+=#
 
 #=
+for y in axes(Params.TradeRoute, 4)
+    for r in axes(Params.TradeRoute, 1)
+        for rr in axes(Params.TradeRoute, 2)
+            dual_value = nothing  # Ensure it's defined before the try block
+
+            try
+                dual_value = GENeSYS_MOD.genesysmod_getdualsbyname(
+                    model, Switch, "TradeInvDuals", 
+                    "TrC6_SymmetricalTransmissionExpansion|$(y)|$(r)|$(rr)"
+                )
+            catch e
+                @warn "Failed to retrieve dual value for TrC6_SymmetricalTransmissionExpansion|$(y)|$(r)|$(rr). Error: $e"
+            end
+        end
+    end
+end
+=#
+
+# write everything in a text file
 io = open(joinpath(resultdir, "result_run_all.txt"), "w")
 for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n_constr)
     string = [Dict(
@@ -220,4 +255,3 @@ for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n
     println(io, string)
 end
 
-=#

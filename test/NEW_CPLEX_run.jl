@@ -37,7 +37,7 @@ n_constr = []
     DNLPsolver=Ipopt.Optimizer
     model_region="minimal"
     data_base_region="DE"
-    data_file="Data_Europe_GradualDevelopment_Input_cleaned_free" # Changed Full_Europe with Data_Europe_GradualDevelopment_Input_cleaned_free
+    data_file="Data_Europe_GradualDevelopment_Input_cleaned_free_original" # Changed Full_Europe with Data_Europe_GradualDevelopment_Input_cleaned_free
     hourly_data_file="Hourly_Data_Europe_v13"
     threads=30
     emissionPathway="MinimalExample"
@@ -68,7 +68,7 @@ n_constr = []
     switch_endogenous_employment=0
     employment_data_file="None"
     switch_dispatch=0
-    elmod_nthhour=300
+    elmod_nthhour=365
     elmod_starthour=0
     elmod_dunkelflaute=0
     elmod_daystep=0
@@ -156,11 +156,19 @@ n_constr = []
 
     s = (n - b)
 
-   
+    if occursin("INFEASIBLE",string(termination_status(model)))
+        if switch_iis == 1
+            println("Termination status:", termination_status(model), ". Computing IIS")
+            compute_conflict!(model)
+            println("Saving IIS to file")
+            print_iis(model)
+        else
+            error("Model infeasible. Turn on 'switch_iis' to compute and write the iis file or use `compute_conflict!`")
+        end
 
-
+    elseif termination_status(model) == MOI.OPTIMAL
         VarPar = GENeSYS_MOD.genesysmod_variable_parameter(model, Sets, Params)
-        open(joinpath(resultdir, "TradeInvestments_nth300_editedData.txt"), "w") do file
+        open(joinpath(resultdir, "Newest_nth365_free_originalDataset_TradeInv.txt"), "w") do file
             objective = objective_value(model)
             println(file, "Objective = $objective")
             for v in all_variables(model)
@@ -192,11 +200,15 @@ n_constr = []
         append!(n_var, n_v)
         append!(n_constr, n_c)
         println(b, " ", s," ", objective_value(model)," ", n_v, " ",n_c)
-   
+    else
+        println("Termination status:", termination_status(model), ".")
+    end
 #end
 
 
 # write everything in a text file
+
+#=
 io = open(joinpath(resultdir, "result_run_all.txt"), "w")
 for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n_constr)
     string = [Dict(
@@ -208,3 +220,4 @@ for (b, s, o, v, c) in zip(building_time, solving_time, objective_list, n_var, n
     println(io, string)
 end
 
+=#
