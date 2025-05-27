@@ -258,6 +258,9 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                     end
                 end
             end
+            for f ∈ Maps.Tech_Fuel[t]
+                JuMP.unfix(Vars.AnnualTechnologyEmissionByMode[y,t,:,:,r])
+            end
         end end
 
         Params.TotalAnnualMaxCapacity[Sets.Region_full,"A_Air",:] .= 99999
