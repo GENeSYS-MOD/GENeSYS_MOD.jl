@@ -1,0 +1,26 @@
+name: Feature Request
+description: Suggest an idea or improvement.
+title: "[FEATURE] <your feature request title here>"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature. Please provide the following details.
+
+  - type: input
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Feature Description
+      description: What should this feature do?
+      placeholder: e.g., Add support for output in other file formats...
+    validations:
+      required: true
