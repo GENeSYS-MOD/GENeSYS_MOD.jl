@@ -1,0 +1,45 @@
+name: Bug Report
+description: File a report if something isn't working as expected.
+title: "[BUG] <your bug title here>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please fill out the details below.
+
+  - type: input
+    id: region
+    attributes:
+      label: Dataset / Region
+      description: What dataset or region did you use?
+      placeholder: e.g., MiddleEarth, Europe, ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error description
+      description: What exactly went wrong?
+      placeholder: Problem description.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce the bug?
+      placeholder: |
+        1. Go to '...'
+        2. Run '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Optional - Relevant Logs / Screenshots
+      description: Please copy and paste any relevant log output or screenshots.
