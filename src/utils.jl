@@ -47,7 +47,7 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
         indices = collect(Base.Iterators.product(var.axes...))
         data = [NamedTuple{tup_dim}(ind) for ind in indices if var_val[ind...] != 0]
         values = [var_val[ind...] for ind in indices if var_val[ind...] != 0]
-        
+
         df = DataFrame(data)
         df[!, value_col] = values
     else
@@ -61,7 +61,7 @@ end
 Creates DenseAxisArrays containing the input parameters to the model considering hierarchy
 with base region data and world data.
 
-The function creates a DenseAxisArray for a given parameter indexed by the given sets. The 
+The function creates a DenseAxisArray for a given parameter indexed by the given sets. The
 values are intialized to 0. If copy world is true, the value for the region world are copied.
 If inherit_base_world is 1, missing data will be fetched from the base region if they exist
 and again from the world region if necessary.
@@ -74,7 +74,7 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, els...;inherit_base_world=
     # Fill in values from Excel
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -119,7 +119,7 @@ function create_daa(in_data::XLSX.XLSXFile, tab_name, els...;inherit_base_world=
     return A
 end
 
-function read_subsets(in_data::XLSX.XLSXFile, tab_name) 
+function read_subsets(in_data::XLSX.XLSXFile, tab_name)
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
 
     A=Dict()
@@ -129,7 +129,7 @@ function read_subsets(in_data::XLSX.XLSXFile, tab_name)
     return A
 end
 
-#= function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims) 
+#= function create_daa(in_data::XLSX.XLSXFile, tab_name, cdims)
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
 
     # Initialize all combinations to zero:
@@ -138,7 +138,7 @@ end
     # Fill in values from Excel
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -154,7 +154,7 @@ function create_daa(in_data::DataFrame, tab_name, els...) # els contains the Set
     # Fill in values from Excel
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.y 
+            A[r[1:end-1]...] = r.y
         catch err
             @debug err
         end
@@ -163,7 +163,7 @@ function create_daa(in_data::DataFrame, tab_name, els...) # els contains the Set
 end
 
 """
-Create dense axis array initialized at a given value. 
+Create dense axis array initialized at a given value.
 """
 function create_daa_init(in_data, tab_name,init_value=0, els...;inherit_base_world=false,copy_world=false, base_region="DE") # els contains the Sets, col_names is the name of the columns in the df as symbols
     df = DataFrame(XLSX.gettable(in_data[tab_name];first_row=1))
@@ -173,7 +173,7 @@ function create_daa_init(in_data, tab_name,init_value=0, els...;inherit_base_wor
     # Fill in values from Excel
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -233,7 +233,7 @@ function specified_demand_profile(time_series_data,Sets)
         Sets.Region_full, Sets.Fuel, Sets.Timeslice, Sets.Year)
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -264,7 +264,7 @@ function year_split(time_series_data,Sets)
         Sets.Timeslice, Sets.Year)
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -295,7 +295,7 @@ function capacity_factor(time_series_data,Sets)
         Sets.Region_full, Sets.Technology, Sets.Timeslice, Sets.Year)
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -326,7 +326,7 @@ function read_x_peakingDemand(time_series_data,Sets)
         Sets.Region_full, Sets.Sector)
     for r in eachrow(df)
         try
-            A[r[1:end-1]...] = r.Value 
+            A[r[1:end-1]...] = r.Value
         catch err
             @debug err
         end
@@ -399,7 +399,7 @@ It allows a faster analysis of iis files.
 """
 function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=true,digits=3)
     constraints = String[]
-    
+
     # Read the file
     open(file_path) do file
         for line in eachline(file)
@@ -419,7 +419,7 @@ function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=
             lhs=sides[1]
             rhs=sides[2]
             lhs_els = split(lhs,['+','-'])
-            if parse(Float64,rhs) == 0 && length(lhs_els) == 1 
+            if parse(Float64,rhs) == 0 && length(lhs_els) == 1
                 push!(null_constraint_vars,lhs_els[1])
             else
                 push!(constraints_to_simplify,con)
@@ -430,9 +430,9 @@ function simplify_iis(file_path;output_filename="simplified_iis",round_numerics=
     end
 
     for con in constraints_to_simplify
-        pieces = split_by_substrings(con,["==",">=","<="]) 
+        pieces = split_by_substrings(con,["==",">=","<="])
         lhs = pieces[1]
-        sign = pieces[2] 
+        sign = pieces[2]
         rhs = pieces[3]
         els=split(lhs,[' '])
         for var in null_constraint_vars
@@ -524,7 +524,7 @@ end
 
 function read_capacities(; file, nam, year, technology, region)
     A = JuMP.Containers.DenseAxisArray(
-        zeros(length(year), length(technology), length(region)), 
+        zeros(length(year), length(technology), length(region)),
         year, technology, region)
 
     open(file, "r") do f
@@ -539,13 +539,13 @@ function read_capacities(; file, nam, year, technology, region)
                 end
             end
         end
-    end  
+    end
     return A
 end
 
 function read_trade_capacities(; file, nam, year, technology, region)
     A = JuMP.Containers.DenseAxisArray(
-        zeros(length(year), length(technology), length(region), length(region)), 
+        zeros(length(year), length(technology), length(region), length(region)),
         year, technology, region, region)
 
     open(file, "r") do f
@@ -558,19 +558,19 @@ function read_trade_capacities(; file, nam, year, technology, region)
                 region1 = split(parts, ",")[3]
                 region2 = split(split(parts, ",")[4], "]")[1]
                 value = parse(Float64, split(split(line, "]")[2], "= ")[2])
-        
+
                 if y ∈ year && region1 ∈ region && region2 ∈ region && tech ∈ technology
                     A[y, tech, region1, region2] = value
                 end
             end
         end
     end
-    return A 
+    return A
 end
 
 function read_storage_capacities(; file, nam, year, technology, region)
     A = JuMP.Containers.DenseAxisArray(
-        zeros(length(technology), length(year), length(region)), 
+        zeros(length(technology), length(year), length(region)),
         technology, [2050], region)
 
     open(file, "r") do f
@@ -578,11 +578,11 @@ function read_storage_capacities(; file, nam, year, technology, region)
             line = readline(f)
             if startswith(line, nam)
                 parts = split(line, "[")
-    
+
                 y = parse(Int, split(parts[2], ",")[2])
                 tech = split(parts[2],",")[1]
                 r = split(split(parts[2],",")[3],"]")[1]
-    
+
                 if r ∈ region && tech ∈ technology
                     value = parse(Float64, split(split(line, "]")[2], "= ")[2])
                     A[tech, 2050, r] += value
@@ -591,4 +591,23 @@ function read_storage_capacities(; file, nam, year, technology, region)
         end
     end
     return A
+end
+
+function violations(model, tol=1e-4)
+	res = []
+	if termination_status(model) == INFEASIBLE &&
+	   dual_status(model) == INFEASIBILITY_CERTIFICATE
+		for (F, S) in list_of_constraint_types(model)
+			cons = all_constraints(model, F, S)
+			for i in eachindex(cons)
+				if isassigned(cons, i)
+					con = cons[i]
+					if abs(dual(con)) > tol
+						push!(res, con)
+					end
+				end
+			end
+		end
+	end
+	res
 end

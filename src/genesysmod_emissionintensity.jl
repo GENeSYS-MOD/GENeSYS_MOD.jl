@@ -39,14 +39,16 @@ function genesysmod_emissionintensity(model, Sets, Params, VarPar, Vars, TierFiv
         for f ∈ TierFive
             SectorEmissions[y,r,f,e] = sum(value(Vars.AnnualTechnologyEmissionByMode[y,t,e,m,r])*Params.OutputActivityRatio[r,t,f,m,y] for (t,m) ∈ LoopSetOutput[(r,f,y)])
 
-            EmissionIntensity[y,r,f,e] = SectorEmissions[y,r,f,e]/VarPar.ProductionAnnual[y,f,r]
+            if VarPar.ProductionAnnual[y,f,r] != 0
+                EmissionIntensity[y,r,f,e] = SectorEmissions[y,r,f,e]/VarPar.ProductionAnnual[y,f,r]
+            end
         end
 
-        EmissionIntensity[y,r,"Power",e] = SectorEmissions[y,r,"Power",e]/
-        sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ 𝓣 if Params.TagTechnologyToSector[t,"Storages"] == 0)
-    
+        if sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ 𝓣 if Params.TagTechnologyToSector[t,"Storages"] == 0) != 0
+            EmissionIntensity[y,r,"Power",e] = SectorEmissions[y,r,"Power",e]/
+            sum(value(model[:ProductionByTechnologyAnnual][y,t,"Power",r]) for t ∈ 𝓣 if Params.TagTechnologyToSector[t,"Storages"] == 0)
+        end
     end end end
 
     return SectorEmissions, EmissionIntensity
 end
-

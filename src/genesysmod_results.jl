@@ -483,34 +483,47 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         append!(output_exogenous_costs, df_tmp)
     end
 
-    ### parameter output_trade_capacity
+    ### parameter output_trade
 
-    colnames = [:Region, :Region2, :Type, :Year, :Value]
-    output_trade_capacity = DataFrame([name => [] for name in colnames])
+    colnames = [:Region, :Region2, :Fuel, :Type, :Year, :Value]
+    output_trade = DataFrame([name => [] for name in colnames])
 
-    df_tmp = convert_jump_container_to_df(value.(Vars.TotalTradeCapacity[:,["Power"],:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
-    df_tmp[!,:Type] .= "Power Transmissions Capacity"
+    df_tmp = convert_jump_container_to_df(value.(Vars.TotalTradeCapacity[:,:,:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
+    df_tmp[!,:Type] .= "Transmissions Capacity"
     if !isempty(df_tmp)
         select!(df_tmp,colnames)
-        append!(output_trade_capacity, df_tmp)
+        append!(output_trade, df_tmp)
     end
 
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Region_full, Sets.Region_full)
-    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
-        tmp[y,r,rr] = Params.TradeCapacityGrowthCosts[r,rr,"Power"]*Params.TradeRoute[r,rr,"Power",y]
-    end end end
-    df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Region, :Region2])
+    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
+        tmp[y,f,r,rr] = Params.TradeCapacityGrowthCosts[r,rr,f]*Params.TradeRoute[r,rr,f,y]
+    end end end end
+    df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Transmission Expansion Costs in MEUR/GW"
     if !isempty(df_tmp)
          select!(df_tmp,colnames)
-        append!(output_trade_capacity, df_tmp)
+        append!(output_trade, df_tmp)
     end
 
     r2 = (length(Sets.Region_full) > 1 ? 2 : 1)
     df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],"Power"]))
     if !isempty(df_tmp)
         select!(df_tmp,colnames)
-        append!(output_trade_capacity, df_tmp)
+        append!(output_trade, df_tmp)
+    end
+
+    df_tmp = convert_jump_container_to_df(value.(Vars.Export[:,:,:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
+    df_tmp[!,:Type] .= "Export"
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_trade, df_tmp)
+    end
+    df_tmp = convert_jump_container_to_df(value.(Vars.Import[:,:,:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
+    df_tmp[!,:Type] .= "Import"
+    if !isempty(df_tmp)
+        select!(df_tmp,colnames)
+        append!(output_trade, df_tmp)
     end
 
     ### parameters SelfSufficiencyRate,ElectrificationRate,output_other
@@ -943,6 +956,6 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     CSV.write(joinpath(Switch.resultdir[],"output_model_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_model[output_model.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir[],"output_technology_costs_detailed_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_technology_costs_detailed[output_technology_costs_detailed.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir[],"output_exogenous_costs_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_exogenous_costs[output_exogenous_costs.Value .!= 0, :])
-    CSV.write(joinpath(Switch.resultdir[],"output_trade_capacity_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade_capacity[output_trade_capacity.Value .!= 0, :])
+    CSV.write(joinpath(Switch.resultdir[],"output_trade_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_trade[output_trade.Value .!= 0, :])
     CSV.write(joinpath(Switch.resultdir[],"output_energydemandstatistics_$(Switch.model_region)_$(Switch.emissionPathway)_$(Switch.emissionScenario)_$(extr_str).csv"), output_energydemandstatistics[output_energydemandstatistics.Value .!= 0, :])
 end

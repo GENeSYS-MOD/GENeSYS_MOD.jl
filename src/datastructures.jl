@@ -36,6 +36,8 @@ struct Tags <: InputClass
     RETagTechnology::JuMP.Containers.DenseAxisArray
     RETagFuel::JuMP.Containers.DenseAxisArray
     TagDispatchableTechnology::JuMP.Containers.DenseAxisArray
+    TagModalTypeToModalGroups::JuMP.Containers.DenseAxisArray
+    TagCanFuelBeTraded::JuMP.Containers.DenseAxisArray
 end
 
 """
@@ -299,6 +301,7 @@ struct Parameters <: InputClass
     Tags ::Tags
 
     SpecifiedAnnualDemand ::JuMP.Containers.DenseAxisArray
+    SpecifiedDemandDevelopment ::JuMP.Containers.DenseAxisArray
     SpecifiedDemandProfile ::JuMP.Containers.DenseAxisArray
     RateOfDemand ::JuMP.Containers.DenseAxisArray
     Demand ::JuMP.Containers.DenseAxisArray
@@ -330,6 +333,7 @@ struct Parameters <: InputClass
     StorageMaxCapacity ::JuMP.Containers.DenseAxisArray
 
     TotalAnnualMaxCapacity ::JuMP.Containers.DenseAxisArray
+    NewCapacityExpansionStop ::JuMP.Containers.DenseAxisArray
     TotalAnnualMinCapacity ::JuMP.Containers.DenseAxisArray
 
     AnnualSectoralEmissionLimit ::JuMP.Containers.DenseAxisArray
@@ -346,8 +350,6 @@ struct Parameters <: InputClass
     ReserveMarginTagFuel ::JuMP.Containers.DenseAxisArray
     ReserveMargin ::JuMP.Containers.DenseAxisArray
 
-    REMinProductionTarget ::JuMP.Containers.DenseAxisArray
-
     EmissionActivityRatio ::JuMP.Containers.DenseAxisArray
     EmissionContentPerFuel ::JuMP.Containers.DenseAxisArray
     EmissionsPenalty ::JuMP.Containers.DenseAxisArray
@@ -356,6 +358,8 @@ struct Parameters <: InputClass
     AnnualEmissionLimit ::JuMP.Containers.DenseAxisArray
     RegionalAnnualEmissionLimit ::JuMP.Containers.DenseAxisArray
     ModelPeriodExogenousEmission ::JuMP.Containers.DenseAxisArray
+    AnnualMinNewCapacity ::JuMP.Containers.DenseAxisArray
+    AnnualMaxNewCapacity ::JuMP.Containers.DenseAxisArray
     ModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray
     RegionalModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray
     CurtailmentCostFactor ::JuMP.Containers.DenseAxisArray
@@ -365,13 +369,15 @@ struct Parameters <: InputClass
     TradeLossFactor ::JuMP.Containers.DenseAxisArray
     TradeRouteInstalledCapacity ::JuMP.Containers.DenseAxisArray
     TradeLossBetweenRegions ::JuMP.Containers.DenseAxisArray
-    CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
 
     TradeCapacity ::JuMP.Containers.DenseAxisArray
+    CommissionedTradeCapacity ::JuMP.Containers.DenseAxisArray
+    REMinProductionTarget ::JuMP.Containers.DenseAxisArray
     TradeCapacityGrowthCosts ::JuMP.Containers.DenseAxisArray
     GrowthRateTradeCapacity ::JuMP.Containers.DenseAxisArray
 
     SelfSufficiency ::JuMP.Containers.DenseAxisArray
+    ProductionGrowthLimit ::JuMP.Containers.DenseAxisArray
 
     RampingUpFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}
     RampingDownFactor ::Union{Nothing,JuMP.Containers.DenseAxisArray}
@@ -476,6 +482,7 @@ struct Variables
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
     BaseYearBounds_TooLow ::JuMP.Containers.DenseAxisArray
     BaseYearBounds_TooHigh ::JuMP.Containers.DenseAxisArray
+    HeatingSlack ::JuMP.Containers.DenseAxisArray
 
     DiscountedSalvageValueTransmission ::JuMP.Containers.DenseAxisArray
 
@@ -508,8 +515,6 @@ Model settings necessary for running the model
     Value between 0 and 1. Used only if switch_base_year_bounds is set to 1.\n
 - **`PhaseIn ::Dict`** TODO.\n
 - **`PhaseOut ::Dict`** TODO.\n
-- **`StorageLevelYearStartUpperLimit ::Float64`** TODO.\n
-- **`StorageLevelYearStartLowerLimit ::Float64`** TODO.\n
 """
 struct Settings <: InputClass
     DepreciationMethod ::JuMP.Containers.DenseAxisArray
@@ -518,15 +523,12 @@ struct Settings <: InputClass
     SocialDiscountRate ::JuMP.Containers.DenseAxisArray
     InvestmentLimit ::Float64
     NewRESCapacity ::Float64
-    ProductionGrowthLimit ::JuMP.Containers.DenseAxisArray
-    StorageLimitOffset  ::Float64
+    StorageLimitOffset ::Float64
     Trajectory2020UpperLimit ::Float64
     Trajectory2020LowerLimit ::Float64
     BaseYearSlack ::JuMP.Containers.DenseAxisArray
     PhaseIn ::Dict
     PhaseOut ::Dict
-    StorageLevelYearStartUpperLimit ::Float64
-    StorageLevelYearStartLowerLimit ::Float64
 end
 
 """
@@ -788,6 +790,10 @@ struct Switch <: InputClass
     switch_ramping ::Int16
     switch_weighted_emissions ::Int16
     set_symmetric_transmission ::Float16
+    switch_hydrogen_blending_share ::Float16
+    set_storagelevelstart_up ::Float16
+    set_storagelevelstart_down ::Float16
+    E2P_ration_deviation_factor ::Float16
     switch_intertemporal ::Int16
     switch_base_year_bounds ::Int16
     switch_base_year_bounds_debugging ::Int8

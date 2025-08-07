@@ -30,7 +30,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
      "Heat_High_Industrial"]
 
     for r ∈ Sets.Region_full for y ∈ Sets.Year
-        for t ∈ intersect(Sets.Technology,Params.Tags.TagTechnologyToSubsets["Renewables"])
+        for t ∈ intersect(Sets.Technology,Params.Tags.TagTechnologyToSubsets["EmergingTechnologies"])
             Params.Tags.RETagTechnology[r,t,y] = 1
         end
         for f ∈ intersect(Sets.Fuel,sub)
@@ -64,20 +64,25 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             end
     end end
 
-    f="ETS"
     for r ∈ Sets.Region_full
         for rr ∈ Sets.Region_full
-            if Params.TradeCosts[f,r,rr] == 0
-                Params.TradeCosts[f,r,rr] = 0.01
-    end end end
+            for y ∈ Sets.Year
+                if Params.TradeCosts[r,"ETS",y,rr] == 0
+                    Params.TradeCosts[r,"ETS",y,rr] = 0.01
+    end end end end
 
-    for r ∈ Sets.Region_full
+    for r ∈ Sets.Region_full for m ∈ Sets.Mode_of_operation for y ∈ Sets.Year
         for t ∈ Sets.Technology
-            for m ∈ Sets.Mode_of_operation
-                for y ∈ Sets.Year
-                    if Params.VariableCost[r,t,m,y]==0
-                        Params.VariableCost[r,t,m,y] = 0.01
-    end end end end end
+            if t == "Power"
+                if Params.VariableCost[r,t,m,y]==0
+                    Params.VariableCost[r,t,m,y] = 0.001
+                end
+            else
+                if Params.VariableCost[r,t,m,y]==0
+                    Params.VariableCost[r,t,m,y] = 0.01
+                end
+            end
+    end end end end
 
     #
     # ####### Dummy-Technologies [enable for test purposes, if model runs infeasible] #############
@@ -89,12 +94,14 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
         output_activity_dict = Dict(
             "Infeasibility_HLI" => "Heat_Low_Industrial",
-            "Infeasibility_HMI" => "Heat_Medium_Industrial",
+            "Infeasibility_HMI" => ["Heat_MediumHigh_Industrial","Heat_MediumLow_Industrial"],
             "Infeasibility_HHI" => "Heat_High_Industrial",
-            "Infeasibility_HRI" => "Heat_Low_Residential",
+            "Infeasibility_HRI" => "Heat_Buildings",
             "Infeasibility_Power" => "Power",
             "Infeasibility_Mob_Passenger" => "Mobility_Passenger",
-            "Infeasibility_Mob_Freight" => "Mobility_Freight")
+            "Infeasibility_Mob_Freight" => "Mobility_Freight",
+            "Infeasibility_H2" => "H2",
+            "Infeasibility_Natural_Gas2" => "Gas_Natural",)
 
         for (k,v) ∈ output_activity_dict
             try
@@ -125,16 +132,18 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             if t ∈ vcat(Params.Tags.TagTechnologyToSubsets["Transformation"],Params.Tags.TagTechnologyToSubsets["FossilPower"],Params.Tags.TagTechnologyToSubsets["FossilFuelGeneration"],
                 Params.Tags.TagTechnologyToSubsets["CHP"],Params.Tags.TagTechnologyToSubsets["Transport"],Params.Tags.TagTechnologyToSubsets["ImportTechnology"],Params.Tags.TagTechnologyToSubsets["Biomass"],"P_Biomass")
                 for y ∈ Sets.Year
-                    Params.TotalAnnualMaxCapacity[r,t,y] = 999999
+                    if Params.TotalAnnualMaxCapacity[r,t,y] == 0
+                        Params.TotalAnnualMaxCapacity[r,t,y] = 999999
+                    end
                 end
             end
     end end
 
-    for r ∈ Sets.Region_full
+#=     for r ∈ Sets.Region_full
         for t ∈ Params.Tags.TagTechnologyToSubsets["ImportTechnology"]
             for y ∈ Sets.Year
                 Params.AvailabilityFactor[r,t,y] = 1
-    end end end
+    end end end =#
 
     for r ∈ Sets.Region_full
         for t ∈ Sets.Technology
@@ -142,7 +151,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 for l ∈ Sets.Timeslice
                     for y ∈ Sets.Year
                         Params.CapacityFactor[r,t,l,y] = 1
-                end end
+                    end
+                end
     end end end
 
     for r ∈ Sets.Region_full
@@ -154,7 +164,8 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     for r ∈ Sets.Region_full
         for t ∈ Params.Tags.TagTechnologyToSubsets["ImportTechnology"]
             Params.TotalTechnologyModelPeriodActivityUpperLimit[r,t] = 999999
-    end end
+        end
+    end
 
     #
     # ####### Bounds for storage technologies #############
@@ -168,26 +179,28 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #CapacityFactor(r,Heat,l,y)$(sum(ll,CapacityFactor(r,Heat,ll,y)) = 0) = 1;
     #Params.CapacityFactor[[x ∈ Subsets.Heat for x ∈ Params.CapacityFactor[!,:Technology]], :Value] .= 1
 
-    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Residential"])
-        Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"RES_PV_Rooftop_Commercial",l,y]
+    for r ∈ Sets.Region_full, l ∈ Sets.Timeslice, y ∈ Sets.Year, t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HB_Solar_Thermal", "HD_Solar_Thermal", "P_PV_Rooftop_Residential"])
+        Params.CapacityFactor[r,t,l,y] = Params.CapacityFactor[r,"P_PV_Rooftop_Commercial",l,y]
     end
     #
     # ####### No new capacity construction in 2015 #############
     #
     if Switch.switch_dispatch == 0
         for r ∈ Sets.Region_full
-            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Transformation"],Params.Tags.TagTechnologyToSubsets["PowerSupply"], Params.Tags.TagTechnologyToSubsets["SectorCoupling"], Params.Tags.TagTechnologyToSubsets["StorageDummies"]))
+            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Transformation"],
+                Params.Tags.TagTechnologyToSubsets["PowerSupply"], Params.Tags.TagTechnologyToSubsets["SectorCoupling"],
+                Params.Tags.TagTechnologyToSubsets["StorageDummies"], Params.Tags.TagTechnologyToSubsets["CHP"],
+                Params.Tags.TagTechnologyToSubsets["Transport"]))
                 JuMP.fix(Vars.NewCapacity[Switch.StartYear,t,r],0; force=true)
             end
-            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Biomass"],Params.Tags.TagTechnologyToSubsets["CHP"],["HLR_Gas_Boiler","HLI_Gas_Boiler","HHI_BF_BOF",
-                "HHI_Bio_BF_BOF","HHI_Scrap_EAF","HHI_DRI_EAF", "D_Gas_Methane"]))
+            for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Biomass"],["D_Gas_Methane", "X_SMR"]))
                 if JuMP.is_fixed(Vars.NewCapacity[Switch.StartYear,t,r])
                     JuMP.unfix(Vars.NewCapacity[Switch.StartYear,t,r])
                 end
             end
         end
 
-        if "CHP" ∈ Sets.Sector
+        #= if "CHP" ∈ Sets.Sector
             for t ∈ Sets.Technology
                 if Params.Tags.TagTechnologyToSector[t,"CHP"] == 1
                     for r ∈ Sets.Region_full
@@ -197,7 +210,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                     end
                 end
             end
-        end
+        end =#
     end
 
 
@@ -212,14 +225,14 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     ### Adds (negligible) variable costs to transport technologies, since they only had fuel costs before
     ### This is to combat strange "curtailment" effects of some transportation technologies
-    for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Transport"])
+    #= for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Transport"])
         Params.VariableCost[r,t,:,:] .= 0.09
-    end end
+    end end =#
 
     #
     # ####### Dispatch and Curtailment #############
     #
-    subs = vcat(intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Wind"]), ["RES_Hydro_Small"])
+    subs = vcat(intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Solar"]), intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["Wind"]), ["P_Hydro_RoR"])
     Params.Tags.TagDispatchableTechnology[subs] = zeros(length(intersect(Sets.Technology,subs)))
     Params.CurtailmentCostFactor == 0.1
 
@@ -322,7 +335,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
             end =#
             for l ∈ Sets.Timeslice
                 Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Large",r] = 0.1
-                Params.MinActiveProductionPerTimeslice[y,l,"Power","RES_Hydro_Small",r] = 0.05
+                Params.MinActiveProductionPerTimeslice[y,l,"Power","P_Hydro_RoR",r] = 0.05
             end
         end end
     end
@@ -337,34 +350,35 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
         if Switch.switch_dispatch==0
-            for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HLR", "S_Heat_HLI"])
+            for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HB_Tank_Small", "S_Heat_HLI_Tank_Large", "S_CAES"])
                 if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
                     JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)
                 end
             end
         end
-        if "RES_CSP" ∈ Sets.Technology
+        if "P_CSP" ∈ Sets.Technology
             try
-                Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Opt",Sets.Timeslice[i],y]
+                Params.CapacityFactor[r,"P_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Opt",Sets.Timeslice[i],y]
             catch e
                 if isa(e, KeyError)
-                    Params.CapacityFactor[r,"RES_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+                    Params.CapacityFactor[r,"P_CSP",Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Avg",Sets.Timeslice[i],y]
                 end
             end
         end
 
-        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HLR_Solar_Thermal", "RES_PV_Rooftop_Commercial", "RES_PV_Rooftop_Residential"])
-            Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"RES_PV_Utility_Avg",Sets.Timeslice[i],y]
+        for t ∈ intersect(Sets.Technology, ["HLI_Solar_Thermal", "HB_Solar_Thermal", "HD_Solar_Thermal", "P_PV_Rooftop_Commercial", "P_PV_Rooftop_Residential"])
+            Params.CapacityFactor[r,t,Sets.Timeslice[i],y] = Params.CapacityFactor[r,"P_PV_Utility_Avg",Sets.Timeslice[i],y]
         end
     end end end
 
-    #for r ∈ Sets.Region_full for s in Sets.Storage for y ∈ Sets.Year
-        #Params.CapitalCostStorage[r,s,y] = CapitalCostStorage[r,s,y]/365*8760/Switch.elmod_nthhour/(24/Switch.elmod_hourstep)
+    for r ∈ Sets.Region_full for s in Sets.Storage for y ∈ Sets.Year
+        Params.CapitalCostStorage[r,s,y] = max(round(Params.CapitalCostStorage[r,s,y]/365*8760/Switch.elmod_nthhour/(24/Switch.elmod_hourstep),sigdigits=4),0.01)
+    end end end
 
-        #@constraint(model, Vars.StorageUpperLimit[s,y,r] <= sum(Params.TotalCapacityAnnual[y,t,r] * Partams.StorageE2PRatio[s] * 0.0036 * 3 for t in Sets.Technology for m in Sets.Mode_of_operation if Params.TechnologyToStorage[t,s,m,y] != 0),
-        #base_name="Add_E2PRatio_up|$(s)|$(y)|$(r)")
-        #@constraint(model, Vars.StorageUpperLimit[s,y,r] >= sum(Params.TotalCapacityAnnual[y,t,r] * Partams.StorageE2PRatio[s] * 0.0036 * 0.5 for t in Sets.Technology for m in Sets.Mode_of_operation if Params.TechnologyToStorage[t,s,m,y] != 0),
-        #base_name="Add_E2PRatio_low|$(s)|$(y)|$(r)")
+
+    #=loop(y,
+    SpecifiedAnnualDemand(r,f,y)$(not sameas(f,'H2') and YearVal(y)>%year%) = SpecifiedAnnualDemand(r,f,y-1)*(1+SpecifiedDemandDevelopment(r,f,y)*YearlyDifferenceMultiplier(y-1))
+    ) =#
 end
 
 function YearlyDifferenceMultiplier(y,Sets);

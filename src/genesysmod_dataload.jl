@@ -139,13 +139,13 @@ function add_extras_sets!(Technology, Storage, s_infeas, s_dispatch)
 end
 
 function add_extras_sets!(Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch)
-    append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
+    append!(Technology, ["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas"])
 end
 
 function add_extras_sets!(Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    append!(Technology, ["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight","D_Trade_Storage_Power"])
+    append!(Technology, ["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas","D_Trade_Storage_Power"])
     push!(Storage,"S_Trade_Storage_Power")
 end
 
@@ -167,6 +167,7 @@ function read_tags(in_data, Sets, Switch, s_infeas, s_dispatch)
     𝓛 = Sets.Timeslice
     𝓢 = Sets.Storage
     𝓜𝓽 = Sets.ModalType
+    #𝓜𝓰 = Sets.ModalGroups
     𝓢𝓮 = Sets.Sector
 
     update_sectors!(Sets.Sector,s_infeas)
@@ -180,9 +181,13 @@ function read_tags(in_data, Sets, Switch, s_infeas, s_dispatch)
     RETagTechnology = DenseArray(zeros(length(𝓡), length(𝓣), length(𝓨)), 𝓡, 𝓣, 𝓨)
     RETagFuel = DenseArray(zeros(length(𝓡), length(𝓕), length(𝓨)), 𝓡, 𝓕, 𝓨)
     TagDispatchableTechnology = DenseArray(ones(length(𝓣)), 𝓣)
+    #TagModalTypeToModalGroups = create_daa(in_data, "Par_TagModalTypeToModalGroups", 𝓜𝓽, 𝓜𝓰)
+    TagModalTypeToModalGroups = create_daa(in_data, "Par_TagModalTypeToModalGroups", 𝓜𝓽, ["TransportModes","ModalSubgroups"])
+    TagCanFuelBeTraded = create_daa(in_data, "Par_TagCanFuelBeTraded", 𝓕)
 
     tags = Tags(TagTechnologyToSubsets,TagFuelToSubsets,TagDemandFuelToSector,TagElectricTechnology,
-    TagTechnologyToModalType,TagTechnologyToSector,RETagTechnology,RETagFuel,TagDispatchableTechnology)
+    TagTechnologyToModalType,TagTechnologyToSector,RETagTechnology,RETagFuel,TagDispatchableTechnology,
+    TagModalTypeToModalGroups,TagCanFuelBeTraded)
 
     add_extras_tags!(tags, Sets, s_infeas, s_dispatch)
 
@@ -193,13 +198,13 @@ function add_extras_tags!(tags::Tags, sets, s_infeas, s_dispatch)
 end
 
 function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight"])
+    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas"])
 end
 
 function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "D_Trade_Storage_Power"])
+    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
+    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas", "D_Trade_Storage_Power"])
     push!(tags.TagTechnologyToSubsets["StorageDummies"], "D_Trade_Storage_Power")
 end
 
@@ -215,8 +220,10 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_Natural_Gas","Natural_Gas",1,:] .= 1
 
     Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
     Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -245,8 +252,10 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_Natural_Gas","Natural_Gas",1,:] .= 1
 
     Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
     Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -316,6 +325,7 @@ function read_params(in_data, Sets, Switch, Tags)
     CapacityToActivityUnit = create_daa(in_data, "Par_CapacityToActivityUnit", 𝓣)
     RegionalBaseYearProduction = create_daa(in_data, "Par_RegionalBaseYearProduction", 𝓡, 𝓣, 𝓕, 𝓨)
     SpecifiedAnnualDemand = create_daa(in_data, "Par_SpecifiedAnnualDemand", 𝓡, 𝓕, 𝓨)
+    SpecifiedDemandDevelopment = create_daa(in_data, "Par_SpecifiedDemandDevelopment", 𝓡, 𝓕, 𝓨)
 
     AnnualEmissionLimit = create_daa(in_data,"Par_AnnualEmissionLimit", 𝓔, 𝓨)
     AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", 𝓡, 𝓔, 𝓨)
@@ -325,17 +335,24 @@ function read_params(in_data, Sets, Switch, Tags)
 
     GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
     TradeCapacity = create_daa(in_data,"Par_TradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
+    CommissionedTradeCapacity = create_daa(in_data,"Par_CommissionedTradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
+    REMinProductionTarget = create_daa(in_data,"Par_REMinProductionTarget", 𝓡, 𝓕, 𝓨)
+    SelfSufficiency = create_daa(in_data,"Par_SelfSufficiency", 𝓡, 𝓕, 𝓨)
+    ProductionGrowthLimit = create_daa(in_data, "Par_ProductionGrowthLimit", 𝓕, 𝓨)
     Readin_TradeRoute2015 = create_daa(in_data,"Par_TradeRoute", 𝓡, 𝓡, 𝓕)
     TradeRoute = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
     for y ∈ 𝓨
         TradeRoute[:,:,:,y] = Readin_TradeRoute2015
     end
     TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts", 𝓡, 𝓡, 𝓕)
-    TradeCosts = create_daa(in_data,"Par_TradeCosts", 𝓕, 𝓡, 𝓡)
+    #TradeCosts = create_daa(in_data,"Par_TradeCosts", 𝓕, 𝓡, 𝓡)
+    TradeCostFactor = create_daa(in_data,"Par_TradeCostFactor", 𝓕, 𝓨)
+
 
     ResidualCapacity = create_daa(in_data, "Par_ResidualCapacity", 𝓡, 𝓣, 𝓨)
 
     TotalAnnualMaxCapacity = create_daa(in_data, "Par_TotalAnnualMaxCapacity", 𝓡, 𝓣, 𝓨)
+    NewCapacityExpansionStop = create_daa(in_data, "Par_NewCapacityExpansionStop", 𝓡, 𝓣)
     TotalAnnualMinCapacity = create_daa(in_data, "Par_TotalAnnualMinCapacity", 𝓡, 𝓣, 𝓨)
     TotalTechnologyAnnualActivityUpperLimit = create_daa(in_data, "Par_TotalAnnualMaxActivity", 𝓡, 𝓣, 𝓨)
     TotalTechnologyAnnualActivityLowerLimit = create_daa(in_data, "Par_TotalAnnualMinActivity", 𝓡, 𝓣, 𝓨)
@@ -353,9 +370,13 @@ function read_params(in_data, Sets, Switch, Tags)
 
     ModalSplitByFuelAndModalType = create_daa(in_data, "Par_ModalSplitByFuel", 𝓡, 𝓕, 𝓨, 𝓜𝓽)
 
-
-    StorageE2PRatio = nothing
-    #StorageE2PRatio = create_daa(in_data, "Par_StorageE2PRatio",dbr, 𝓢)
+    #StorageE2PRatio = nothing
+    StorageE2PRatio = create_daa(in_data, "Par_StorageE2PRatio", 𝓢)
+    ModelPeriodEmissionLimit = create_daa(in_data, "Par_ModelPeriodEmissionLimit", 𝓔)
+    RegionalModelPeriodEmissionLimit = create_daa(in_data, "Par_RegionalModelPeriodEmission", 𝓡, 𝓔)
+    ModelPeriodExogenousEmission = create_daa(in_data, "Par_ModelPeriodExogenousEmissio", 𝓡, 𝓔)
+    AnnualMinNewCapacity = create_daa(in_data, "Par_AnnualMinNewCapacity", 𝓡, 𝓣, 𝓨)
+    AnnualMaxNewCapacity = create_daa(in_data, "Par_AnnualMaxNewCapacity", 𝓡, 𝓣, 𝓨)
 
     RateOfDemand = DenseArray(zeros(length.([𝓨, 𝓛, 𝓕, 𝓡])...), 𝓨, 𝓛, 𝓕, 𝓡)
     Demand = DenseArray(zeros(length.([𝓨, 𝓛, 𝓕, 𝓡])...), 𝓨, 𝓛, 𝓕, 𝓡)
@@ -364,26 +385,24 @@ function read_params(in_data, Sets, Switch, Tags)
     TotalAnnualMinCapacityInvestment = DenseArray(zeros(length.([𝓡, 𝓣, 𝓨])...), 𝓡, 𝓣, 𝓨)
     TotalTechnologyModelPeriodActivityLowerLimit = DenseArray(zeros(length.([𝓡, 𝓣])...), 𝓡, 𝓣)
 
-    REMinProductionTarget = DenseArray(zeros(length.([𝓡, 𝓕, 𝓨])...), 𝓡, 𝓕, 𝓨)
-
-    ModelPeriodExogenousEmission = DenseArray(zeros(length.([𝓡, 𝓔])...), 𝓡, 𝓔)
-    ModelPeriodEmissionLimit = DenseArray(fill(999999, length(𝓔)), 𝓔)
-    RegionalModelPeriodEmissionLimit = DenseArray(fill(999999, length.([𝓔,𝓡])...), 𝓔, 𝓡)
-
     CurtailmentCostFactor = DenseArray(fill(0.1,length.([𝓡, 𝓕, 𝓨])...), 𝓡, 𝓕, 𝓨)
     TradeLossFactor = DenseArray(zeros(length.([𝓕, 𝓨])...), 𝓕, 𝓨)
     TradeRouteInstalledCapacity = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
     TradeLossBetweenRegions = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
-
-    CommissionedTradeCapacity = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
-
-    SelfSufficiency = DenseArray(zeros(length.([𝓨, 𝓕, 𝓡])...), 𝓨, 𝓕, 𝓡)
 
     SpecifiedDemandProfile = DenseArray(zeros(length.([𝓡, 𝓕, 𝓛, 𝓨])...), 𝓡, 𝓕, 𝓛, 𝓨)
     YearSplit = DenseArray(ones(length.([𝓛, 𝓨])...) * 1/length(𝓛), 𝓛, 𝓨)
     TimeDepEfficiency = DenseArray(ones(length.([𝓡, 𝓣, 𝓛, 𝓨])...), 𝓡, 𝓣, 𝓛, 𝓨)
     x_peakingDemand = DenseArray(zeros(length.([𝓡, 𝓢𝓮])...),𝓡, 𝓢𝓮)
 
+
+    TradeCosts = DenseArray(zeros(length.([𝓡, 𝓕, 𝓨, 𝓡])...), 𝓡, 𝓕, 𝓨, 𝓡)
+    for r ∈ 𝓡, f ∈ 𝓕, y ∈ 𝓨, rr ∈ 𝓡
+        TradeCosts[r,f,y,rr] = TradeCostFactor[f,y]*TradeRoute[r,rr,f,y]
+        if GrowthRateTradeCapacity[r,rr,f,y] == 0
+            GrowthRateTradeCapacity[r,rr,f,y] = GrowthRateTradeCapacity[r,rr,f,Switch.StartYear]
+        end
+    end
 
     if Switch.switch_ramping == 1
         RampingUpFactor = create_daa(in_data, "Par_RampingUpFactor", 𝓣,𝓨)
@@ -438,25 +457,25 @@ function read_params(in_data, Sets, Switch, Tags)
         emp_Sets=Emp_Sets(nothing,nothing,nothing)
     end
 
-    Params = Parameters(YearSplit,Tags,SpecifiedAnnualDemand,
-    SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
+    Params = Parameters(YearSplit,Tags,SpecifiedAnnualDemand, SpecifiedDemandDevelopment,
+    SpecifiedDemandProfile, RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     RegionalBaseYearProduction,TimeDepEfficiency,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
     StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
-    TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
+    TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity, NewCapacityExpansionStop,TotalAnnualMinCapacity,
     AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,
     TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,
     TotalTechnologyAnnualActivityLowerLimit, TotalTechnologyModelPeriodActivityUpperLimit,
     TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,
-    ReserveMarginTagFuel,ReserveMargin,REMinProductionTarget,
+    ReserveMarginTagFuel,ReserveMargin,
     EmissionActivityRatio, EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
-    ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
-    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,CommissionedTradeCapacity,
-    TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
-    RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
+    TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
+    TradeCapacity, CommissionedTradeCapacity,REMinProductionTarget,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
+    ProductionGrowthLimit, RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
     ModalSplitByFuelAndModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,

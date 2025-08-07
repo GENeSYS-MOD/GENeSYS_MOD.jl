@@ -160,14 +160,13 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AnnualTechnologyEmissionsPenalty = @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray)
     DiscountedTechnologyEmissionsPenalty = @variable(model, DiscountedTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray)
     AnnualEmissions = @variable(model, AnnualEmissions[𝓨,𝓔,𝓡], container=DenseArray)
-    ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓔,𝓡], container=DenseArray)
+    ModelPeriodEmissions = @variable(model, ModelPeriodEmissions[𝓡,𝓔], container=DenseArray)
     WeightedAnnualEmissions = @variable(model, WeightedAnnualEmissions[𝓨,𝓔,𝓡], container=DenseArray)
 
 
     ######### SectoralEmissions #############
 
     AnnualSectoralEmissions = @variable(model, AnnualSectoralEmissions[𝓨,𝓔,𝓢𝓮,𝓡], container=DenseArray)
-
 
 
     ######### Trade #############
@@ -178,7 +177,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     NewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
     DiscountedNewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
     for y ∈ 𝓨 for f ∈ 𝓕 for r1 ∈ 𝓡 for r2 ∈ 𝓡
-        if Params.TradeRoute[r1,r2,f,y] != 0
+        if (Params.TradeRoute[r1,r2,f,y] != 0) && (Params.Tags.TagCanFuelBeTraded[f] != 0)
             for l ∈ 𝓛
                 Import[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Import[$y,$l,$f,$r1,$r2]")
                 Export[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Export[$y,$l,$f,$r1,$r2]")
@@ -262,6 +261,8 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     end end end
     model[:BaseYearBounds_TooLow] = BaseYearBounds_TooLow
     model[:BaseYearBounds_TooHigh] = BaseYearBounds_TooHigh
+    HeatingSlack= @variable(model, HeatingSlack[𝓡, 𝓨], container=DenseArray)
+
     DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=DenseArray)
 
     Vars = GENeSYS_MOD.Variables(NewCapacity,AccumulatedNewCapacity,TotalCapacityAnnual,
@@ -282,7 +283,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     DiscountedNewTradeCapacityCosts,NetTrade,NetTradeAnnual,AnnualTotalTradeCosts,
     DiscountedAnnualTotalTradeCosts,DemandSplitByModalType,ProductionSplitByModalType,
     ProductionUpChangeInTimeslice,ProductionDownChangeInTimeslice,
-    RateOfTotalActivity,BaseYearSlack,BaseYearBounds_TooLow,BaseYearBounds_TooHigh, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
+    RateOfTotalActivity,BaseYearSlack,BaseYearBounds_TooLow,BaseYearBounds_TooHigh, HeatingSlack, DiscountedSalvageValueTransmission,PeakingDemand,PeakingCapacity,
     AnnualProductionChangeCost,DiscountedAnnualProductionChangeCost)
     return Vars
 end

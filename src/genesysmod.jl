@@ -28,16 +28,17 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022",
     threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit",
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\",
-    switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=0,
-    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
-    switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0,
-    set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025,
-    switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 0,
+    switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=1,
+    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0, switch_hydrogen_blending_share = 1,
+    set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ration_deviation_factor = 2,
+    switch_intertemporal=0, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
+    set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.25, set_peaking_startyear = 2030,
+    switch_peaking_with_storages = 1, switch_peaking_with_trade = 1,switch_peaking_minrun = 0,
     switch_employment_calculation = 0, switch_endogenous_employment = 0,
     employment_data_file = "", elmod_nthhour = 0, elmod_starthour = 8,
     elmod_dunkelflaute = 0, switch_raw_results = NoRawResult(), switch_processed_results = 0, write_reduced_timeserie = 1, switch_LCOE_calc=0,
     switch_reserve=0,switch_base_year_bounds_debugging=0,
-    extr_str_results = "inv_run", extr_str_dispatch="dispatch_run")
+    extr_str_results = "inv_run", extr_str_dispatch="dispatch_run",switch_iis=1)
 
     if elmod_nthhour != 0 && (elmod_daystep !=0 || elmod_hourstep !=0)
         @warn "Both elmod_nthhour and elmod_daystep/elmod_hourstep are defined.
@@ -78,6 +79,10 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_ramping,
     switch_weighted_emissions,
     set_symmetric_transmission,
+    switch_hydrogen_blending_share,
+    set_storagelevelstart_up,
+    set_storagelevelstart_down,
+    E2P_ration_deviation_factor,
     switch_intertemporal,
     switch_base_year_bounds,
     switch_base_year_bounds_debugging,
@@ -130,7 +135,14 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     genesysmod_bounds(model,Sets,Params,Vars,Settings,switch,Maps)
 
-    # create tech, fuel and mode of operation mapping
+    #
+    # ####### load additional bounds and data for certain scenarios #############
+    #
+    if isfile("genesysmod_scenariodata_$(switch.model_region).jl")
+        include("genesysmod_scenariodata_$(switch.model_region).jl")
+    else
+        @warn "No scenario data for region $(switch.model_region) found!"
+    end
 
     #
     # ####### Including Equations #############
