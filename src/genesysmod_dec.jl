@@ -150,7 +150,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     AnnualTechnologyEmissionByMode = def_daa(𝓨,𝓣,𝓔,𝓜,𝓡)
     for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔
         for m ∈ Maps.Tech_MO[t]
-            AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, lower_bound = 0, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
+            AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
         end
     end end end end
     model[:AnnualTechnologyEmissionByMode] = AnnualTechnologyEmissionByMode
