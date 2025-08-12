@@ -28,5 +28,6 @@ employment_data_file = "",
 elmod_dunkelflaute= 0,
 switch_raw_results = CSVResult(),
 switch_processed_results = 1,
-switch_dispatch = OneNodeSimple("DE")
+switch_dispatch = OneNodeSimple("DE"),
+model_region="europe"
 )

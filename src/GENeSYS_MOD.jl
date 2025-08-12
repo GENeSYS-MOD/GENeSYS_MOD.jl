@@ -50,6 +50,7 @@ include("genesysmod_results.jl")
 include("genesysmod_levelizedcosts.jl")
 include("genesysmod_emissionintensity.jl")
 include("genesysmod_dispatch.jl")
+include.(filter(f-> occursin(r".jl$",f) && occursin("scenariodata",f), readdir(joinpath(pkgdir(GENeSYS_MOD,"src")))))
 
 export genesysmod, genesysmod_dispatch
 export NoInfeasibilityTechs, WithInfeasibilityTechs # for use with the switch infeasibility_techs

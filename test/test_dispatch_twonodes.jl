@@ -28,5 +28,6 @@ employment_data_file = "",
 elmod_dunkelflaute= 0,
 switch_raw_results = TXTResult("result_test"),
 switch_processed_results = 1,
-switch_dispatch = TwoNodes("DE")
+switch_dispatch = TwoNodes("DE"),
+model_region="europe"
 );

@@ -495,7 +495,7 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         append!(output_trade, df_tmp)
     end
 
-    tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Region_full, Sets.Region_full)
+    tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
     for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
         tmp[y,f,r,rr] = Params.TradeCapacityGrowthCosts[r,rr,f]*Params.TradeRoute[r,rr,f,y]
     end end end end
@@ -506,20 +506,33 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         append!(output_trade, df_tmp)
     end
 
+    tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),1,1), Sets.Year, Sets.Fuel, ["General"], ["General"])
     r2 = (length(Sets.Region_full) > 1 ? 2 : 1)
-    df_tmp = DataFrame(Dict(:Region => "General", :Region2 => "General",:Type => "Transmission Expansion Costs in MEUR/GW/km",:Year => "General",:Value => Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],"Power"]))
+    for y ∈ Sets.Year for f ∈ Sets.Fuel
+        tmp[y,f,"General","General"] = Params.TradeCapacityGrowthCosts[Sets.Region_full[1],Sets.Region_full[r2],f]
+    end end
+    df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
+    df_tmp[!,:Type] .= "Transmission Expansion Costs in MEUR/GW/km"
     if !isempty(df_tmp)
         select!(df_tmp,colnames)
         append!(output_trade, df_tmp)
     end
 
-    df_tmp = convert_jump_container_to_df(value.(Vars.Export[:,:,:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
+    tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
+    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
+        tmp[y,f,r,rr] = sum(value.(Vars.Export[y,l,f,r,rr]) for l in Sets.Timeslice)
+    end end end end
+    df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Export"
     if !isempty(df_tmp)
         select!(df_tmp,colnames)
         append!(output_trade, df_tmp)
     end
-    df_tmp = convert_jump_container_to_df(value.(Vars.Import[:,:,:,:]);dim_names=[:Year, :Fuel, :Region, :Region2])
+    tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
+    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
+        tmp[y,f,r,rr] = sum(value.(Vars.Import[y,l,f,r,rr]) for l in Sets.Timeslice)
+    end end end end
+    df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Import"
     if !isempty(df_tmp)
         select!(df_tmp,colnames)

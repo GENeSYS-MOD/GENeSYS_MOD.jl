@@ -138,10 +138,15 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     #
     # ####### load additional bounds and data for certain scenarios #############
     #
-    if isfile("genesysmod_scenariodata_$(switch.model_region).jl")
-        include("genesysmod_scenariodata_$(switch.model_region).jl")
+    
+    scn_file = "genesysmod_scenariodata_$(switch.model_region).jl"
+    scn_path = joinpath(pkgdir(GENeSYS_MOD),"src", scn_file)
+    if isfile(scn_path)
+        modname = Symbol("ScenarioData", uppercasefirst(switch.model_region))
+        scenario_module = getfield(GENeSYS_MOD, modname)
+        scenario_module.genesysmod_scenariodata(model,Sets,Params,Vars,switch)
     else
-        @warn "No scenario data for region $(switch.model_region) found!"
+        @warn "No scenario data for region $(switch.model_region) found at $(scn_path)!"
     end
 
     #
@@ -167,7 +172,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         set_optimizer_attribute(model, "CPX_PARAM_SOLUTIONTYPE", 2)
         env = model.moi_backend.optimizer.model.env
-        CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
+        CPLEX.CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
     elseif string(solver) == "HiGHS.Optimizer"
         set_optimizer_attribute(model, "solver", "ipm")

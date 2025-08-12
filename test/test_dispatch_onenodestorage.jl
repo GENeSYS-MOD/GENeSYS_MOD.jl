@@ -29,5 +29,6 @@ elmod_dunkelflaute= 0,
 #switch_raw_results = CSVResult(),
 switch_raw_results = TXTResult("result_test"),
 switch_processed_results = 1,
-switch_dispatch = OneNodeStorage("DE")
+switch_dispatch = OneNodeStorage("DE"),
+model_region="europe"
 );

@@ -446,7 +446,6 @@ struct Variables
     DemandNeedingReserveMargin ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
     TotalREProductionAnnual ::JuMP.Containers.DenseAxisArray
-    RETotalDemandOfTargetFuelAnnual ::JuMP.Containers.DenseAxisArray
     TotalTechnologyModelPeriodActivity ::JuMP.Containers.DenseAxisArray
     RETargetMin ::JuMP.Containers.DenseAxisArray
 
@@ -479,7 +478,6 @@ struct Variables
 
     RateOfTotalActivity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
-    BaseYearSlack ::JuMP.Containers.DenseAxisArray
     BaseYearBounds_TooLow ::JuMP.Containers.DenseAxisArray
     BaseYearBounds_TooHigh ::JuMP.Containers.DenseAxisArray
     HeatingSlack ::JuMP.Containers.DenseAxisArray

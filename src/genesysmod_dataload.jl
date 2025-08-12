@@ -216,9 +216,10 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
     Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumLow_Industrial",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumHigh_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Buildings",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
@@ -248,9 +249,10 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
     Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_Medium_Industrial",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumLow_Industrial",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumHigh_Industrial",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Low_Residential",1,:] .= 1
+    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Buildings",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
     Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
