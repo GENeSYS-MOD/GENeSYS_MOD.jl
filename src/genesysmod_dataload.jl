@@ -125,7 +125,7 @@ function read_sets(in_data, Switch, s_infeas, s_dispatch)
     ModalType = DataFrame(XLSX.gettable(in_data["Sets"],"G";first_row=1))[!,"ModalType"]
     Sector = DataFrame(XLSX.gettable(in_data["Sets"],"H";first_row=1))[!,"Sector"]
 
-    add_extras_sets!(Technology, Storage, s_infeas, s_dispatch)
+    add_extras_sets!(in_data, Technology, Storage, s_infeas, s_dispatch)
     add_dummy_region!(Region_full, s_dispatch)
     Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
 
@@ -135,17 +135,18 @@ function read_sets(in_data, Switch, s_infeas, s_dispatch)
     return sets
 end
 
-function add_extras_sets!(Technology, Storage, s_infeas, s_dispatch)
+function add_extras_sets!(in_data, Technology, Storage, s_infeas, s_dispatch)
 end
 
-function add_extras_sets!(Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch)
-    append!(Technology, ["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas"])
+function add_extras_sets!(in_data, Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch)
+    TagFuelToSubsets = read_subsets(in_data, "Par_TagFuelToSubsets")
+    end_uses = union(["Power"], TagFuelToSubsets["HeatFuels"], TagFuelToSubsets["TransportFuels"])
+    append!(Technology, ["Infeasibility_$(end_use)" for end_use in end_uses])
 end
 
-function add_extras_sets!(Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    append!(Technology, ["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas","D_Trade_Storage_Power"])
+function add_extras_sets!(in_data, Technology, Storage, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
+    add_extras_sets!(in_data, Technology, Storage, s_infeas, NoDispatch())
+    append!(Technology, ["D_Trade_Storage_Power"])
     push!(Storage,"S_Trade_Storage_Power")
 end
 
@@ -189,22 +190,23 @@ function read_tags(in_data, Sets, Switch, s_infeas, s_dispatch)
     TagTechnologyToModalType,TagTechnologyToSector,RETagTechnology,RETagFuel,TagDispatchableTechnology,
     TagModalTypeToModalGroups,TagCanFuelBeTraded)
 
-    add_extras_tags!(tags, Sets, s_infeas, s_dispatch)
+    add_extras_tags!(in_data, tags, Sets, s_infeas, s_dispatch)
 
     return tags
 end
 
-function add_extras_tags!(tags::Tags, sets, s_infeas, s_dispatch)
+function add_extras_tags!(in_data, tags::Tags, sets, s_infeas, s_dispatch)
 end
 
-function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas"])
+function add_extras_tags!(in_data, tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch)
+    TagFuelToSubsets = read_subsets(in_data, "Par_TagFuelToSubsets")
+    end_uses = union(["Power"], TagFuelToSubsets["HeatFuels"], TagFuelToSubsets["TransportFuels"])
+    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_$(end_use)" for end_use in end_uses])
 end
 
-function add_extras_tags!(tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    tags.TagTechnologyToSubsets["DummyTechnology"] = intersect(sets.Technology,["Infeasibility_Power", "Infeasibility_H2", "Infeasibility_HLI", "Infeasibility_HMI",
-    "Infeasibility_HHI", "Infeasibility_HRI", "Infeasibility_Mob_Passenger", "Infeasibility_Mob_Freight", "Infeasibility_Natural_Gas", "D_Trade_Storage_Power"])
+function add_extras_tags!(in_data, tags::Tags, sets, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
+    add_extras_tags!(in_data, tags, sets, s_infeas, NoDispatch())
+    push!(tags.TagTechnologyToSubsets["DummyTechnology"], "D_Trade_Storage_Power")
     push!(tags.TagTechnologyToSubsets["StorageDummies"], "D_Trade_Storage_Power")
 end
 
@@ -215,16 +217,10 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.Tags.TagTechnologyToSector[Params.Tags.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
     Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
 
-    Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumLow_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumHigh_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Buildings",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Natural_Gas","Natural_Gas",1,:] .= 1
+    end_uses = union(["Power"], Params.Tags.TagFuelToSubsets["HeatFuels"], Params.Tags.TagFuelToSubsets["TransportFuels"])
+    for end_use in end_uses
+        Params.OutputActivityRatio[:,"Infeasibility_$(end_use)",end_use,1,:] .= 1
+    end
 
     Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
     Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
@@ -236,45 +232,16 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1
     Params.EmissionActivityRatio[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
 
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_ROAD"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_RAIL"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_AIR"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_ROAD"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_RAIL"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_SHIP"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Passenger",1,"MT_PSNG_ROAD"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Passenger",1,"MT_PSNG_RAIL"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Passenger",1,"MT_PSNG_AIR"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Freight",1,"MT_FRT_ROAD"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Freight",1,"MT_FRT_RAIL"] .= 1
+    Params.Tags.TagTechnologyToModalType["Infeasibility_Mobility_Freight",1,"MT_FRT_SHIP"] .= 1
 end
 
 function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dispatch::OneNodeStorage)
-    Params.Tags.TagTechnologyToSector[Params.Tags.TagTechnologyToSubsets["DummyTechnology"],"Infeasibility"] .= 1
-    Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 0
-
-    Params.OutputActivityRatio[:,"Infeasibility_HLI","Heat_Low_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumLow_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HMI","Heat_MediumHigh_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HHI","Heat_High_Industrial",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_HRI","Heat_Buildings",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Power","Power",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_H2","H2",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Passenger","Mobility_Passenger",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Mob_Freight","Mobility_Freight",1,:] .= 1
-    Params.OutputActivityRatio[:,"Infeasibility_Natural_Gas","Natural_Gas",1,:] .= 1
-
-    Params.CapacityToActivityUnit[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 31.56
-    Params.TotalAnnualMaxCapacity[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999999
-    Params.FixedCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
-    Params.CapitalCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 999
-    Params.VariableCost[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 999
-    Params.AvailabilityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:] .= 1
-    Params.CapacityFactor[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:] .= 1
-    Params.OperationalLife[Params.Tags.TagTechnologyToSubsets["DummyTechnology"]] .= 1
-    Params.EmissionActivityRatio[:,Params.Tags.TagTechnologyToSubsets["DummyTechnology"],:,:,:] .= 0
-
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_ROAD"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_RAIL"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Passenger",1,"MT_PSNG_AIR"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_ROAD"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_RAIL"] .= 1
-    Params.Tags.TagTechnologyToModalType["Infeasibility_Mob_Freight",1,"MT_FRT_SHIP"] .= 1
+    update_inftechs_params!(Params, s_infeas, NoDispatch())
 
     Params.OutputActivityRatio[:,"D_Trade_Storage_Power","Power",2,:] .= 1
     Params.InputActivityRatio[:,"D_Trade_Storage_Power","Power",1,:] .= 1
@@ -333,7 +300,7 @@ function read_params(in_data, Sets, Switch, Tags)
     AnnualExogenousEmission = create_daa(in_data,"Par_AnnualExogenousEmission", 𝓡, 𝓔, 𝓨)
     AnnualSectoralEmissionLimit = create_daa(in_data, "Par_AnnualSectoralEmissionLimit", 𝓔, 𝓢𝓮, 𝓨)
     EmissionContentPerFuel = create_daa(in_data, "Par_EmissionContentPerFuel", 𝓕, 𝓔)
-    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", 𝓡, 𝓔, 𝓨)
+    RegionalAnnualEmissionLimit = create_daa(in_data,"Par_RegionalAnnualEmissionLimit", 𝓡, 𝓔, 𝓨; inherit_base_world=true, base_region=dbr)
 
     GrowthRateTradeCapacity = create_daa(in_data, "Par_GrowthRateTradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)
     TradeCapacity = create_daa(in_data,"Par_TradeCapacity", 𝓡, 𝓡, 𝓕, 𝓨)

@@ -138,7 +138,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     #
     # ####### load additional bounds and data for certain scenarios #############
     #
-    
+
     scn_file = "genesysmod_scenariodata_$(switch.model_region).jl"
     scn_path = joinpath(pkgdir(GENeSYS_MOD),"src", scn_file)
     if isfile(scn_path)
@@ -171,8 +171,8 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         set_optimizer_attribute(model, "CPX_PARAM_SOLUTIONTYPE", 2)
-        env = model.moi_backend.optimizer.model.env
-        CPLEX.CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
+        #env = model.moi_backend.optimizer.model.env
+        #CPLEX.CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
     elseif string(solver) == "HiGHS.Optimizer"
         set_optimizer_attribute(model, "solver", "ipm")

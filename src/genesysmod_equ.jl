@@ -474,10 +474,11 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
       base_name="TrC6_SymmetricalTransmissionExpansion|$(𝓨[i])|$(r)|$(rr)")
     end
 
-    if Params.TradeRoute[r,rr,"Power",𝓨[i]] != 0 && Params.GrowthRateTradeCapacity[r,rr,"Power",𝓨[i]] == 0
-      JuMP.fix(Vars.NewTradeCapacity[𝓨[i],"Power",r,rr],0; force=true)
+    for f ∈ 𝓕
+        if Params.TradeRoute[r,rr,f,𝓨[i]] != 0 && (Params.Tags.TagCanFuelBeTraded[f] != 0) && (Params.GrowthRateTradeCapacity[r,rr,f,𝓨[i]] == 0 || i == 1)
+            JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
+        end
     end
-
   #=     for f ∈ 𝓕
       if f != "Power"
         JuMP.fix(Vars.NewTradeCapacity[𝓨[i],f,r,rr],0; force=true)
@@ -597,13 +598,13 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
               if Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] != 0
                 for t ∈ intersect(Maps.Fuel_Tech[f],Params.Tags.TagTechnologyToSubsets["PhaseInSet"])
                     @constraint(model,
-                    Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] >= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseIn[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1),
+                    Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] >= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseIn[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1),
                     base_name="SC3_SmoothingRenewableIntegration|$(𝓨[i])|$(r)|$(t)|$(f)")
                 end
 
                 for t ∈ intersect(Maps.Fuel_Tech[f],Params.Tags.TagTechnologyToSubsets["PhaseOutSet"])
                     @constraint(model,
-                    Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] <= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseOut[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1),
+                    Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] <= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseOut[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1),
                     base_name="SC3_SmoothingFossilPhaseOuts|$(𝓨[i])|$(r)|$(t)|$(f)")
                 end
               end

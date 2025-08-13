@@ -74,14 +74,20 @@ function timeseries_reduction!(Params, Sets, Switch)
         "P_Wind_Offshore_Deep" => "WIND_OFFSHORE_DEEP",
         "P_Wind_Offshore_Shallow" => "WIND_OFFSHORE_SHALLOW",
         "Heat_Buildings" => "HEAT_LOW",
+        "Heat_District" => "HEAT_LOW",
+        "Cool_Low_Building" => "COOL_LOW",
         "HB_Heatpump_Aerial" => "HP_AIRSOURCE",
         "HB_Heatpump_Ground" => "HP_GROUNDSOURCE",
         "Mobility_Passenger" => "MOBILITY_PSNG",
+        "Mobility_Freight" => "MOBILITY_PSNG",
         "P_Hydro_RoR" => "HYDRO_ROR",
         "Heat_High_Industrial" => "HEAT_HIGH",
+        "Heat_MediumLow_Industrial" => "HEAT_HIGH",
+        "Heat_MediumHigh_Industrial" => "HEAT_HIGH",
+        "Heat_Low_Industrial" => "HEAT_HIGH",
     )
 
-    Country_Data_Entries= [keys_mapping[k] for k ∈ intersect(keys(keys_mapping), union(Sets.Fuel, Sets.Technology))]
+    Country_Data_Entries= unique([keys_mapping[k] for k ∈ intersect(keys(keys_mapping), union(Sets.Fuel, Sets.Technology))])
 
     sector_to_tech = Dict(
         "Industry"=>"HEAT_HIGH",
@@ -147,14 +153,21 @@ function timeseries_reduction!(Params, Sets, Switch)
     for r ∈ Sets.Region_full
         if sum(CountryData["LOAD"][l,r] for l ∈ Sets.Timeslice) != 0
             AverageCapacityFactor["LOAD"][1,r] = sum(CountryData["LOAD"][:,r])/8760
+            CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
         end
-        CountryData["LOAD"][!,r] = CountryData["LOAD"][!,r] / AverageCapacityFactor["LOAD"][1,r]
 
         if "HEAT_LOW" ∈ Country_Data_Entries
             if sum(CountryData["HEAT_LOW"][l,r] for l ∈ Sets.Timeslice) != 0
                 AverageCapacityFactor["HEAT_LOW"][1,r] = sum(CountryData["HEAT_LOW"][:,r])/8760
+                CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
             end
-            CountryData["HEAT_LOW"][!,r] = CountryData["HEAT_LOW"][!,r] / AverageCapacityFactor["HEAT_LOW"][1,r]
+        end
+
+        if "COOL_LOW" ∈ Country_Data_Entries
+            if sum(CountryData["COOL_LOW"][l,r] for l ∈ Sets.Timeslice) != 0
+                AverageCapacityFactor["COOL_LOW"][1,r] = sum(CountryData["COOL_LOW"][:,r])/8760
+                CountryData["COOL_LOW"][!,r] = CountryData["COOL_LOW"][!,r] / AverageCapacityFactor["COOL_LOW"][1,r]
+            end
         end
 
         for cde ∈ Country_Data_Entries
@@ -178,6 +191,7 @@ function timeseries_reduction!(Params, Sets, Switch)
     smoothing_range["WIND_OFFSHORE_DEEP"] = 2
     smoothing_range["MOBILITY_PSNG"] = 3
     smoothing_range["HEAT_LOW"] = 3
+    smoothing_range["COOL_LOW"] = 3
     smoothing_range["HEAT_HIGH"] = 3
     smoothing_range["HEAT_PUMP_AIR"] = 3
     smoothing_range["HEAT_PUMP_GROUND"] = 3
@@ -209,6 +223,7 @@ function timeseries_reduction!(Params, Sets, Switch)
         smoothing_range["WIND_OFFSHORE_DEEP"] = 4
         smoothing_range["MOBILITY_PSNG"] = 3
         smoothing_range["HEAT_LOW"] = 3
+        smoothing_range["COOL_LOW"] = 3
         smoothing_range["HEAT_HIGH"] = 3
         smoothing_range["HEAT_PUMP_AIR"] = 3
         smoothing_range["HEAT_PUMP_GROUND"] = 3
@@ -230,6 +245,7 @@ function timeseries_reduction!(Params, Sets, Switch)
         smoothing_range["WIND_OFFSHORE_DEEP"] = 3
         smoothing_range["MOBILITY_PSNG"] = 3
         smoothing_range["HEAT_LOW"] = 3
+        smoothing_range["COOL_LOW"] = 3
         smoothing_range["HEAT_HIGH"] = 3
         smoothing_range["HEAT_PUMP_AIR"] = 3
         smoothing_range["HEAT_PUMP_GROUND"] = 3
@@ -327,7 +343,10 @@ function timeseries_reduction!(Params, Sets, Switch)
         ScaledCountryData[cde] .= round.(ScaledCountryData[cde], digits=6)
     end
 
-    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight","Heat_Buildings","Heat_Low_Industrial","Heat_Medium_Industrial","Heat_High_Industrial","Heat_MediumLow_Industrial","Heat_MediumHigh_Industrial"])
+    sdp_list=intersect(Sets.Fuel, ["Power","Mobility_Passenger","Mobility_Freight",
+        "Heat_Buildings","Heat_District","Heat_Low_Industrial","Heat_Medium_Industrial",
+        "Heat_High_Industrial","Heat_MediumLow_Industrial","Heat_MediumHigh_Industrial",
+        "Cool_Low_Building"])
     capf_list=intersect(Sets.Technology, ["HB_Heatpump_Aerial","HB_Heatpump_Ground","P_PV_Utility_Opt","P_Wind_Onshore_Opt","P_Wind_Offshore_Transitional","P_Wind_Onshore_Avg","P_Wind_Offshore_Shallow","P_PV_Utility_Inf",
     "P_Wind_Onshore_Inf","P_Wind_Offshore_Deep","P_PV_Utility_Tracking","P_Hydro_RoR", "P_PV_Utility_Avg"])
     #tmp = ScaledCountryData["LOAD"] ./ length(Sets.Timeslice)
@@ -352,23 +371,26 @@ function timeseries_reduction!(Params, Sets, Switch)
     end =#
 
     tmp=Dict()
-    for t ∈ intersect(Country_Data_Entries, ["LOAD", "MOBILITY_PSNG", "HEAT_LOW", "HEAT_HIGH"])
-        tmp[t] = ScaledCountryData[t] ./ combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+    for t ∈ intersect(Country_Data_Entries, ["LOAD", "MOBILITY_PSNG", "HEAT_LOW", "HEAT_HIGH", "COOL_LOW"])
+        div = combine(ScaledCountryData[t], names(ScaledCountryData[t]) .=> sum, renamecols=false)
+        for col in names(div)
+            replace!(div[!, col], 0 => 1)
+        end
+        tmp[t] = ScaledCountryData[t] ./ div
     end
 
+    end_uses = union(["Power"], Params.Tags.TagFuelToSubsets["HeatFuels"], Params.Tags.TagFuelToSubsets["TransportFuels"])
     for r ∈ Sets.Region_full
         for f ∈ Sets.Fuel
             if sum(Params.SpecifiedAnnualDemand[r,f,:]) != 0
                 Params.SpecifiedDemandProfile[r,f,:,Sets.Year[1]] = tmp["LOAD"][Sets.Timeslice,r]
+            else
+                Params.SpecifiedDemandProfile[r,f,:,Sets.Year[1]] = [0.0 for i ∈ 1:length(Sets.Timeslice)]
             end
         end
-        Params.SpecifiedDemandProfile[r,"Mobility_Passenger",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Mobility_Freight",:,Sets.Year[1]] = tmp["MOBILITY_PSNG"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Heat_Buildings",:,Sets.Year[1]] = tmp["HEAT_LOW"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Heat_Low_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Heat_MediumLow_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Heat_MediumHigh_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Sets.Timeslice,r]
-        Params.SpecifiedDemandProfile[r,"Heat_High_Industrial",:,Sets.Year[1]] = tmp["HEAT_HIGH"][Sets.Timeslice,r]
+        for f ∈ setdiff(end_uses, ["Power"])
+            Params.SpecifiedDemandProfile[r,f,:,Sets.Year[1]] = tmp[keys_mapping[f]][Sets.Timeslice,r]
+        end
     end
 
     for r ∈ Sets.Region_full for f ∈ Sets.Fuel for y ∈ Sets.Year[2:end]
