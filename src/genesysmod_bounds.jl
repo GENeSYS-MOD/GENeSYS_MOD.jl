@@ -191,7 +191,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
     #
     # ####### No new capacity construction in 2015 #############
     #
-    if Switch.switch_dispatch == 0
+    if Switch.switch_dispatch isa NoDispatch
         for r ∈ Sets.Region_full
             for t ∈ intersect(Sets.Technology, vcat(Params.Tags.TagTechnologyToSubsets["Transformation"],
                 Params.Tags.TagTechnologyToSubsets["PowerSupply"], Params.Tags.TagTechnologyToSubsets["SectorCoupling"],
@@ -355,7 +355,7 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
 
     for r ∈ Sets.Region_full for i ∈ 1:length(Sets.Timeslice) for y ∈ Sets.Year
-        if Switch.switch_dispatch==0
+        if Switch.switch_dispatch isa NoDispatch
             for s in intersect(Sets.Storage, ["S_Battery_Li-Ion","S_Battery_Redox","S_Heat_HB_Tank_Small", "S_Heat_HLI_Tank_Large", "S_CAES"])
                 if (i-1 + Switch.elmod_starthour/Switch.elmod_hourstep) % (24/Switch.elmod_hourstep) == 0
                     JuMP.fix(Vars.StorageLevelTSStart[s,y,Sets.Timeslice[i],r], 0; force = true)

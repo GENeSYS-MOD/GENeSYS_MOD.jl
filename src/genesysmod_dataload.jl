@@ -21,13 +21,13 @@
 """
 Internal function used in the run process to load the input data and create the reduced timeseries.
 """
-function genesysmod_dataload(Switch)
+function genesysmod_dataload(Switch; dispatch_week=nothing)
 
     inputdir = Switch.inputdir
 
     in_data=XLSX.readxlsx(joinpath(inputdir, Switch.data_file * ".xlsx"))
 
-    Sets = read_sets(in_data, Switch, Switch.switch_infeasibility_tech, Switch.switch_dispatch)
+    Sets = read_sets(in_data, Switch, Switch.switch_infeasibility_tech, Switch.switch_dispatch; dispatch_week=dispatch_week)
 
     𝓡 = Sets.Region_full
     𝓕 = Sets.Fuel
@@ -112,7 +112,7 @@ function make_mapping(Sets,Params)
     return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
 end
 
-function read_sets(in_data, Switch, s_infeas, s_dispatch)
+function read_sets(in_data, Switch, s_infeas, s_dispatch; dispatch_week=nothing)
     Timeslice_full = 1:8760
 
     Emission = DataFrame(XLSX.gettable(in_data["Sets"],"F";first_row=1))[!,"Emission"]
@@ -127,7 +127,11 @@ function read_sets(in_data, Switch, s_infeas, s_dispatch)
 
     add_extras_sets!(in_data, Technology, Storage, s_infeas, s_dispatch)
     add_dummy_region!(Region_full, s_dispatch)
-    Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
+    if !isnothing(dispatch_week) && dispatch_week > 0 && dispatch_week <= 52
+        Timeslice = [(dispatch_week-1)*168+i for i in 1:168]
+    else
+        Timeslice = [x for x in Timeslice_full if (x-Switch.elmod_starthour)%(Switch.elmod_nthhour) == 0]
+    end
 
     sets=Sets(Timeslice_full,Emission,Technology,Fuel,
         Year,Timeslice,Mode_of_operation,Region_full,Storage,ModalType,Sector)
@@ -252,6 +256,7 @@ function update_inftechs_params!(Params, s_infeas::WithInfeasibilityTechs, s_dis
     Params.TechnologyToStorage["D_Trade_Storage_Power", "S_Trade_Storage_Power", 1, :] .= 0.95
     Params.TechnologyFromStorage["D_Trade_Storage_Power", "S_Trade_Storage_Power", 2, :] .= 0.95
     Params.OperationalLifeStorage["S_Trade_Storage_Power"] .= 100
+    Params.AnnualMaxNewCapacity[:,"D_Trade_Storage_Power",:] .= 99999
 end
 
 function read_params(in_data, Sets, Switch, Tags)
@@ -496,23 +501,27 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     CapacityToActivityUnit = Params_Full.CapacityToActivityUnit
     RegionalBaseYearProduction = aggregate_daa(Params_Full.RegionalBaseYearProduction, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓕, 𝓨)
     SpecifiedAnnualDemand = aggregate_daa(Params_Full.SpecifiedAnnualDemand, 𝓡, 𝓡_full, Sum(), 𝓕, 𝓨)
+    SpecifiedDemandDevelopment = aggregate_daa(Params_Full.SpecifiedDemandDevelopment, 𝓡, 𝓡_full, Mean(), 𝓕, 𝓨)
 
     AnnualEmissionLimit = Params_Full.AnnualEmissionLimit[:,𝓨]
     AnnualExogenousEmission = aggregate_daa(Params_Full.AnnualExogenousEmission, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)
     AnnualSectoralEmissionLimit = Params_Full.AnnualSectoralEmissionLimit[:,:,𝓨]
     EmissionContentPerFuel = Params_Full.EmissionContentPerFuel
     RegionalAnnualEmissionLimit = aggregate_daa(Params_Full.RegionalAnnualEmissionLimit, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)
+    AnnualMinNewCapacity = aggregate_daa(Params_Full.AnnualMinNewCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
+    AnnualMaxNewCapacity = aggregate_daa(Params_Full.AnnualMaxNewCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
+
 
     GrowthRateTradeCapacity = aggregate_cross_daa(Params_Full.GrowthRateTradeCapacity, 𝓡, 𝓡_full, Mean(), 𝓕, 𝓨)
     TradeCapacity = aggregate_cross_daa(Params_Full.TradeCapacity, 𝓡, 𝓡_full, Sum(), 𝓕, 𝓨)
     TradeRoute = aggregate_cross_daa(Params_Full.TradeRoute, 𝓡, 𝓡_full, Mean(), 𝓕, 𝓨)
     TradeCapacityGrowthCosts = aggregate_cross_daa(Params_Full.TradeCapacityGrowthCosts, 𝓡, 𝓡_full, Mean(), 𝓕)
     TradeCosts = JuMP.Containers.DenseAxisArray(
-        zeros(length(𝓕),length(𝓡),length(𝓡)), 𝓕, 𝓡, 𝓡)
-    for f in 𝓕
-        TradeCosts[f,𝓡[1],𝓡[2]] = (sum(Params_Full.TradeCosts[f,𝓡[1],r] for r in 𝓡_full) - Params_Full.TradeCosts[f,𝓡[1],𝓡[1]])/(length(𝓡_full)-1)
-        TradeCosts[f,𝓡[2],𝓡[1]] = (sum(Params_Full.TradeCosts[f,r,𝓡[1]] for r in 𝓡_full) - Params_Full.TradeCosts[f,𝓡[1],𝓡[1]])/(length(𝓡_full)-1)
-    end
+        zeros(length(𝓡),length(𝓕),length(𝓨),length(𝓡)), 𝓡, 𝓕, 𝓨, 𝓡)
+    for f in 𝓕 for y in 𝓨
+        TradeCosts[𝓡[1],f,y,𝓡[2]] = (sum(Params_Full.TradeCosts[𝓡[1],f,y,r] for r in 𝓡_full) - Params_Full.TradeCosts[𝓡[1],f,y,𝓡[1]])/(length(𝓡_full)-1)
+        TradeCosts[𝓡[2],f,y,𝓡[1]] = (sum(Params_Full.TradeCosts[r,f,y,𝓡[1]] for r in 𝓡_full) - Params_Full.TradeCosts[𝓡[1],f,y,𝓡[1]])/(length(𝓡_full)-1)
+    end end
     TradeLossBetweenRegions = aggregate_cross_daa(Params_Full.TradeLossBetweenRegions, 𝓡, 𝓡_full, Mean(), 𝓕, 𝓨)
 
     ResidualCapacity = aggregate_daa(Params_Full.ResidualCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
@@ -526,6 +535,7 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
         end
     end end end
     TotalAnnualMaxCapacity = aggregate_daa(Params_Full.TotalAnnualMaxCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
+    NewCapacityExpansionStop = JuMP.Containers.DenseAxisArray(zeros(length(𝓡),length(𝓣)), 𝓡, 𝓣)
 
     TotalAnnualMinCapacity = aggregate_daa(Params_Full.TotalAnnualMinCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
     TotalTechnologyAnnualActivityUpperLimit = aggregate_daa(Params_Full.TotalTechnologyAnnualActivityUpperLimit, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
@@ -557,7 +567,7 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
 
     ModelPeriodExogenousEmission = Params_Full.ModelPeriodExogenousEmission[𝓡,:]
     ModelPeriodEmissionLimit = Params_Full.ModelPeriodEmissionLimit
-    RegionalModelPeriodEmissionLimit = Params_Full.RegionalModelPeriodEmissionLimit[:,𝓡]
+    RegionalModelPeriodEmissionLimit = Params_Full.RegionalModelPeriodEmissionLimit[𝓡,:]
 
     CurtailmentCostFactor = Params_Full.CurtailmentCostFactor[𝓡,:,𝓨]
     TradeLossFactor = Params_Full.TradeLossFactor[:,𝓨]
@@ -565,7 +575,8 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
 
     CommissionedTradeCapacity = Params_Full.CommissionedTradeCapacity[𝓡,𝓡,:,𝓨]
 
-    SelfSufficiency = Params_Full.SelfSufficiency[𝓨,:,𝓡]
+    SelfSufficiency = Params_Full.SelfSufficiency[𝓡,:,𝓨]
+    ProductionGrowthLimit = Params_Full.ProductionGrowthLimit
 
     RampingUpFactor = Params_Full.RampingUpFactor
     RampingDownFactor = Params_Full.RampingDownFactor
@@ -592,24 +603,26 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     YearSplit = DenseArray(ones(length.([𝓛, 𝓨])...) * 1/length(𝓛), 𝓛, 𝓨)
 
     Params = GENeSYS_MOD.Parameters(YearSplit,Params_Full.Tags,SpecifiedAnnualDemand,
+    SpecifiedDemandDevelopment,
     SpecifiedDemandProfile,RateOfDemand,Demand,CapacityToActivityUnit,CapacityFactor,
     AvailabilityFactor,OperationalLife,ResidualCapacity,InputActivityRatio,OutputActivityRatio,
     RegionalBaseYearProduction,TimeDepEfficiency,RegionalCCSLimit,CapitalCost,VariableCost,FixedCost,
     StorageLevelStart,MinStorageCharge,
     OperationalLifeStorage,CapitalCostStorage,ResidualStorageCapacity,TechnologyToStorage,
-    TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,TotalAnnualMinCapacity,
+    TechnologyFromStorage,StorageMaxCapacity,TotalAnnualMaxCapacity,
+    NewCapacityExpansionStop,TotalAnnualMinCapacity,
     AnnualSectoralEmissionLimit,TotalAnnualMaxCapacityInvestment,
     TotalAnnualMinCapacityInvestment,TotalTechnologyAnnualActivityUpperLimit,
     TotalTechnologyAnnualActivityLowerLimit, TotalTechnologyModelPeriodActivityUpperLimit,
     TotalTechnologyModelPeriodActivityLowerLimit,ReserveMarginTagTechnology,
-    ReserveMarginTagFuel,ReserveMargin,REMinProductionTarget,
+    ReserveMarginTagFuel,ReserveMargin,
     EmissionActivityRatio, EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
-    ModelPeriodExogenousEmission,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
     TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
-    TradeCapacity,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
-    RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
+    TradeCapacity,CommissionedTradeCapacity,REMinProductionTarget,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
+    ProductionGrowthLimit,RampingUpFactor,RampingDownFactor,ProductionChangeCost,MinActiveProductionPerTimeslice,
     ModalSplitByFuelAndModalType,EFactorConstruction, EFactorOM,
     EFactorManufacturing, EFactorFuelSupply, EFactorCoalJobs,CoalSupply, CoalDigging,
     RegionalAdjustmentFactor, LocalManufacturingFactor, DeclineRate,x_peakingDemand,

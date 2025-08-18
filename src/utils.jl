@@ -593,7 +593,7 @@ function read_storage_capacities(; file, nam, year, technology, region)
     return A
 end
 
-function violations(model, tol=1e-4)
+function violations(model, tol=1e-7)
 	res = []
 	if termination_status(model) == INFEASIBLE &&
 	   dual_status(model) == INFEASIBILITY_CERTIFICATE
@@ -609,5 +609,6 @@ function violations(model, tol=1e-4)
 			end
 		end
 	end
-	res
+	println(res)
+    return res
 end

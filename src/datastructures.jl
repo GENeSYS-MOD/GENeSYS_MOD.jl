@@ -707,8 +707,6 @@ folders, as well as the inclusion or not of various features.
 # Fields
 
 - **`StartYear :: Int16`** First year of the study horizon.\n
-- **`solver `** Solver to be used to solve the LP. The corresponding package must be called.
- For instance: using Gurobi, then the solver is Gurobi.Optimizer. \n
 - **`DNLPsolver`** Solver used for the time reduction algorithm. The recommended solver
 is Ipopt as it is open but other commercial solvers with a julia integration can be used.\n
 - **`model_region ::String`** Name of the modelled region. It will be used in naming files.\n
@@ -770,7 +768,6 @@ run that will be read to fix some decision variables.\n
 """
 struct Switch <: InputClass
     StartYear :: Int16
-    solver
     DNLPsolver
     model_region ::String
     data_base_region ::String
