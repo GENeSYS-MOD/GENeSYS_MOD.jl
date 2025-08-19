@@ -788,7 +788,7 @@ struct Switch <: InputClass
     switch_hydrogen_blending_share ::Float16
     set_storagelevelstart_up ::Float16
     set_storagelevelstart_down ::Float16
-    E2P_ration_deviation_factor ::Float16
+    E2P_ratio_deviation_factor ::Float16
     switch_intertemporal ::Int16
     switch_base_year_bounds ::Int16
     switch_base_year_bounds_debugging ::Int8

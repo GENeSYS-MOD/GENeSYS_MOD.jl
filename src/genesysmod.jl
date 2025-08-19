@@ -28,7 +28,7 @@ function genesysmod_build_model(;elmod_daystep, elmod_hourstep, solver=nothing, 
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\",
     switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=1,
     switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0, switch_hydrogen_blending_share = 1,
-    set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ration_deviation_factor = 2,
+    set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ratio_deviation_factor = 2,
     switch_intertemporal=0, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.25, set_peaking_startyear = 2030,
     switch_peaking_with_storages = 1, switch_peaking_with_trade = 1,switch_peaking_minrun = 0,
@@ -79,7 +79,7 @@ function genesysmod_build_model(;elmod_daystep, elmod_hourstep, solver=nothing, 
     switch_hydrogen_blending_share,
     set_storagelevelstart_up,
     set_storagelevelstart_down,
-    E2P_ration_deviation_factor,
+    E2P_ratio_deviation_factor,
     switch_intertemporal,
     switch_base_year_bounds,
     switch_base_year_bounds_debugging,
@@ -167,7 +167,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\",
     switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=1,
     switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0, switch_hydrogen_blending_share = 1,
-    set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ration_deviation_factor = 2,
+    set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ratio_deviation_factor = 2,
     switch_intertemporal=0, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.25, set_peaking_startyear = 2030,
     switch_peaking_with_storages = 1, switch_peaking_with_trade = 1,switch_peaking_minrun = 0,
@@ -189,7 +189,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     switch_ramping=switch_ramping, switch_weighted_emissions=switch_weighted_emissions,
     set_symmetric_transmission=set_symmetric_transmission, switch_hydrogen_blending_share = switch_hydrogen_blending_share,
     set_storagelevelstart_up = set_storagelevelstart_up, set_storagelevelstart_down = set_storagelevelstart_down,
-    E2P_ration_deviation_factor = E2P_ration_deviation_factor,
+    E2P_ratio_deviation_factor = E2P_ratio_deviation_factor,
     switch_intertemporal=switch_intertemporal, switch_base_year_bounds = switch_base_year_bounds,
     switch_base_year_bounds_debugging = switch_base_year_bounds_debugging,
     switch_peaking_capacity = switch_peaking_capacity, set_peaking_slack = set_peaking_slack,
@@ -254,7 +254,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     #
     if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
-            if occursin("Gurobi",string(solver)) || occcursin("CPLEX",string(solver))
+            if occursin("Gurobi",string(solver)) || occursin("CPLEX",string(solver))
                 println("Termination status:", termination_status(model), ". Computing IIS")
                 compute_conflict!(model)
                 println("Saving IIS to file")
