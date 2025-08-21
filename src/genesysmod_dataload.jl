@@ -329,6 +329,13 @@ function read_params(in_data, Sets, Switch, Tags)
     TradeRoute = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
     for y ∈ 𝓨
         TradeRoute[:,:,:,y] = Readin_TradeRoute2015
+        for f ∈ 𝓕
+            for r ∈ 𝓡 for rr ∈ 𝓡
+                if TradeRoute[r,rr,f,y] != TradeRoute[rr,r,f,y]
+                    println("TradeRoute is not symmetric for $f in $y: $r -> $rr != $rr -> $r")
+                end
+            end end
+        end
     end
     TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts", 𝓡, 𝓡, 𝓕)
     #TradeCosts = create_daa(in_data,"Par_TradeCosts", 𝓕, 𝓡, 𝓡)
