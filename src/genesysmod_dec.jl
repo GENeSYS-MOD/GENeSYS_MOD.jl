@@ -60,34 +60,18 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     ############### Activity Variables #############
 
-    RateOfActivity = def_daa(𝓨,𝓛,𝓣,𝓜,𝓡)
-    TotalAnnualTechnologyActivityByMode = def_daa(𝓨,𝓣,𝓜,𝓡)
-    ProductionByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
-    UseByTechnologyAnnual = def_daa(𝓨,𝓣,𝓕,𝓡)
-    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
-        for m ∈ Maps.Tech_MO[t]
-            for l ∈ 𝓛
-                RateOfActivity[y,l,t,m,r] = @variable(model, lower_bound = 0, base_name= "RateOfActivity[$y,$l,$t,$m,$r]")
-            end
-            TotalAnnualTechnologyActivityByMode[y,t,m,r] = @variable(model, lower_bound = 0, base_name= "TotalAnnualTechnologyActivityByMode[$y,$t,$m,$r]")
-        end
-        for f ∈ Maps.Tech_Fuel[t]
-            ProductionByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "ProductionByTechnologyAnnual[$y,$t,$f,$r]")
-            UseByTechnologyAnnual[y,t,f,r] = @variable(model, lower_bound = 0, base_name= "UseByTechnologyAnnual[$y,$t,$f,$r]")
-        end
-    end end end
-    model[:RateOfActivity] = RateOfActivity
-    model[:TotalAnnualTechnologyActivityByMode] = TotalAnnualTechnologyActivityByMode
-    model[:ProductionByTechnologyAnnual] = ProductionByTechnologyAnnual
-    model[:UseByTechnologyAnnual] = UseByTechnologyAnnual
+    RateOfActivity = @variable(model, RateOfActivity[y=𝓨, l=𝓛, t=𝓣, m=𝓜, r=𝓡; (t,m) ∈ Maps.Set_Tech_MO] >= 0)
+    TotalAnnualTechnologyActivityByMode = @variable(model, TotalAnnualTechnologyActivityByMode[y=𝓨, t=𝓣, m=𝓜, r=𝓡; (t,m) ∈ Maps.Set_Tech_MO] >= 0)
+    ProductionByTechnologyAnnual = @variable(model, ProductionByTechnologyAnnual[y=𝓨, t=𝓣, f=𝓕, r=𝓡; (t,f) ∈ Maps.Set_Tech_FuelOut] >= 0)
+    UseByTechnologyAnnual = @variable(model, UseByTechnologyAnnual[y=𝓨, t=𝓣, f=𝓕, r=𝓡; (t,f) ∈ Maps.Set_Tech_FuelIn] >= 0)
 
-    @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
+    TotalTechnologyAnnualActivity = @variable(model, TotalTechnologyAnnualActivity[𝓨,𝓣,𝓡] >= 0)
 
-    @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
-    @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
-    @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
-    @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
-    @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
+    TotalActivityPerYear = @variable(model, TotalActivityPerYear[𝓡,𝓛,𝓣,𝓨] >= 0)
+    CurtailedEnergyAnnual = @variable(model, CurtailedEnergyAnnual[𝓨,𝓕,𝓡] >= 0)
+    CurtailedCapacity = @variable(model, CurtailedCapacity[𝓡,𝓛,𝓣,𝓨] >= 0)
+    CurtailedEnergy = @variable(model, CurtailedEnergy[𝓨,𝓛,𝓕,𝓡] >= 0)
+    DispatchDummy = @variable(model, DispatchDummy[𝓡,𝓛,𝓣,𝓨] >= 0)
 
 
     ############### Costing Variables #############
@@ -146,14 +130,7 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
     ######## Emissions #############
 
-    AnnualTechnologyEmissionByMode = def_daa(𝓨,𝓣,𝓔,𝓜,𝓡)
-    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣 for e ∈ 𝓔
-        for m ∈ Maps.Tech_MO[t]
-            AnnualTechnologyEmissionByMode[y,t,e,m,r] = @variable(model, base_name= "AnnualTechnologyEmissionByMode[$y,$t,$e,$m,$r]")
-        end
-    end end end end
-    model[:AnnualTechnologyEmissionByMode] = AnnualTechnologyEmissionByMode
-
+    AnnualTechnologyEmissionByMode = @variable(model, AnnualTechnologyEmissionByMode[y=𝓨, t=𝓣, e=𝓔, m=𝓜, r=𝓡; (t,m) ∈ Maps.Set_Tech_MO])
     AnnualTechnologyEmission = @variable(model, AnnualTechnologyEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray)
     AnnualTechnologyEmissionPenaltyByEmission = @variable(model, AnnualTechnologyEmissionPenaltyByEmission[𝓨,𝓣,𝓔,𝓡], container=DenseArray)
     AnnualTechnologyEmissionsPenalty = @variable(model, AnnualTechnologyEmissionsPenalty[𝓨,𝓣,𝓡], container=DenseArray)
@@ -169,30 +146,12 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
 
     ######### Trade #############
-    Import = def_daa(𝓨,𝓛,𝓕,𝓡,𝓡)
-    Export = def_daa(𝓨,𝓛,𝓕,𝓡,𝓡)
-    NewTradeCapacity = def_daa(𝓨,𝓕,𝓡,𝓡)
-    TotalTradeCapacity = def_daa(𝓨,𝓕,𝓡,𝓡)
-    NewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
-    DiscountedNewTradeCapacityCosts = def_daa(𝓨,𝓕,𝓡,𝓡)
-    for y ∈ 𝓨 for f ∈ 𝓕 for r1 ∈ 𝓡 for r2 ∈ 𝓡
-        if (Params.TradeRoute[r1,r2,f,y] != 0) && (Params.Tags.TagCanFuelBeTraded[f] != 0)
-            for l ∈ 𝓛
-                Import[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Import[$y,$l,$f,$r1,$r2]")
-                Export[y,l,f,r1,r2] = @variable(model, lower_bound= 0, base_name="Export[$y,$l,$f,$r1,$r2]")
-            end
-            NewTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacity[$y,$f,$r1,$r2]")
-            TotalTradeCapacity[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="TotalTradeCapacity[$y,$f,$r1,$r2]")
-            NewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="NewTradeCapacityCosts[$y,$f,$r1,$r2]")
-            DiscountedNewTradeCapacityCosts[y,f,r1,r2] = @variable(model, lower_bound= 0, base_name="DiscountedNewTradeCapacityCosts[$y,$f,$r1,$r2]")
-        end
-    end end end end
-    model[:Import] = Import
-    model[:Export] = Export
-    model[:NewTradeCapacity] = NewTradeCapacity
-    model[:TotalTradeCapacity] = TotalTradeCapacity
-    model[:NewTradeCapacityCosts] = NewTradeCapacityCosts
-    model[:DiscountedNewTradeCapacityCosts] = DiscountedNewTradeCapacityCosts
+    Import = @variable(model, Import[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
+    Export = @variable(model, Export[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
+    NewTradeCapacity = @variable(model, NewTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
+    TotalTradeCapacity = @variable(model, TotalTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
+    NewTradeCapacityCosts = @variable(model, NewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
+    DiscountedNewTradeCapacityCosts = @variable(model, DiscountedNewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
 
     NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=DenseArray)
     NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=DenseArray)
@@ -220,18 +179,10 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
     if Switch.switch_ramping == 1
 
         ######## Ramping #############
-        ProductionUpChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
-        ProductionDownChangeInTimeslice = def_daa(𝓨,𝓛,𝓕,𝓣,𝓡)
-        for y ∈ 𝓨 for r ∈ 𝓡 for f ∈ 𝓕 for l ∈ 𝓛
-            for t ∈ Maps.Fuel_Tech[f]
-                ProductionUpChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionUpChangeInTimeslice[$y,$l,$f,$t,$r]")
-                ProductionDownChangeInTimeslice[y,l,f,t,r] = @variable(model, lower_bound = 0, base_name= "ProductionDownChangeInTimeslice[$y,$l,$f,$t,$r]")
-            end
-        end end end end
-        model[:ProductionUpChangeInTimeslice] = ProductionUpChangeInTimeslice
-        model[:ProductionDownChangeInTimeslice] = ProductionDownChangeInTimeslice
-        @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
-        @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
+        ProductionUpChangeInTimeslice = @variable(model, ProductionUpChangeInTimeslice[y=𝓨, l=𝓛, f=𝓕, t=𝓣, r=𝓡; (t,f) ∈ Maps.Set_Tech_FuelOut] >= 0)
+        ProductionDownChangeInTimeslice = @variable(model, ProductionDownChangeInTimeslice[y=𝓨, l=𝓛, f=𝓕, t=𝓣, r=𝓡; (t,f) ∈ Maps.Set_Tech_FuelOut] >= 0)
+        AnnualProductionChangeCost = @variable(model, AnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
+        DiscountedAnnualProductionChangeCost = @variable(model, DiscountedAnnualProductionChangeCost[𝓨,𝓣,𝓡] >= 0, container=DenseArray)
     else
         ProductionUpChangeInTimeslice=nothing
         ProductionDownChangeInTimeslice=nothing
@@ -245,20 +196,15 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
         RateOfTotalActivity=nothing
     end
 
-    BaseYearBounds_TooLow = def_daa(𝓡,𝓣,𝓕,𝓨)
-    BaseYearBounds_TooHigh = def_daa(𝓡,𝓣,𝓕,𝓨)
-    for y ∈ 𝓨 for r ∈ 𝓡 for t ∈ 𝓣
-        for f ∈ Maps.Tech_Fuel[t]
-            BaseYearBounds_TooLow[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "BaseYearBounds_TooLow[$r,$t,$f,$y]")
-            BaseYearBounds_TooHigh[r,t,f,y] = @variable(model, lower_bound = 0, base_name= "BaseYearBounds_TooHigh[$r,$t,$f,$y]")
-            if Switch.switch_base_year_bounds_debugging == 0
-                JuMP.fix(BaseYearBounds_TooLow[r,t,f,y], 0;force=true)
-                JuMP.fix(BaseYearBounds_TooHigh[r,t,f,y], 0;force=true)
-            end
-        end
-    end end end
-    model[:BaseYearBounds_TooLow] = BaseYearBounds_TooLow
-    model[:BaseYearBounds_TooHigh] = BaseYearBounds_TooHigh
+    BaseYearBounds_TooLow = @variable(model, BaseYearBounds_TooLow[r=𝓡, t=𝓣, f=𝓕, y=𝓨; (t,f) ∈ Maps.Set_Tech_FuelOut] >= 0)
+    BaseYearBounds_TooHigh = @variable(model, BaseYearBounds_TooHigh[r=𝓡, t=𝓣, f=𝓕, y=𝓨; (t,f) ∈ Maps.Set_Tech_FuelOut] >= 0)
+    if Switch.switch_base_year_bounds_debugging == 0
+        for y ∈ 𝓨 for r ∈ 𝓡 for (t,f) ∈ Maps.Set_Tech_FuelOut
+            JuMP.fix(BaseYearBounds_TooLow[r,t,f,y], 0;force=true)
+            JuMP.fix(BaseYearBounds_TooHigh[r,t,f,y], 0;force=true)
+        end end end
+    end
+
     HeatingSlack= @variable(model, HeatingSlack[𝓡, 𝓨] >= 0, container=DenseArray)
 
     DiscountedSalvageValueTransmission= @variable(model, DiscountedSalvageValueTransmission[𝓨,𝓡] >= 0, container=DenseArray)

@@ -406,10 +406,10 @@ struct Variables
     AccumulatedNewCapacity ::JuMP.Containers.DenseAxisArray
     TotalCapacityAnnual ::JuMP.Containers.DenseAxisArray
 
-    RateOfActivity ::JuMP.Containers.DenseAxisArray
-    TotalAnnualTechnologyActivityByMode ::JuMP.Containers.DenseAxisArray
-    ProductionByTechnologyAnnual ::JuMP.Containers.DenseAxisArray
-    UseByTechnologyAnnual ::JuMP.Containers.DenseAxisArray
+    RateOfActivity ::JuMP.Containers.SparseAxisArray
+    TotalAnnualTechnologyActivityByMode ::JuMP.Containers.SparseAxisArray
+    ProductionByTechnologyAnnual ::JuMP.Containers.SparseAxisArray
+    UseByTechnologyAnnual ::JuMP.Containers.SparseAxisArray
     TotalTechnologyAnnualActivity ::JuMP.Containers.DenseAxisArray
     TotalActivityPerYear ::JuMP.Containers.DenseAxisArray
     CurtailedEnergyAnnual ::JuMP.Containers.DenseAxisArray
@@ -449,7 +449,7 @@ struct Variables
     TotalTechnologyModelPeriodActivity ::JuMP.Containers.DenseAxisArray
     RETargetMin ::JuMP.Containers.DenseAxisArray
 
-    AnnualTechnologyEmissionByMode ::JuMP.Containers.DenseAxisArray
+    AnnualTechnologyEmissionByMode ::JuMP.Containers.SparseAxisArray
     AnnualTechnologyEmission ::JuMP.Containers.DenseAxisArray
     AnnualTechnologyEmissionPenaltyByEmission ::JuMP.Containers.DenseAxisArray
     AnnualTechnologyEmissionsPenalty ::JuMP.Containers.DenseAxisArray
@@ -460,12 +460,12 @@ struct Variables
 
     AnnualSectoralEmissions ::JuMP.Containers.DenseAxisArray
 
-    Import ::JuMP.Containers.DenseAxisArray
-    Export ::JuMP.Containers.DenseAxisArray
-    NewTradeCapacity ::JuMP.Containers.DenseAxisArray
-    TotalTradeCapacity ::JuMP.Containers.DenseAxisArray
-    NewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
-    DiscountedNewTradeCapacityCosts ::JuMP.Containers.DenseAxisArray
+    Import ::JuMP.Containers.SparseAxisArray
+    Export ::JuMP.Containers.SparseAxisArray
+    NewTradeCapacity ::JuMP.Containers.SparseAxisArray
+    TotalTradeCapacity ::JuMP.Containers.SparseAxisArray
+    NewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray
+    DiscountedNewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray
     NetTrade ::JuMP.Containers.DenseAxisArray
     NetTradeAnnual ::JuMP.Containers.DenseAxisArray
     AnnualTotalTradeCosts ::JuMP.Containers.DenseAxisArray
@@ -473,13 +473,13 @@ struct Variables
 
     DemandSplitByModalType ::JuMP.Containers.DenseAxisArray
     ProductionSplitByModalType ::JuMP.Containers.DenseAxisArray
-    ProductionUpChangeInTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
-    ProductionDownChangeInTimeslice ::Union{Nothing,JuMP.Containers.DenseAxisArray}
+    ProductionUpChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray}
+    ProductionDownChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray}
 
     RateOfTotalActivity ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 
-    BaseYearBounds_TooLow ::JuMP.Containers.DenseAxisArray
-    BaseYearBounds_TooHigh ::JuMP.Containers.DenseAxisArray
+    BaseYearBounds_TooLow ::JuMP.Containers.SparseAxisArray
+    BaseYearBounds_TooHigh ::JuMP.Containers.SparseAxisArray
     HeatingSlack ::JuMP.Containers.DenseAxisArray
 
     DiscountedSalvageValueTransmission ::JuMP.Containers.DenseAxisArray
@@ -844,10 +844,15 @@ struct Variable_Parameters <: InputClass
 end
 
 """
-Structure containing the mappings of sets combinations
+Structure containing the mappings of sets combinations as Dicts and Sets
 """
 struct Maps <: InputClass
     Tech_Fuel ::Dict
     Tech_MO ::Dict
     Fuel_Tech ::Dict
+    Set_Tech_MO ::Set{Tuple{String, Int8}}
+    Set_Tech_FuelIn ::Set{Tuple{String, String}}
+    Set_Tech_FuelOut ::Set{Tuple{String, String}}
+    Set_Tech_Fuel ::Set{Tuple{String, String}}
+    Set_Fuel_Regions ::Set{Tuple{String, String, String}}
 end

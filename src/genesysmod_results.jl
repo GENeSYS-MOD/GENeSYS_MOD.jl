@@ -519,9 +519,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     end
 
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
+    for y ∈ Sets.Year for (f,r,rr) ∈ Maps.Set_Fuel_Regions
         tmp[y,f,r,rr] = sum(value.(Vars.Export[y,l,f,r,rr]) for l in Sets.Timeslice)
-    end end end end
+    end end
     df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Export"
     if !isempty(df_tmp)
@@ -529,9 +529,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
         append!(output_trade, df_tmp)
     end
     tmp= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Region_full)
-    for y ∈ Sets.Year for r ∈ Sets.Region_full for rr ∈ Sets.Region_full for f ∈ Sets.Fuel
+    for y ∈ Sets.Year for (f,r,rr) ∈ Maps.Set_Fuel_Regions
         tmp[y,f,r,rr] = sum(value.(Vars.Import[y,l,f,r,rr]) for l in Sets.Timeslice)
-    end end end end
+    end end
     df_tmp = convert_jump_container_to_df(tmp;dim_names=[:Year, :Fuel, :Region, :Region2])
     df_tmp[!,:Type] .= "Import"
     if !isempty(df_tmp)
@@ -657,8 +657,9 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
     ## Final Energy for all regions per sector
     fed= JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year),length(Sets.Fuel),length(Sets.Region_full),length(Sets.Sector)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Sector)
     for se ∈ FinalDemandSector for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full
+        techs = [x for (x,y) ∈ Maps.Set_Tech_FuelIn if y==f]
         if f ∉ ["Area_Rooftop_Residential","Area_Rooftop_Commercial","Heat_District"]
-            fed[y,f,r,se] = sum(value(Vars.UseByTechnologyAnnual[y,t,f,r]) for t ∈ Sets.Technology if Params.Tags.TagTechnologyToSector[t,se] != 0)/3.6
+            fed[y,f,r,se] = sum(value(Vars.UseByTechnologyAnnual[y,t,f,r]) for t ∈ techs if Params.Tags.TagTechnologyToSector[t,se] != 0)/3.6
         end
     end end end end
 
