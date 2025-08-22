@@ -61,10 +61,24 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
 
   LoopSetOutput = Dict()
   LoopSetInput = Dict()
-  for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
-    LoopSetOutput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.OutputActivityRatio[r,:,f,:,y]) if Params.OutputActivityRatio[r,x[1],f,x[2],y] > 0]
-    LoopSetInput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.InputActivityRatio[r,:,f,:,y]) if Params.InputActivityRatio[r,x[1],f,x[2],y] > 0]
-  end end end
+  for y ∈ 𝓨, f ∈ 𝓕, r ∈ 𝓡
+      slice_out = Params.OutputActivityRatio[r,:,f,:,y]
+      slice_in  = Params.InputActivityRatio[r,:,f,:,y]
+
+      # Get the original labels from the axes
+      out_i_labels = axes(slice_out, 1)
+      out_j_labels = axes(slice_out, 2)
+
+      in_i_labels = axes(slice_in, 1)
+      in_j_labels = axes(slice_in, 2)
+
+      # Find positions where value > 0
+      LoopSetOutput[(r,f,y)] = [(out_i_labels[i[1]], out_j_labels[i[2]]) for i in findall(x -> x > 0, Array(slice_out))]
+      LoopSetInput[(r,f,y)]  = [(in_i_labels[i[1]],  in_j_labels[i[2]])  for i in findall(x -> x > 0, Array(slice_in))]
+  end
+
+  print("LoopSets : ",Dates.now()-start,"\n")
+  start=Dates.now()
 
   function CanFuelBeUsedByModeByTech(y, f, r,t,m)
     temp = Params.InputActivityRatio[r,t,f,m,y]*
@@ -848,7 +862,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
     sum(Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] for t ∈ intersect(techs, Params.Tags.TagTechnologyToSubsets["Renewables"])) == Vars.TotalREProductionAnnual[𝓨[i],r,f],base_name="RE1_ComputeTotalAnnualREProduction|$(𝓨[i])|$(r)|$(f)")
 
     @constraint(model,
-    Params.REMinProductionTarget[r,f,𝓨[i]]*sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]]*Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛 for t ∈ 𝓣 for m ∈ Maps.Tech_MO[t] if Params.OutputActivityRatio[r,t,f,m,𝓨[i]] != 0 )*Params.Tags.RETagFuel[r,f,𝓨[i]] <= Vars.TotalREProductionAnnual[𝓨[i],r,f],
+    Params.REMinProductionTarget[r,f,𝓨[i]]*sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]]*Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,𝓨[i])])*Params.Tags.RETagFuel[r,f,𝓨[i]] <= Vars.TotalREProductionAnnual[𝓨[i],r,f],
     base_name="RE2_AnnualREProductionLowerLimit|$(𝓨[i])|$(r)|$(f)")
 
     if Switch.switch_dispatch isa NoDispatch
