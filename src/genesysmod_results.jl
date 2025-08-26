@@ -61,10 +61,18 @@ It also runs the functions for processing emissions and levelized costs.
 function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, Maps, elapsed, extr_str)
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
-    for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full
-      LoopSetOutput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.OutputActivityRatio[r,:,f,:,y]) if Params.OutputActivityRatio[r,x[1],f,x[2],y] > 0]
-      LoopSetInput[(r,f,y)] = [(x[1],x[2]) for x in keys(Params.InputActivityRatio[r,:,f,:,y]) if Params.InputActivityRatio[r,x[1],f,x[2],y] > 0]
-    end end end
+    for y ∈ 𝓨, f ∈ 𝓕, r ∈ 𝓡
+        slice_out = Params.OutputActivityRatio[r,:,f,:,y]
+        slice_in  = Params.InputActivityRatio[r,:,f,:,y]
+        # Get the original labels from the axes
+        out_i_labels = axes(slice_out, 1)
+        out_j_labels = axes(slice_out, 2)
+        in_i_labels = axes(slice_in, 1)
+        in_j_labels = axes(slice_in, 2)
+        # Find positions where value > 0
+        LoopSetOutput[(r,f,y)] = [(out_i_labels[i[1]], out_j_labels[i[2]]) for i in findall(x -> x > 0, Array(slice_out))]
+        LoopSetInput[(r,f,y)]  = [(in_i_labels[i[1]],  in_j_labels[i[2]])  for i in findall(x -> x > 0, Array(slice_in))]
+    end
 
     z_fuelcosts = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Fuel),length(Sets.Year),length(Sets.Region_full)), Sets.Fuel, Sets.Year, Sets.Region_full)
     for y ∈ Sets.Year for r ∈ Sets.Region_full
