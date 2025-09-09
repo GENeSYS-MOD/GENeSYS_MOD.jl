@@ -1,8 +1,4 @@
-using GENeSYS_MOD
-using HiGHS
-using Ipopt
-
-model, data = genesysmod(;elmod_daystep = 80, elmod_hourstep = 1, solver=HiGHS.Optimizer, DNLPsolver = Ipopt.Optimizer, threads=0, 
+model, data = genesysmod(;elmod_daystep = 80, elmod_hourstep = 4, solver=solver, DNLPsolver = Ipopt.Optimizer, threads=0,
 inputdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Inputs"),
 resultdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results"),
 data_file="RegularParameters_testdata",
@@ -28,7 +24,10 @@ employment_data_file = "",
 elmod_starthour = 0,
 elmod_dunkelflaute= 0,
 #switch_raw_results = CSVResult(),
-switch_raw_results = TXTResult("result_test"),
+switch_raw_results = TXTandCSV("result_test"),
 switch_processed_results = 1,
 write_reduced_timeserie = 1,
+model_region="europe"
 );
+
+@test termination_status(model) == MOI.OPTIMAL

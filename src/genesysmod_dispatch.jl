@@ -19,20 +19,22 @@
 # #############################################################
 
 """
-Run the simple dispatch model. A previous run is necessary to allow to read in investment
+Build the dispatch model. A previous run is necessary to allow to read in investment
 decisions. For information about the switches, refer to the datastructure documentation
 """
-function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
+function genesysmod_build_model_dispatch(; solver=nothing, DNLPsolver, year=2018,
         model_region="minimal", data_base_region="DE", data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
         hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", threads=4, emissionPathway="MinimalExample",
         emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\",resultdir="Results\\",
-        switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,switch_intertemporal=0,
+        switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,
+        switch_hydrogen_blending_share = 1, set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25,
+        E2P_ratio_deviation_factor = 2, switch_intertemporal=0,
         switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15,
         set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
         switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",
         elmod_dunkelflaute = 0, switch_raw_results = CSVResult(), switch_processed_results = 1, switch_LCOE_calc=0,
         switch_dispatch = OneNodeSimple("DE"), extr_str_results = "inv_run", extr_str_dispatch="dispatch_run",
-        switch_base_year_bounds_debugging = 0, switch_reserve = 0)
+        switch_base_year_bounds_debugging = 0, switch_reserve = 0, switch_iis=1,dispatch_week=nothing)
 
     elmod_daystep = 0
     elmod_hourstep = 1
@@ -46,7 +48,6 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     end
 
     switch = Switch(year,
-    solver,
     DNLPsolver,
     model_region,
     data_base_region,
@@ -64,6 +65,10 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     switch_ramping,
     switch_weighted_emissions,
     set_symmetric_transmission,
+    switch_hydrogen_blending_share,
+    set_storagelevelstart_up,
+    set_storagelevelstart_down,
+    E2P_ratio_deviation_factor,
     switch_intertemporal,
     switch_base_year_bounds,
     switch_base_year_bounds_debugging,
@@ -99,27 +104,24 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     #
     # ####### Load data from provided excel files and declarations #############
     #
-    println(Dates.now()-starttime)
 
-    Sets, Params, Emp_Sets = genesysmod_dataload(switch);
+    Sets, Params, Emp_Sets = genesysmod_dataload(switch;dispatch_week=dispatch_week);
     Sets, Params, Region_full, Params_full = aggregate_params(switch, Sets, Params, switch.switch_dispatch);
 
-    println(Dates.now()-starttime)
     Maps = make_mapping(Sets,Params)
     Vars = genesysmod_dec(model,Sets,Params,switch,Maps)
-    println(Dates.now()-starttime)
+
     #
     # ####### Settings for model run (Years, Regions, etc) #############
     #
 
     Settings=genesysmod_settings(Sets, Params, switch.socialdiscountrate)
-    println(Dates.now()-starttime)
+
     #
     # ####### apply general model bounds #############
     #
 
     genesysmod_bounds(model,Sets,Params, Vars,Settings,switch,Maps)
-    println(Dates.now()-starttime)
 
     #
     # ####### Fix Investment Variables #############
@@ -132,9 +134,62 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     #
 
     considered_duals = genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,switch, Maps; storage_ratio = storage_ratio, Params_full= Params_full, Region_Full=Region_full)
-    println(Dates.now()-starttime)
+    return model, Dict("Sets" => Sets, "Params" => Params, "Switch" => switch, "Vars" => Vars, "Maps" => Maps, "Settings" => Settings, "ConsideredDuals" => considered_duals)
+end
 
+"""
+Run the simple dispatch model. A previous run is necessary to allow to read in investment
+decisions. For information about the switches, refer to the datastructure documentation
+"""
+function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
+        model_region="minimal", data_base_region="DE", data_file="Data_Europe_openENTRANCE_technoFriendly_combined_v00_kl_21_03_2022_new",
+        hourly_data_file = "Hourly_Data_Europe_v09_kl_23_02_2022", threads=4, emissionPathway="MinimalExample",
+        emissionScenario="globalLimit", socialdiscountrate=0.05,  inputdir="Inputdata\\",resultdir="Results\\",
+        switch_investLimit=1, switch_ccs=1, switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0,
+        switch_hydrogen_blending_share = 1, set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25,
+         E2P_ratio_deviation_factor = 2, switch_intertemporal=0,
+        switch_base_year_bounds = 0,switch_peaking_capacity = 1, set_peaking_slack =1.0, set_peaking_minrun_share =0.15,
+        set_peaking_res_cf=0.5, set_peaking_min_thermal=0.5, set_peaking_startyear = 2025, switch_peaking_with_storages = 0, switch_peaking_with_trade = 0,switch_peaking_minrun = 1,
+        switch_employment_calculation = 0, switch_endogenous_employment = 0, employment_data_file = "",
+        elmod_dunkelflaute = 0, switch_raw_results = CSVResult(), switch_processed_results = 1, switch_LCOE_calc=0,
+        switch_dispatch = OneNodeSimple("DE"), extr_str_results = "inv_run", extr_str_dispatch="dispatch_run",
+        switch_base_year_bounds_debugging = 0, switch_reserve = 0, switch_iis=1, dispatch_week=nothing)
 
+    starttime= Dates.now()
+
+    model, case = genesysmod_build_model_dispatch(; solver=solver, DNLPsolver=DNLPsolver,
+    year=year, model_region=model_region, data_base_region=data_base_region,
+    data_file=data_file, hourly_data_file = hourly_data_file,
+    threads=threads, emissionPathway=emissionPathway, emissionScenario=emissionScenario,
+    socialdiscountrate=socialdiscountrate, inputdir=inputdir, resultdir=resultdir,
+    switch_investLimit=switch_investLimit, switch_ccs=switch_ccs,
+    switch_ramping=switch_ramping, switch_weighted_emissions=switch_weighted_emissions,
+    set_symmetric_transmission=set_symmetric_transmission, switch_hydrogen_blending_share = switch_hydrogen_blending_share,
+    set_storagelevelstart_up = set_storagelevelstart_up, set_storagelevelstart_down = set_storagelevelstart_down,
+    E2P_ratio_deviation_factor = E2P_ratio_deviation_factor,
+    switch_intertemporal=switch_intertemporal, switch_base_year_bounds = switch_base_year_bounds,
+    switch_base_year_bounds_debugging = switch_base_year_bounds_debugging,
+    switch_peaking_capacity = switch_peaking_capacity, set_peaking_slack = set_peaking_slack,
+    set_peaking_minrun_share = set_peaking_minrun_share, set_peaking_res_cf=set_peaking_res_cf,
+    set_peaking_min_thermal=set_peaking_min_thermal, set_peaking_startyear = set_peaking_startyear,
+    switch_peaking_with_storages = switch_peaking_with_storages, switch_peaking_with_trade = switch_peaking_with_trade,
+    switch_peaking_minrun = switch_peaking_minrun,
+    switch_employment_calculation = switch_employment_calculation,
+    switch_endogenous_employment = switch_endogenous_employment,
+    employment_data_file = employment_data_file,
+    elmod_dunkelflaute = elmod_dunkelflaute, switch_raw_results = switch_raw_results,
+    switch_processed_results = switch_processed_results,
+    switch_LCOE_calc=switch_LCOE_calc,
+    switch_dispatch=switch_dispatch, switch_reserve = switch_reserve,
+    extr_str_results = extr_str_results, extr_str_dispatch=extr_str_dispatch,
+    switch_iis=switch_iis,dispatch_week=dispatch_week);
+    Sets = case["Sets"]
+    Params = case["Params"]
+    Vars = case["Vars"]
+    Maps = case["Maps"]
+    Settings = case["Settings"]
+    considered_duals = case["ConsideredDuals"]
+    switch = case["Switch"]
     #
     # ####### Solver Options #############
     #
@@ -154,20 +209,20 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
         set_optimizer_attribute(model, "Crossover", 0)
-        set_optimizer_attribute(model, "LogFile", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
+        set_optimizer_attribute(model, "LogFile", joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"))
     elseif string(solver) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         set_optimizer_attribute(model, "CPX_PARAM_SOLUTIONTYPE", 2)
         env = model.moi_backend.optimizer.model.env
-        CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
+        CPXsetlogfilename(env, joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
     elseif string(solver) == "HiGHS.Optimizer"
         set_optimizer_attribute(model, "solver", "ipm")
         #set_optimizer_attribute(model, "solver", "pdlp")
         set_optimizer_attribute(model, "run_crossover", "off")
-        set_optimizer_attribute(model, "log_file", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
+        set_optimizer_attribute(model, "log_file", joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"))
     end
 
     println("model_region = $model_region")
@@ -184,10 +239,30 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
 
     if occursin("INFEASIBLE",string(termination_status(model)))
         if switch_iis == 1
-            println("Termination status:", termination_status(model), ". Computing IIS")
-            compute_conflict!(model)
-            println("Saving IIS to file")
-            print_iis(model)
+            if occursin("Gurobi",string(solver)) || occursin("CPLEX",string(solver))
+                println("Termination status:", termination_status(model), ". Computing IIS")
+                compute_conflict!(model)
+                println("Saving IIS to file")
+                print_iis(model)
+            elseif occursin("HiGHS",string(solver))
+                println("Termination status:", termination_status(model), ". Printing violations:")
+                res = violations(model)
+                println("Saving violations to file")
+                open(joinpath(resultdir,"IIS_$(today()).txt"), "w") do f
+                    for line in res
+                        println(f, line)
+                    end
+                end
+            else
+                try
+                    println("Termination status:", termination_status(model), ". Computing IIS")
+                    compute_conflict!(model)
+                    println("Saving IIS to file")
+                    print_iis(model)
+                catch
+                    println("IIS computation failed. Please check the model and the solver settings.")
+                end
+            end
         else
             error("Model infeasible. Turn on 'switch_iis' to compute and write the iis file")
         end
@@ -254,11 +329,12 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
             for t ∈ Params.Tags.TagTechnologyToSubsets["DummyTechnology"]
                 fix(model[:TotalCapacityAnnual][y,t,r], 99999; force=true)
             end
-            # exchange capacity (capacity unit)
-            fix(model[:TotalCapacityAnnual][y,"D_Trade_Storage_Power",r], trade_capacity_in; force=true)
-            # storage capacity (energy unit)
-            fix(model[:NewStorageCapacity]["S_Trade_Storage_Power",y,r], 500; force=true)
         end
+        # exchange capacity (capacity unit)
+        fix(model[:TotalCapacityAnnual][y,"D_Trade_Storage_Power",r], trade_capacity_in; force=true)
+        # storage capacity (energy unit)
+        fix(model[:NewStorageCapacity]["S_Trade_Storage_Power",y,r], 500; force=true)
+
         for s ∈ setdiff(Sets.Storage, ["S_Trade_Storage_Power"])
             fix(model[:NewStorageCapacity][s,y,r], tmp_NewStorageCapacity[s,y,r]; force=true)
         end

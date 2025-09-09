@@ -1,8 +1,4 @@
-using GENeSYS_MOD
-using HiGHS
-using Ipopt
-
-model, data = genesysmod_dispatch(; solver=HiGHS.Optimizer, DNLPsolver = Ipopt.Optimizer, threads=0, 
+model, data = genesysmod_dispatch(; solver=solver, DNLPsolver = Ipopt.Optimizer, threads=0,
 inputdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Inputs"),
 resultdir = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results"),
 data_file="RegularParameters_testdata",
@@ -28,5 +24,9 @@ employment_data_file = "",
 elmod_dunkelflaute= 0,
 switch_raw_results = CSVResult(),
 switch_processed_results = 1,
-switch_dispatch = OneNodeSimple("DE")
-)
+switch_dispatch = OneNodeSimple("DE"),
+model_region="europe",
+dispatch_week=1
+);
+
+@test termination_status(model) == MOI.OPTIMAL

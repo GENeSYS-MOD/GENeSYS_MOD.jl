@@ -33,9 +33,10 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Set
     TierFive = [
     "Mobility_Passenger",
     "Mobility_Freight",
-    "Heat_Low_Residential",
+    "Heat_Buildings",
     "Heat_Low_Industrial",
-    "Heat_Medium_Industrial",
+    "Heat_MediumHigh_Industrial",
+    "Heat_MediumLow_Industrial",
     "Heat_High_Industrial"]
 
     Resources = [
@@ -48,12 +49,12 @@ function genesysmod_levelizedcosts(model,Sets, Params, VarPar, Vars, Switch, Set
     "H2"]
 
     ResourceTechnologies = [
-    "RES_Grass",
-    "RES_Wood",
-    "RES_Residues",
-    "RES_Paper_Cardboard",
-    "RES_Roundwood",
-    "RES_Biogas",
+    "R_Grass",
+    "R_Wood",
+    "R_Residues",
+    "R_Paper_Cardboard",
+    "R_Roundwood",
+    "R_Biogas",
     "Z_Import_Hardcoal",
     "R_Coal_Hardcoal",
     "R_Coal_Lignite",
