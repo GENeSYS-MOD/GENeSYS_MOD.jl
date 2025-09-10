@@ -294,7 +294,7 @@ function read_params(in_data, Sets, Switch, Tags)
     VariableCost = create_daa(in_data, "Par_VariableCost", 𝓡, 𝓣, 𝓜, 𝓨; inherit_base_world=true, base_region=dbr)
 
     EmissionActivityRatio = create_daa(in_data, "Par_EmissionActivityRatio", 𝓡, 𝓣, 𝓜, 𝓔, 𝓨; inherit_base_world=true, base_region=dbr)
-    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty", 𝓡, 𝓔, 𝓨)
+    EmissionsPenalty = create_daa(in_data, "Par_EmissionsPenalty", 𝓡, 𝓔, 𝓨; inherit_base_world=true, base_region=dbr)
     EmissionsPenaltyTagTechnology = create_daa(in_data, "Par_EmissionPenaltyTagTech", 𝓡, 𝓣, 𝓔, 𝓨; inherit_base_world=true, base_region=dbr)
 
     ReserveMargin = create_daa(in_data,"Par_ReserveMargin", 𝓡, 𝓨; inherit_base_world=true, base_region=dbr)
