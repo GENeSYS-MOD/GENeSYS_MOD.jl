@@ -360,23 +360,27 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
 
   start=Dates.now()
   Set_Fuel_Region1= Set([(x,y) for (x,y,z) ∈ Maps.Set_Fuel_Regions])
-  for y ∈ 𝓨 for (f,r) ∈ Set_Fuel_Region1
-    region2s = [z for (x,y,z) ∈ Maps.Set_Fuel_Regions if (x == f) && (y == r)]
-    for rr ∈ region2s
-      for l ∈ 𝓛
-        @constraint(model, Vars.Import[y,l,f,r,rr] == Vars.Export[y,l,f,rr,r], base_name="EB1_TradeBalanceEachTS|$(y)|$(l)|$(f)|$(r)|$(rr)")
-      end
-    end
+  for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
+    if (f,r) ∈ Set_Fuel_Region1
+        region2s = [z for (x,y,z) ∈ Maps.Set_Fuel_Regions if (x == f) && (y == r)]
+        for rr ∈ region2s
+            for l ∈ 𝓛
+                @constraint(model, Vars.Import[y,l,f,r,rr] == Vars.Export[y,l,f,rr,r], base_name="EB1_TradeBalanceEachTS|$(y)|$(l)|$(f)|$(r)|$(rr)")
+            end
+        end
 
-    if (sum(Params.TradeRoute[r,rr,f,y] for rr ∈ region2s) == 0) || (Params.Tags.TagCanFuelBeTraded[f] == 0)
-      JuMP.fix.(Vars.NetTrade[y,:,f,r], 0; force=true)
+        if (sum(Params.TradeRoute[r,rr,f,y] for rr ∈ region2s) == 0) || (Params.Tags.TagCanFuelBeTraded[f] == 0)
+            JuMP.fix.(Vars.NetTrade[y,:,f,r], 0; force=true)
+        else
+            for l ∈ 𝓛
+                @constraint(model, sum(Vars.Export[y,l,f,r,rr]*(1+Params.TradeLossBetweenRegions[r,rr,f,y]) - Vars.Import[y,l,f,r,rr] for rr ∈ region2s) == Vars.NetTrade[y,l,f,r],
+                base_name="EB4_NetTradeBalance|$(y)|$(l)|$(f)|$(r)")
+            end
+        end
     else
-      for l ∈ 𝓛
-        @constraint(model, sum(Vars.Export[y,l,f,r,rr]*(1+Params.TradeLossBetweenRegions[r,rr,f,y]) - Vars.Import[y,l,f,r,rr] for rr ∈ region2s) == Vars.NetTrade[y,l,f,r],
-        base_name="EB4_NetTradeBalance|$(y)|$(l)|$(f)|$(r)")
-      end
+        JuMP.fix.(Vars.NetTrade[y,:,f,r], 0; force=true)
     end
-  end end
+  end end end
 
   for y ∈ 𝓨 for f ∈ 𝓕 for r ∈ 𝓡
     if TagTimeIndependentFuel[y,f,r] == 0
