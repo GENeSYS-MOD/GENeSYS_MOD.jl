@@ -274,7 +274,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         end
 
     elseif termination_status(model) == MOI.OPTIMAL
-        VarPar = genesysmod_variable_parameter(model, Sets, Params, Vars)
+        VarPar = genesysmod_variable_parameter(model, Sets, Params, Vars,Maps)
         if switch_processed_results == 1
             genesysmod_results(model, Sets, Params, VarPar, Vars, switch,
              Settings, Maps, elapsed, switch.extr_str_results)
