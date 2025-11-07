@@ -276,6 +276,21 @@ function genesysmod_results(model,Sets, Params, VarPar, Vars, Switch, Settings, 
                             :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"ExogenousEmissions")
     merge_df!(df_tmp, dict_col_value, output_emissions, colnames)
 
+    df_endo_emission = DataFrame([:Region=>[], :Emission=>[], :Year=>[], :Value=>[]])
+
+    for e ∈ Sets.Emission, y ∈ Sets.Year
+        tmp_val=0
+        for r ∈ Sets.Region_full
+            value = dual(constraint_by_name(model,"E8_RegionalAnnualEmissionsLimit|$(y)|$(e)|$(r)")) * (-1) * (1 + Settings.GeneralDiscountRate[r])^(y - Sets.Year[1])
+            push!(df_endo_emission, (; Region=r, Emission=e, Year=y, Value=value))
+            tmp_val += value
+        end
+        push!(df_endo_emission, (; Region="Total", Emission=e, Year=y, Value=tmp_val/length(Sets.Region_full)))
+    end
+    dict_col_value = Dict(:Sector=>"Regional Endogenous CO2 Price", :Type=>"Regional Endogenous CO2 Price",
+                            :PathwayScenario=>"$(Switch.emissionPathway)_$(Switch.emissionScenario)", :Technology=>"Regional Endogenous CO2 Price")
+    merge_df!(df_endo_emission, dict_col_value, output_emissions, colnames)
+
     ### parameter output_model(*,*,*,*)
     colnames = [:Type, :PathwayScenario, :Pathway, :Scenario, :Value]
     output_model = DataFrame([name => [] for name in colnames])
