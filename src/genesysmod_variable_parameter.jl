@@ -21,7 +21,7 @@
 Internal function used in the run process after solving to compute aggregated versions of the rate of activity,
     rate of use and demand, on mode of operation, timeslice and technology.
 """
-function genesysmod_variable_parameter(model, Sets, Params, Vars)
+function genesysmod_variable_parameter(model, Sets, Params, Vars, Maps)
     RateOfTotalActivity = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Region_full)
     RateOfProductionByTechnologyByMode = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Mode_of_operation), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Mode_of_operation, Sets.Fuel, Sets.Region_full)
     RateOfUseByTechnologyByMode = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Timeslice), length(Sets.Technology), length(Sets.Mode_of_operation), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Timeslice, Sets.Technology, Sets.Mode_of_operation, Sets.Fuel, Sets.Region_full)
@@ -37,6 +37,8 @@ function genesysmod_variable_parameter(model, Sets, Params, Vars)
     UseAnnual = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full)), Sets.Year, Sets.Fuel, Sets.Region_full)
     CurtailedEnergy = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Year), length(Sets.Fuel), length(Sets.Region_full), length(Sets.Timeslice)), Sets.Year, Sets.Fuel, Sets.Region_full, Sets.Timeslice)
     ModelPeriodCostByRegion = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full)), Sets.Region_full)
+    CCSByTechnologyAnnual = JuMP.Containers.DenseAxisArray(zeros(length(Sets.Region_full),length(Sets.Technology),length(Sets.Year)), Sets.Region_full,Sets.Technology,Sets.Year)
+
 
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
@@ -88,6 +90,11 @@ function genesysmod_variable_parameter(model, Sets, Params, Vars)
 
     for r ∈ Sets.Region_full
         ModelPeriodCostByRegion[r] = sum(JuMP.value.(Vars.TotalDiscountedCost[:,r]))
+    end
+
+    for r ∈ Sets.Region_full, t ∈ Sets.Technology, y ∈ Sets.Year
+        CCSByTechnologyAnnual[r, t, y] = sum(
+            JuMP.value(Vars.TotalAnnualTechnologyActivityByMode[y,t,m,r])*Params.EmissionContentPerFuel[f,e]*Params.InputActivityRatio[r,t,f,m,y]*YearlyDifferenceMultiplier(y,Sets)* (Params.EmissionActivityRatio[r,t,m,e,y] >= 0 ? 1-Params.EmissionActivityRatio[r,t,m,e,y] : -1 * Params.EmissionActivityRatio[r,t,m,e,y]) for e ∈ Sets.Emission for f ∈ Maps.Tech_Fuel[t] for m ∈ Maps.Tech_MO[t])
     end
 
     VarPar = Variable_Parameters(RateOfTotalActivity, RateOfProductionByTechnologyByMode, RateOfUseByTechnologyByMode, RateOfProductionByTechnology, RateOfUseByTechnology,
