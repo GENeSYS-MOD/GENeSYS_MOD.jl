@@ -42,7 +42,7 @@ function genesysmod_variable_parameter(model, Sets, Params, Vars, Maps)
 
     LoopSetOutput = Dict()
     LoopSetInput = Dict()
-    for y ∈ 𝓨, f ∈ 𝓕, r ∈ 𝓡
+    for y ∈ Sets.Year, f ∈ Sets.Fuel, r ∈ Sets.Region_full
         slice_out = Params.OutputActivityRatio[r,:,f,:,y]
         slice_in  = Params.InputActivityRatio[r,:,f,:,y]
 
