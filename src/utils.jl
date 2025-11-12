@@ -57,6 +57,41 @@ function convert_jump_container_to_df(var::JuMP.Containers.DenseAxisArray;
     return df
 end
 
+function convert_jump_container_to_df(var::JuMP.Containers.SparseAxisArray;
+    dim_names::Vector{Symbol}=Vector{Symbol}(),
+    value_col::Symbol=:Value)
+
+    if isempty(var)
+        return DataFrame()
+    end
+
+    # Use axes from SparseAxisArray
+    if length(dim_names) == 0
+        dim_names = [Symbol("dim$i") for i in 1:length(var.axes)]
+    end
+
+    if length(dim_names) != length(var.names)
+        throw(ArgumentError("Length of given name list does not fit the number of variable dimensions"))
+    end
+
+    tup_dim = (dim_names...,)
+    var_val = value.(var)
+
+    # Only use stored keys in SparseAxisArray
+    keys = eachindex(var)
+    if !isempty(keys)
+        data = [NamedTuple{tup_dim}(ind) for ind in keys if var_val[ind...] != 0]
+        values = [var_val[ind...] for ind in keys if var_val[ind...] != 0]
+
+        df = DataFrame(data)
+        df[!, value_col] = values
+    else
+        push!(dim_names, :Value)
+        df = DataFrame([[] for i in dim_names], dim_names)
+    end
+    return df
+end
+
 """
 Creates DenseAxisArrays containing the input parameters to the model considering hierarchy
 with base region data and world data.

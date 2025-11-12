@@ -109,7 +109,19 @@ function make_mapping(Sets,Params)
    Map_Fuel_Tech = Dict(f=>[t for t ∈ Sets.Technology if (any(Params.OutputActivityRatio[:,t,f,:,:].>0)
     || any(Params.InputActivityRatio[:,t,f,:,:].>0))] for f ∈ Sets.Fuel)
 
-    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech)
+    Set_Tech_MO = Set{Tuple{String,Int8}}([(t,m) for t ∈ Sets.Technology for m ∈ Map_Tech_MO[t]])
+
+    Set_Tech_FuelIn = Set{Tuple{String,String}}([(t,f) for t ∈ Sets.Technology for f ∈ Sets.Fuel if (any(Params.InputActivityRatio[:,t,f,:,:].>0))])
+
+    Set_Tech_FuelOut = Set{Tuple{String,String}}([(t,f) for t ∈ Sets.Technology for f ∈ Sets.Fuel if (any(Params.OutputActivityRatio[:,t,f,:,:].>0))])
+
+    Set_Tech_Fuel = Set_Tech_FuelIn ∪ Set_Tech_FuelOut
+
+    Set_Fuel_Regions = Set{Tuple{String,String,String}}([(f, r1, r2) for f ∈ Sets.Fuel
+        for r1 ∈ Sets.Region_full for r2 ∈ Sets.Region_full if (any(x-> x!=0, Params.TradeRoute[r1,r2,f,:])
+        && (Params.Tags.TagCanFuelBeTraded[f] != 0))])
+
+    return Maps(Map_Tech_Fuel,Map_Tech_MO,Map_Fuel_Tech, Set_Tech_MO, Set_Tech_FuelIn, Set_Tech_FuelOut, Set_Tech_Fuel, Set_Fuel_Regions)
 end
 
 function read_sets(in_data, Switch, s_infeas, s_dispatch; dispatch_week=nothing)
@@ -317,6 +329,13 @@ function read_params(in_data, Sets, Switch, Tags)
     TradeRoute = DenseArray(zeros(length.([𝓡, 𝓡, 𝓕, 𝓨])...), 𝓡, 𝓡, 𝓕, 𝓨)
     for y ∈ 𝓨
         TradeRoute[:,:,:,y] = Readin_TradeRoute2015
+        for f ∈ 𝓕
+            for r ∈ 𝓡 for rr ∈ 𝓡
+                if TradeRoute[r,rr,f,y] != TradeRoute[rr,r,f,y]
+                    println("TradeRoute is not symmetric for $f in $y: $r -> $rr != $rr -> $r")
+                end
+            end end
+        end
     end
     TradeCapacityGrowthCosts = create_daa(in_data, "Par_TradeCapacityGrowthCosts", 𝓡, 𝓡, 𝓕)
     #TradeCosts = create_daa(in_data,"Par_TradeCosts", 𝓕, 𝓡, 𝓡)

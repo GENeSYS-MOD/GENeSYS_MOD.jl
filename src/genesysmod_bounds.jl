@@ -270,9 +270,10 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
                 end
             else
                 for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
+                    fuels = (y for (x,y) ∈ Maps.Set_Tech_FuelOut if x == t)
                     Params.TotalAnnualMaxCapacity[r,t,y] = 0
                     Params.TotalTechnologyAnnualActivityUpperLimit[r,t,y] = 0
-                    for f ∈ Maps.Tech_Fuel[t]
+                    for f ∈ fuels
                         JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r],0; force=true)
                     end
                 end
@@ -288,9 +289,10 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
 
     else
         for y ∈ Sets.Year for r ∈ Sets.Region_full for t ∈ intersect(Sets.Technology, Params.Tags.TagTechnologyToSubsets["CCS"])
+            fuels = (y for (x,y) ∈ Maps.Set_Tech_FuelOut if x == t)
             Params.AvailabilityFactor[r,t,y] = 0
             Params.TotalAnnualMaxCapacity[r,t,y] = 0
-            for f ∈ Maps.Tech_Fuel[t]
+            for f ∈ fuels
                 JuMP.fix(Vars.ProductionByTechnologyAnnual[y,t,f,r], 0; force = true)
             end
         end end end
