@@ -1277,13 +1277,13 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
       Vars.PeakingCapacity[y,r] ==
         sum((sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛 ) < length(𝓛) ? Vars.TotalCapacityAnnual[y,t,r]*Params.AvailabilityFactor[r,t,y]*RenewableCapacityFactorReduction*(sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛)/length(𝓛)) : 0)
         + (sum(Params.CapacityFactor[r,t,l,y] for l ∈ 𝓛 ) >= length(𝓛) ? Vars.TotalCapacityAnnual[y,t,r]*Params.AvailabilityFactor[r,t,y] : 0)
-        for t ∈ setdiff(𝓣,Params.Tags.TagTechnologyToSubsets["StorageDummies"]) if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0)),
+        for t ∈ setdiff(𝓣,Params.Tags.TagTechnologyToSubsets["StorageDummies"]) if ((t,"Power") in Maps.Set_Tech_FuelOut && sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0)),
         base_name="PC2_PowerPeakingCapacity|$(y)|$(r)")
 
       if y >Switch.set_peaking_startyear
         @constraint(model,
-        Vars.PeakingCapacity[y,r] + (Switch.switch_peaking_with_trade == 1 ? sum(Vars.TotalTradeCapacity[y,"Power",rr,r] for rr ∈ 𝓡) : 0)
-        + (Switch.switch_peaking_with_storages == 1 ? sum(Vars.TotalCapacityAnnual[y,t,r] for t ∈ setdiff(𝓣,Params.Tags.TagTechnologyToSubsets["StorageDummies"]) if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0 && sum(sum(Params.TechnologyToStorage[t,:,m,y]) for m ∈ Maps.Tech_MO[t]) != 0)) : 0)
+        Vars.PeakingCapacity[y,r] + (Switch.switch_peaking_with_trade == 1 ? sum(Vars.TotalTradeCapacity[y,"Power",rr,r] for rr ∈ [z for (f,x,z) in Maps.Set_Fuel_Regions if f == "Power" && x == r]) : 0)
+        + (Switch.switch_peaking_with_storages == 1 ? sum(Vars.TotalCapacityAnnual[y,t,r] for t ∈ Params.Tags.TagTechnologyToSubsets["StorageDummies"] if (sum(Params.OutputActivityRatio[r,t,"Power",m,y] for m ∈ Maps.Tech_MO[t]) != 0 && sum(sum(Params.TechnologyToStorage[t,:,m,y]) for m ∈ Maps.Tech_MO[t]) != 0)) : 0)
         >= Vars.PeakingDemand[y,r]*PeakingSlack,
         base_name="PC3_PeakingConstraint|$(y)|$(r)")
       end
