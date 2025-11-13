@@ -2,7 +2,7 @@ module ScenarioDataEurope
     using JuMP
     export genesysmod_scenariodata
 
-    function genesysmod_scenariodata(model,Sets,Params, Vars,Switch)
+    function genesysmod_scenariodata(model,Sets,Params,Maps,Vars,Switch)
         if "X_DAC_HT" ∈ Sets.Technology
             Params.AvailabilityFactor[:,"X_DAC_HT",:] .= 0
         end
@@ -20,10 +20,9 @@ module ScenarioDataEurope
         # Limit capacity expansion in 2025 to only actually (historically) installed capacities
         for r ∈ Sets.Region_full, t ∈ setdiff(Params.Tags.TagTechnologyToSubsets["PowerSupply"],"P_Nuclear")
             if  Params.TotalAnnualMinCapacity[r,t,2025] == 0
-                @constraint(model, Vars.NewCapacity[2025,t,r] <= Params.TotalAnnualMaxCapacity[r,t,2025], base_name="ScenarioData_Europe_NewCapacity_2025_$(t)_$(r)") #Shouldn't that be fixed to 0?
+                @constraint(model, Vars.NewCapacity[2025,t,r] <= Params.TotalAnnualMinCapacity[r,t,2025], base_name="ScenarioData_Europe_NewCapacity_2025_$(t)_$(r)") #Shouldn't that be fixed to 0?
             end
         end
-        #NewCapacity.up(2025,t,r)$(TagTechnologyToSubsets(t,"PowerSupply") and not TotalAnnualMinCapacity(r,t,2025) and not sameas(t,"P_Nuclear")) = TotalAnnualMinCapacity(r,t,2025);
 
         for r ∈ Sets.Region_full, y ∈ Sets.Year
             @constraint(model, Vars.ProductionByTechnologyAnnual[y,"CHP_WasteToEnergy","Heat_District",r] <= Params.RegionalBaseYearProduction[r,"CHP_WasteToEnergy","Heat_District",2018], base_name="ScenarioData_Europe_CHP_WasdteToEnergy_Heat_District_$(r)_$(y)")
@@ -33,16 +32,6 @@ module ScenarioDataEurope
             if y > 2018
                 @constraint(model, Vars.ProductionByTechnologyAnnual[y,"HD_Heatpump_ExcessHeat","Heat_District",r] <= Params.SpecifiedAnnualDemand[r,"Heat_District",y]*0.08, base_name="ScenarioData_Europe_HD_Heatpump_ExcessHeat_Heat_District_$(r)_$(y)")
             end
-        end
-
-        for r ∈ Sets.Region_full, y ∈ Sets.Year
-            tmp = copy(Params.SpecifiedAnnualDemand[r,"Heat_District",y])
-            Params.SpecifiedAnnualDemand[r,"Heat_Buildings",y] = Params.SpecifiedAnnualDemand[r,"Heat_District",y]*0.85 + Params.SpecifiedAnnualDemand[r,"Heat_Buildings",y]
-            Params.SpecifiedAnnualDemand[r,"Heat_District",y] = 0
-
-            @constraint(model, sum(Vars.RateOfActivity[y,l,t,m,r] * Params.OutputActivityRatio[r,t,"Heat_District",m,y] * Params.YearSplit[l,y] for l ∈ Sets.Timeslice for t ∈ Sets.Technology for m ∈ Sets.Mode_of_operation if Params.OutputActivityRatio[r,t,"Heat_District",m,y] != 0) >= tmp,
-            base_name="ScenarioData_Europe_DistrictHeatLimit_$(r)_$(y)")
-
             @constraint(model, Vars.ProductionByTechnologyAnnual[y,"HLI_Geothermal","Heat_Low_Industrial",r] <= Params.SpecifiedAnnualDemand[r,"Heat_Low_Industrial",y]*0.25, base_name="ScenarioData_Europe_HLI_Geothermal_Heat_Low_Industrial_$(r)_$(y)")
         end
 
@@ -89,4 +78,15 @@ module ScenarioDataEurope
         end
     end
 
+    for r ∈ Sets.Region_Full, y ∈ Sets.Year
+        @constraint(model, sum(Vars.ProductionByTechnologyAnnual[y,t,"Heat_District",r] for t ∈ [t_ for (t_,f_) ∈ Maps.Set_Tech_FuelOut if f_ == "Heat_District"]) >= Params.DistrictHeatDemand[r,y]*1.2048,
+        base_name="DistrictHeatProductionAnnual|$(r)|Heat_District|$(y)")
+
+        for se ∈ Sets.Sector
+            if Params.DistrictHeatSplit[r,se,y] != 0
+                @constraint(model,sum(Vars.ProductionByTechnologyAnnual[y,t,f,r] for (t,f) ∈ Maps.Set_Tech_FuelOut if (Params.Tags.TagDemandFuelToSector[f,se] != 0 && Params.Tags.TagTechnologyToSubsets[t,"Convert"] != 0)) >= Params.DistrictHeatDemand[r,y]*Params.DistrictHeatSplit[r,se,y],
+                base_name="DistrictHeatProductionSplit|$(r)|$(se)|$(y)")
+            end
+        end
+    end
 end

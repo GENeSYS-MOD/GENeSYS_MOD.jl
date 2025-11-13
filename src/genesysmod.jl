@@ -27,7 +27,7 @@ function genesysmod_build_model(;elmod_daystep, elmod_hourstep, solver=nothing, 
     threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit",
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\",
     switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=1,
-    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0, switch_hydrogen_blending_share = 1,
+    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0.9, switch_hydrogen_blending_share = 1,
     set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ratio_deviation_factor = 2,
     switch_intertemporal=0, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.25, set_peaking_startyear = 2030,
@@ -140,7 +140,7 @@ function genesysmod_build_model(;elmod_daystep, elmod_hourstep, solver=nothing, 
     if isfile(scn_path)
         modname = Symbol("ScenarioData", uppercasefirst(switch.model_region))
         scenario_module = getfield(GENeSYS_MOD, modname)
-        scenario_module.genesysmod_scenariodata(model,Sets,Params,Vars,switch)
+        scenario_module.genesysmod_scenariodata(model,Sets,Params,Maps,Vars,switch)
     else
         @warn "No scenario data for region $(switch.model_region) found at $(scn_path)!"
     end
@@ -166,7 +166,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
     threads=4, emissionPathway="MinimalExample", emissionScenario="globalLimit",
     socialdiscountrate=0.05,  inputdir="Inputdata\\", resultdir="Results\\",
     switch_infeasibility_tech = NoInfeasibilityTechs(), switch_investLimit=1, switch_ccs=1,
-    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0, switch_hydrogen_blending_share = 1,
+    switch_ramping=0,switch_weighted_emissions=1,set_symmetric_transmission=0.9, switch_hydrogen_blending_share = 1,
     set_storagelevelstart_up = 0.75, set_storagelevelstart_down = 0.25, E2P_ratio_deviation_factor = 2,
     switch_intertemporal=0, switch_base_year_bounds = 1,switch_peaking_capacity = 1, set_peaking_slack =1.0,
     set_peaking_minrun_share =0.15, set_peaking_res_cf=0.5, set_peaking_min_thermal=0.25, set_peaking_startyear = 2030,

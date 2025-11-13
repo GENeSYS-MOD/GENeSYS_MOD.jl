@@ -61,6 +61,10 @@ function genesysmod_dataload(Switch; dispatch_week=nothing)
 
     GENeSYS_MOD.timeseries_reduction!(Params, Sets, Switch)
 
+    for y ∈ Sets.Year[2:end], r ∈ Sets.Region_full, f ∈ setdiff(Sets.Fuel, ["H2"])
+        Params.SpecifiedAnnualDemand[r,f,y] = Params.SpecifiedAnnualDemand[r,f,y-1] * (1 + Params.SpecifiedDemandDevelopment[r,f,y] * YearlyDifferenceMultiplier(y-1,Sets))
+    end
+
     for y ∈ 𝓨 for l ∈ 𝓛 for r ∈ 𝓡
         for f ∈ 𝓕
             Params.RateOfDemand[y,l,f,r] = Params.SpecifiedAnnualDemand[r,f,y]*Params.SpecifiedDemandProfile[r,f,l,y] / Params.YearSplit[l,y]
@@ -370,6 +374,8 @@ function read_params(in_data, Sets, Switch, Tags)
     ModelPeriodExogenousEmission = create_daa(in_data, "Par_ModelPeriodExogenousEmissio", 𝓡, 𝓔)
     AnnualMinNewCapacity = create_daa(in_data, "Par_AnnualMinNewCapacity", 𝓡, 𝓣, 𝓨)
     AnnualMaxNewCapacity = create_daa(in_data, "Par_AnnualMaxNewCapacity", 𝓡, 𝓣, 𝓨)
+    DistrictHeatDemand = create_daa(in_data, "Par_DistrictHeatDemand", 𝓡, 𝓨)
+    DistrictHeatSplit = create_daa(in_data, "Par_DistrictHeatSplit", 𝓡, 𝓢𝓮, 𝓨)
 
     RateOfDemand = DenseArray(zeros(length.([𝓨, 𝓛, 𝓕, 𝓡])...), 𝓨, 𝓛, 𝓕, 𝓡)
     Demand = DenseArray(zeros(length.([𝓨, 𝓛, 𝓕, 𝓡])...), 𝓨, 𝓛, 𝓕, 𝓡)
@@ -464,7 +470,8 @@ function read_params(in_data, Sets, Switch, Tags)
     ReserveMarginTagFuel,ReserveMargin,
     EmissionActivityRatio, EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
-    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,DistrictHeatDemand,
+    DistrictHeatSplit,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
     TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
     TradeCapacity, CommissionedTradeCapacity,REMinProductionTarget,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,
@@ -529,7 +536,8 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     RegionalAnnualEmissionLimit = aggregate_daa(Params_Full.RegionalAnnualEmissionLimit, 𝓡, 𝓡_full, Sum(), 𝓔, 𝓨)
     AnnualMinNewCapacity = aggregate_daa(Params_Full.AnnualMinNewCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
     AnnualMaxNewCapacity = aggregate_daa(Params_Full.AnnualMaxNewCapacity, 𝓡, 𝓡_full, Sum(), 𝓣, 𝓨)
-
+    DistrictHeatDemand = aggregate_daa(Params_Full.DistrictHeatDemand, 𝓡, 𝓡_full, Sum(), 𝓨)
+    DistrictHeatSplit = aggregate_daa(Params_Full.DistrictHeatSplit, 𝓡, 𝓡_full, Mean(), 𝓢𝓮, 𝓨)
 
     GrowthRateTradeCapacity = aggregate_cross_daa(Params_Full.GrowthRateTradeCapacity, 𝓡, 𝓡_full, Mean(), 𝓕, 𝓨)
     TradeCapacity = aggregate_cross_daa(Params_Full.TradeCapacity, 𝓡, 𝓡_full, Sum(), 𝓕, 𝓨)
@@ -637,7 +645,8 @@ function get_aggregate_params(Params_Full, Sets, Sets_full)
     ReserveMarginTagFuel,ReserveMargin,
     EmissionActivityRatio, EmissionContentPerFuel,EmissionsPenalty,EmissionsPenaltyTagTechnology,
     AnnualExogenousEmission,AnnualEmissionLimit,RegionalAnnualEmissionLimit,
-    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
+    ModelPeriodExogenousEmission,AnnualMinNewCapacity,AnnualMaxNewCapacity,DistrictHeatDemand,
+    DistrictHeatSplit,ModelPeriodEmissionLimit,RegionalModelPeriodEmissionLimit,
     CurtailmentCostFactor,TradeRoute,TradeCosts,
     TradeLossFactor,TradeRouteInstalledCapacity,TradeLossBetweenRegions,
     TradeCapacity,CommissionedTradeCapacity,REMinProductionTarget,TradeCapacityGrowthCosts,GrowthRateTradeCapacity,SelfSufficiency,

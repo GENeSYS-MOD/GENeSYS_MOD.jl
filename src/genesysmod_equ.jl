@@ -610,7 +610,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
             end
             for (t,f) ∈ Maps.Set_Tech_FuelOut
               if Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] != 0
-                if t ∈ Params.Tags.TagTechnologyToSubsets["PhaseInSet"]
+                if t ∈ Params.Tags.TagTechnologyToSubsets["PhaseInSet"] && f != "Heat_District"
                     @constraint(model,
                     Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] >= Vars.ProductionByTechnologyAnnual[𝓨[i-1],t,f,r]*Settings.PhaseIn[𝓨[i]]*(Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] > 0 ? Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]] : 1),
                     base_name="SC3_SmoothingRenewableIntegration|$(𝓨[i])|$(r)|$(t)|$(f)")
@@ -863,22 +863,23 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
 
   start=Dates.now()
   for i ∈ eachindex(𝓨) for f ∈ 𝓕 for r ∈ 𝓡
-    techs = [t for (t,y) ∈ Maps.Set_Tech_FuelOut if y == f]
-    @constraint(model,
-    sum(Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] for t ∈ intersect(techs, Params.Tags.TagTechnologyToSubsets["Renewables"])) == Vars.TotalREProductionAnnual[𝓨[i],r,f],base_name="RE1_ComputeTotalAnnualREProduction|$(𝓨[i])|$(r)|$(f)")
-
-    @constraint(model,
-    Params.REMinProductionTarget[r,f,𝓨[i]]*sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]]*Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,𝓨[i])])*Params.Tags.RETagFuel[r,f,𝓨[i]] <= Vars.TotalREProductionAnnual[𝓨[i],r,f],
-    base_name="RE2_AnnualREProductionLowerLimit|$(𝓨[i])|$(r)|$(f)")
-
-    if Switch.switch_dispatch isa NoDispatch
-      if (𝓨[i]> Switch.StartYear) && (Params.SpecifiedAnnualDemand[r,f,𝓨[i]]>0) && (Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]]>0)
+    if Params.REMinProductionTarget[r,f,𝓨[i]] > 0
+        techs = [t for (t,y) ∈ Maps.Set_Tech_FuelOut if y == f]
         @constraint(model,
-        Vars.TotalREProductionAnnual[𝓨[i],r,f] >= Vars.TotalREProductionAnnual[𝓨[i-1],r,f]*((Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]])),
-        base_name="RE3_RETargetPath|$(𝓨[i])|$(r)|$(f)")
-      end
-    end
+        sum(Vars.ProductionByTechnologyAnnual[𝓨[i],t,f,r] for t ∈ intersect(techs, Params.Tags.TagTechnologyToSubsets["Renewables"])) == Vars.TotalREProductionAnnual[𝓨[i],r,f],base_name="RE1_ComputeTotalAnnualREProduction|$(𝓨[i])|$(r)|$(f)")
 
+        @constraint(model,
+        Params.REMinProductionTarget[r,f,𝓨[i]]*sum(Vars.RateOfActivity[𝓨[i],l,t,m,r]*Params.OutputActivityRatio[r,t,f,m,𝓨[i]]*Params.YearSplit[l,𝓨[i]] for l ∈ 𝓛 for (t,m) ∈ LoopSetOutput[(r,f,𝓨[i])])*Params.Tags.RETagFuel[r,f,𝓨[i]] <= Vars.TotalREProductionAnnual[𝓨[i],r,f],
+        base_name="RE2_AnnualREProductionLowerLimit|$(𝓨[i])|$(r)|$(f)")
+
+        if Switch.switch_dispatch isa NoDispatch
+            if (𝓨[i]> Switch.StartYear) && (Params.SpecifiedAnnualDemand[r,f,𝓨[i]]>0) && (Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]]>0)
+                @constraint(model,
+                Vars.TotalREProductionAnnual[𝓨[i],r,f] >= Vars.TotalREProductionAnnual[𝓨[i-1],r,f]*((Params.SpecifiedAnnualDemand[r,f,𝓨[i]]/Params.SpecifiedAnnualDemand[r,f,𝓨[i-1]])),
+                base_name="RE3_RETargetPath|$(𝓨[i])|$(r)|$(f)")
+            end
+        end
+    end
   end end end
   print("Cstr: RE target : ",Dates.now()-start,"\n")
 

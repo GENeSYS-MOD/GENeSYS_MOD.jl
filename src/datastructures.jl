@@ -240,6 +240,11 @@ technologies in the start year. Used if switch_base_year_bounds is set to 1.\n
     a specific emission generated in a certain modelled region.\n
 - **`ModelPeriodExogenousEmission ::JuMP.Containers.DenseAxisArray`** Additional emissions
     over the entire modelled period, on top of those computed endogenously by the model.\n
+- **`AnnualMinNewCapacity ::JuMP.Containers.DenseAxisArray`** Minimum new capacity added annually.\n
+- **`AnnualMaxNewCapacity ::JuMP.Containers.DenseAxisArray`** Maximum new capacity added annually.\n
+- **`DistrictHeatDemand ::JuMP.Containers.DenseAxisArray`** Defines the total demand for district heat across the year. Unit: PJ\n
+- **`DistrictHeatSplit ::JuMP.Containers.DenseAxisArray`** Defines the share of district heat
+for the Buildings and Industry sector across the year. This is a lower bound. Unit: Factor\n
 - **`ModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray`** Total model period upper
     limit for a specific emission generated in the whole modelled region.\n
 - **`RegionalModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray`** Total model period
@@ -360,6 +365,8 @@ struct Parameters <: InputClass
     ModelPeriodExogenousEmission ::JuMP.Containers.DenseAxisArray
     AnnualMinNewCapacity ::JuMP.Containers.DenseAxisArray
     AnnualMaxNewCapacity ::JuMP.Containers.DenseAxisArray
+    DistrictHeatDemand ::JuMP.Containers.DenseAxisArray
+    DistrictHeatSplit ::JuMP.Containers.DenseAxisArray
     ModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray
     RegionalModelPeriodEmissionLimit ::JuMP.Containers.DenseAxisArray
     CurtailmentCostFactor ::JuMP.Containers.DenseAxisArray

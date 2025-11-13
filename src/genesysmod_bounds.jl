@@ -383,10 +383,6 @@ function genesysmod_bounds(model,Sets,Params, Vars,Settings,Switch,Maps)
         Params.CapitalCostStorage[r,s,y] = max(round(Params.CapitalCostStorage[r,s,y]/365*8760/Switch.elmod_nthhour/(24/Switch.elmod_hourstep),sigdigits=4),0.01)
     end end end
 
-
-    #=loop(y,
-    SpecifiedAnnualDemand(r,f,y)$(not sameas(f,'H2') and YearVal(y)>%year%) = SpecifiedAnnualDemand(r,f,y-1)*(1+SpecifiedDemandDevelopment(r,f,y)*YearlyDifferenceMultiplier(y-1))
-    ) =#
 end
 
 function YearlyDifferenceMultiplier(y,Sets);
