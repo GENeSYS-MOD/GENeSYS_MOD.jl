@@ -219,13 +219,13 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
 
     set_optimizer(model, solver)
 
-    if occursin(string(solver),"Gurobi")
+    if solver_name(model) == "Gurobi"
         set_optimizer_attribute(model, "Threads", threads)
         #set_optimizer_attribute(model, "Names", "no")
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
         set_optimizer_attribute(model, "LogFile", joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"))
-    elseif occursin(string(solver),"CPLEX")
+    elseif solver_name(model) == "CPLEX"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
@@ -233,7 +233,7 @@ function genesysmod(;elmod_daystep, elmod_hourstep, solver, DNLPsolver, year=201
         #env = model.moi_backend.optimizer.model.env
         #CPLEX.CPXsetlogfilename(env, joinpath(resultdir,"Run_$(elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
-    elseif occursin(string(solver),"HiGHS")
+    elseif solver_name(model) == "HiGHS"
         set_optimizer_attribute(model, "solver", "ipm")
         #set_optimizer_attribute(model, "solver", "pdlp")
         set_optimizer_attribute(model, "run_crossover", "off")
