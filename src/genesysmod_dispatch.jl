@@ -127,7 +127,7 @@ function genesysmod_build_model_dispatch(; solver=nothing, DNLPsolver, year=2018
     # ####### Fix Investment Variables #############
     #
 
-    storage_ratio = fix_investments!(model, switch, Sets, Params, Region_full, switch.switch_dispatch)
+    storage_ratio = fix_investments!(model, switch, Sets, Params, Maps, Region_full, switch.switch_dispatch)
 
     #
     # ####### Including Equations #############
@@ -282,7 +282,7 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
     return model, Dict("Sets" => Sets, "Params" => Params, "Switch" => switch)
 end
 
-function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::OneNodeSimple)
+function fix_investments!(model, Switch, Sets, Params, Maps, region_full, s_dispatch::OneNodeSimple)
     # read investment results for relevant variables
     tmp_TotalCapacityAnnual, tmp_TotalTradeCapacity, tmp_NewStorageCapacity = read_investments(Sets, Switch, Switch.switch_raw_results)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
@@ -305,14 +305,14 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
             base_name="Fix_NewStorageCapacity_$(s)_$(y)_$(r)")
         end
     end end
-    for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
+    for y ∈ Sets.Year for (f,r,rr) ∈ Maps.Set_Fuel_Regions
         @constraint(model, model[:TotalTradeCapacity][y,f,r,rr] == tmp_TotalTradeCapacity[y,f,r,rr],
         base_name="Fix_TradeConnection_$(y)_$(f)_$(r)_$(rr)")
-    end end end end
+    end end
     return 0
 end
 
-function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::OneNodeStorage)
+function fix_investments!(model, Switch, Sets, Params, Maps, region_full, s_dispatch::OneNodeStorage)
     # read investment results for relevant variables (from a run on full Europe)
     tmp_TotalCapacityAnnual, tmp_TotalTradeCapacity, tmp_NewStorageCapacity = read_investments(Sets, Switch, region_full, Switch.switch_raw_results)
     tmp_TotalCapacityAnnual = tmp_TotalCapacityAnnual[:,:,Sets.Region_full]
@@ -340,11 +340,11 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
         end
 
     end end
-    for y ∈ Sets.Year for f ∈ Sets.Fuel for r ∈ Sets.Region_full for rr ∈ Sets.Region_full
+    for y ∈ Sets.Year for (f,r,rr) ∈ Maps.Set_Fuel_Regions
         if model[:TotalTradeCapacity][y,f,r,rr] isa VariableRef
             fix(model[:TotalTradeCapacity][y,f,r,rr], 0; force=true)
         end
-    end end end end
+    end end
 
     # determining the ratio between charging and discharging the "trade storage" with the import and export
     col_names = ["Year", "Timeslice", "Fuel", "Region", "Value"]
@@ -363,7 +363,7 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
     return storage_ratio
 end
 
-function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::TwoNodes)
+function fix_investments!(model, Switch, Sets, Params, Maps, region_full, s_dispatch::TwoNodes)
 
     tmp_TotalCapacityAnnual, tmp_TotalTradeCapacity, tmp_NewStorageCapacity = read_investments(Sets, Switch, region_full, Switch.switch_raw_results)
     #= in_data=CSV.read(joinpath(Switch.resultdir, "NetTradeAnnual_" * Switch.model_region * "_" * Switch.emissionPathway * "_" * Switch.emissionScenario * ".csv"), DataFrame)
@@ -392,10 +392,10 @@ function fix_investments!(model, Switch, Sets, Params, region_full, s_dispatch::
         end
     end
     for y ∈ Sets.Year for f ∈ Sets.Fuel
-        if model[:TotalTradeCapacity][y,f,Sets.Region_full[1],Sets.Region_full[2]] isa VariableRef
+        if Params.Tags.TagCanFuelBeTraded[f] != 0 && model[:TotalTradeCapacity][y,f,Sets.Region_full[1],Sets.Region_full[2]] isa VariableRef
             fix(model[:TotalTradeCapacity][y,f,Sets.Region_full[1],Sets.Region_full[2]], sum(tmp_TotalTradeCapacity[y,f,Sets.Region_full[1],r] for r in region_full if r!=Sets.Region_full[1]); force=true)
         end
-        if model[:TotalTradeCapacity][y,f,Sets.Region_full[2],Sets.Region_full[1]] isa VariableRef
+        if Params.Tags.TagCanFuelBeTraded[f] != 0 && model[:TotalTradeCapacity][y,f,Sets.Region_full[2],Sets.Region_full[1]] isa VariableRef
             fix(model[:TotalTradeCapacity][y,f,Sets.Region_full[2],Sets.Region_full[1]], sum(tmp_TotalTradeCapacity[y,f,r,Sets.Region_full[1]] for r in region_full if r!=Sets.Region_full[1]); force=true)
         end
             # @constraint(model, model[:TotalTradeCapacity][y,f,r,rr] == tmp_TotalTradeCapacity[y,f,r,rr],

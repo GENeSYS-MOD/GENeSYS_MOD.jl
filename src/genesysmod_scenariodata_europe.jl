@@ -76,16 +76,16 @@ module ScenarioDataEurope
                 end
             end
         end
-    end
 
-    for r ∈ Sets.Region_Full, y ∈ Sets.Year
-        @constraint(model, sum(Vars.ProductionByTechnologyAnnual[y,t,"Heat_District",r] for t ∈ [t_ for (t_,f_) ∈ Maps.Set_Tech_FuelOut if f_ == "Heat_District"]) >= Params.DistrictHeatDemand[r,y]*1.2048,
-        base_name="DistrictHeatProductionAnnual|$(r)|Heat_District|$(y)")
+        for r ∈ Sets.Region_full, y ∈ Sets.Year
+            @constraint(model, sum(Vars.ProductionByTechnologyAnnual[y,t,"Heat_District",r] for t ∈ [t_ for (t_,f_) ∈ Maps.Set_Tech_FuelOut if f_ == "Heat_District"]) >= Params.DistrictHeatDemand[r,y]*1.2048,
+            base_name="DistrictHeatProductionAnnual|$(r)|Heat_District|$(y)")
 
-        for se ∈ Sets.Sector
-            if Params.DistrictHeatSplit[r,se,y] != 0
-                @constraint(model,sum(Vars.ProductionByTechnologyAnnual[y,t,f,r] for (t,f) ∈ Maps.Set_Tech_FuelOut if (Params.Tags.TagDemandFuelToSector[f,se] != 0 && Params.Tags.TagTechnologyToSubsets[t,"Convert"] != 0)) >= Params.DistrictHeatDemand[r,y]*Params.DistrictHeatSplit[r,se,y],
-                base_name="DistrictHeatProductionSplit|$(r)|$(se)|$(y)")
+            for se ∈ Sets.Sector
+                if Params.DistrictHeatSplit[r,se,y] != 0
+                    @constraint(model,sum(Vars.ProductionByTechnologyAnnual[y,t,f,r] for (t,f) ∈ Maps.Set_Tech_FuelOut if (Params.Tags.TagDemandFuelToSector[f,se] != 0 && t ∈ Params.Tags.TagTechnologyToSubsets["Convert"])) >= Params.DistrictHeatDemand[r,y]*Params.DistrictHeatSplit[r,se,y],
+                    base_name="DistrictHeatProductionSplit|$(r)|$(se)|$(y)")
+                end
             end
         end
     end
