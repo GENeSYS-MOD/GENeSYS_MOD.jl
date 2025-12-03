@@ -474,6 +474,14 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
         base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[i])|H2|$(r)|$(rr)")
       end
     end
+    for (r,rr) ∈ [(y,z) for (x,y,z) ∈ Maps.Set_Fuel_Regions if x == "Gas_Natural"]
+        @constraint(model, (Params.TradeCapacity[r,rr,"Gas_Natural",𝓨[1]] == 0 ? 100 : 0) >= Vars.NewTradeCapacity[𝓨[1],"Gas_Natural",r,rr],
+        base_name="TrC4a_NewTradeCapacityLimitNatGas|$(𝓨[1])|Gas_Natural|$(r)|$(rr)")
+    end
+    for (r,rr) ∈ [(y,z) for (x,y,z) ∈ Maps.Set_Fuel_Regions if x == "H2"]
+        @constraint(model, (Params.TradeCapacity[r,rr,"H2",𝓨[1]] == 0 ? 50 : 0) >= Vars.NewTradeCapacity[𝓨[1],"H2",r,rr],
+        base_name="TrC5a_NewTradeCapacityLimitH2|$(𝓨[1])|H2|$(r)|$(rr)")
+    end
     for (f,r,rr) ∈ Maps.Set_Fuel_Regions
       if Params.TradeCapacityGrowthCosts[r,rr,f] > 0 && f != "Power"
         @constraint(model, sum(Vars.Import[𝓨[i],l,f,rr,r] for l ∈ 𝓛) <= Vars.TotalTradeCapacity[𝓨[i],f,r,rr],
@@ -780,12 +788,12 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
     if Params.AnnualMaxNewCapacity[r,t,y] < 999999
       @constraint(model,
       Vars.NewCapacity[y,t,r] <= Params.AnnualMaxNewCapacity[r,t,y],
-      base_name="NCC1_TotalAnnualMaxNewCapacityConstraint|$(y)|$(t)|$(r)")
+      base_name="NCC1_AnnualMaxNewCapacityConstraint|$(y)|$(t)|$(r)")
     end
     if Params.AnnualMinNewCapacity[r,t,y] > 0
       @constraint(model,
       Vars.NewCapacity[y,t,r] >= Params.AnnualMinNewCapacity[r,t,y],
-      base_name="NCC2_TotalAnnualMinNewCapacityConstraint|$(y)|$(t)|$(r)")
+      base_name="NCC2_AnnualMinNewCapacityConstraint|$(y)|$(t)|$(r)")
     end
     if (y > Params.NewCapacityExpansionStop[r,t]) && (Params.NewCapacityExpansionStop[r,t] != 0) &&
         (Params.TotalAnnualMinCapacity[r,t,y] == 0) && (Params.AnnualMinNewCapacity[r,t,y] == 0)
