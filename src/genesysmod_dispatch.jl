@@ -203,22 +203,22 @@ function genesysmod_dispatch(; solver, DNLPsolver, year=2018,
 
     set_optimizer(model, solver)
 
-    if string(solver) == "Gurobi.Optimizer"
+    if solver_name(model) == "Gurobi.Optimizer"
         set_optimizer_attribute(model, "Threads", threads)
         #set_optimizer_attribute(model, "Names", "no")
         set_optimizer_attribute(model, "Method", 2)
         set_optimizer_attribute(model, "BarHomogeneous", 1)
         set_optimizer_attribute(model, "Crossover", 0)
         set_optimizer_attribute(model, "LogFile", joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"))
-    elseif string(solver) == "CPLEX.Optimizer"
+    elseif solver_name(model) == "CPLEX.Optimizer"
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(model, "CPX_PARAM_PARALLELMODE", -1)
         set_optimizer_attribute(model, "CPX_PARAM_LPMETHOD", 4)
         set_optimizer_attribute(model, "CPX_PARAM_SOLUTIONTYPE", 2)
-        env = model.moi_backend.optimizer.model.env
-        CPXsetlogfilename(env, joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"), "w+")
+        #env = model.moi_backend.optimizer.model.env
+        #CPXsetlogfilename(env, joinpath(resultdir,"Run_$(switch.elmod_nthhour)_$(today()).log"), "w+")
         #set_optimizer_attribute(model, "CPX_PARAM_BAROBJRNG", 1e+075)
-    elseif string(solver) == "HiGHS.Optimizer"
+    elseif solver_name(model) == "HiGHS.Optimizer"
         set_optimizer_attribute(model, "solver", "ipm")
         #set_optimizer_attribute(model, "solver", "pdlp")
         set_optimizer_attribute(model, "run_crossover", "off")

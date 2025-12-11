@@ -541,7 +541,7 @@ function genesysmod_equ(model,Sets,Params, Vars,Emp_Sets,Settings,Switch, Maps; 
 
   for y ∈ 𝓨 for r ∈ 𝓡
     set_fuel_region2 = [(x,z) for (x,y,z) ∈ Maps.Set_Fuel_Regions if y == r]
-    if sum(Params.TradeRoute[r,rr,f,y] for (f,rr) ∈ set_fuel_region2) > 0
+    if !isempty(set_fuel_region2) && sum(Params.TradeRoute[r,rr,f,y] for (f,rr) ∈ set_fuel_region2) > 0
       @constraint(model, sum(Vars.Import[y,l,f,r,rr] * Params.TradeCosts[r,f,y,rr] for (f,rr) ∈ set_fuel_region2 for l ∈ 𝓛) == Vars.AnnualTotalTradeCosts[y,r], base_name="TC1_AnnualTradeCosts|$(y)|$(r)")
     else
       JuMP.fix(Vars.AnnualTotalTradeCosts[y,r], 0; force=true)
