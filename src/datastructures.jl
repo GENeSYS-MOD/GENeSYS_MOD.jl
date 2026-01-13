@@ -133,7 +133,7 @@ All the parameters read for a model run
 
 # Extended
 # Fields
-- **`StartYear ::Int64`** First year of the study horizon.\n
+- **`StartYear ::Int`** First year of the study horizon.\n
 - **`YearSplit ::JuMP.Containers.DenseAxisArray`** Weighting factors of the each timeslice,
      i.e. how much of the whole year is represented by a given tiomeslice. \n
 - **`SpecifiedAnnualDemand ::JuMP.Containers.DenseAxisArray`** Total specified demand for a year.\n
@@ -408,28 +408,28 @@ struct Parameters <: InputClass
     StorageE2PRatio ::Union{Nothing,JuMP.Containers.DenseAxisArray}
 end
 
-const VarDenseIS = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{Int64}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseISS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{Int64}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSISI = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{String}, Vector{Int64}, Vector{String}, Vector{Int64}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}}}
-const VarDenseIISS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{Int64}, Vector{Int64}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSIS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{String}, Vector{Int64}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSIIS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{String}, Vector{Int64}, Vector{Int64}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSII = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{String}, Vector{Int64}, Vector{Int64}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}}}
-const VarDenseIIS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{Int64}, Vector{Int64}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSS = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseISSS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{Int64}, Vector{String}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}}}
-const VarDenseSI = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{String}, Vector{Int64}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}}}
-const VarDenseSISSI = JuMP.Containers.DenseAxisArray{VariableRef, 5, Tuple{Vector{String}, Vector{Int64}, Vector{String}, Vector{String}, Vector{Int64}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{String, Int64}}, JuMP.Containers._AxisLookup{Dict{Int64, Int64}}}}
+const VarDenseIS = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{Int}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseISS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{Int}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSISI = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{String}, Vector{Int}, Vector{String}, Vector{Int}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}}}
+const VarDenseIISS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{Int}, Vector{Int}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSIS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{String}, Vector{Int}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSIIS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{String}, Vector{Int}, Vector{Int}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSII = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{String}, Vector{Int}, Vector{Int}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}}}
+const VarDenseIIS = JuMP.Containers.DenseAxisArray{VariableRef, 3, Tuple{Vector{Int}, Vector{Int}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSS = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseISSS = JuMP.Containers.DenseAxisArray{VariableRef, 4, Tuple{Vector{Int}, Vector{String}, Vector{String}, Vector{String}}, Tuple{JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}}}
+const VarDenseSI = JuMP.Containers.DenseAxisArray{VariableRef, 2, Tuple{Vector{String}, Vector{Int}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}}}
+const VarDenseSISSI = JuMP.Containers.DenseAxisArray{VariableRef, 5, Tuple{Vector{String}, Vector{Int}, Vector{String}, Vector{String}, Vector{Int}}, Tuple{JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{String, Int}}, JuMP.Containers._AxisLookup{Dict{Int, Int}}}}
 
 struct Variables
     NewCapacity ::VarDenseISS
     AccumulatedNewCapacity ::VarDenseISS
     TotalCapacityAnnual ::VarDenseISS
 
-    RateOfActivity ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, Int64, String, Int64, String}}
-    TotalAnnualTechnologyActivityByMode ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, Int64, String}}
-    ProductionByTechnologyAnnual ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
-    UseByTechnologyAnnual ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
+    RateOfActivity ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, Int, String, Int, String}}
+    TotalAnnualTechnologyActivityByMode ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, Int, String}}
+    ProductionByTechnologyAnnual ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
+    UseByTechnologyAnnual ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
     TotalTechnologyAnnualActivity ::VarDenseISS
     TotalActivityPerYear ::VarDenseSISI
     CurtailedEnergyAnnual ::VarDenseISS
@@ -469,7 +469,7 @@ struct Variables
     TotalTechnologyModelPeriodActivity ::VarDenseSS
     RETargetMin ::VarDenseIS
 
-    AnnualTechnologyEmissionByMode ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, String, String, Int64, String}}
+    AnnualTechnologyEmissionByMode ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, String, String, Int, String}}
     AnnualTechnologyEmission ::VarDenseISSS
     AnnualTechnologyEmissionPenaltyByEmission ::VarDenseISSS
     AnnualTechnologyEmissionsPenalty ::VarDenseISS
@@ -480,12 +480,12 @@ struct Variables
 
     AnnualSectoralEmissions ::VarDenseISSS
 
-    Import ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, Int64, String, String, String}}
-    Export ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, Int64, String, String, String}}
-    NewTradeCapacity ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
-    TotalTradeCapacity ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
-    NewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
-    DiscountedNewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int64, String, String, String}}
+    Import ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, Int, String, String, String}}
+    Export ::JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, Int, String, String, String}}
+    NewTradeCapacity ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
+    TotalTradeCapacity ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
+    NewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
+    DiscountedNewTradeCapacityCosts ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{Int, String, String, String}}
     NetTrade ::VarDenseIISS
     NetTradeAnnual ::VarDenseISS
     AnnualTotalTradeCosts ::VarDenseIS
@@ -493,13 +493,13 @@ struct Variables
 
     DemandSplitByModalType ::VarDenseSISSI
     ProductionSplitByModalType ::VarDenseSISSI
-    ProductionUpChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, Int64, String, String, String}}}
-    ProductionDownChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int64, Int64, String, String, String}}}
+    ProductionUpChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, Int, String, String, String}}}
+    ProductionDownChangeInTimeslice ::Union{Nothing,JuMP.Containers.SparseAxisArray{VariableRef, 5, Tuple{Int, Int, String, String, String}}}
 
     RateOfTotalActivity ::Union{Nothing,VarDenseIISS}
 
-    BaseYearBounds_TooLow ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{String, String, String, Int64}}
-    BaseYearBounds_TooHigh ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{String, String, String, Int64}}
+    BaseYearBounds_TooLow ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{String, String, String, Int}}
+    BaseYearBounds_TooHigh ::JuMP.Containers.SparseAxisArray{VariableRef, 4, Tuple{String, String, String, Int}}
     HeatingSlack ::VarDenseSI
 
     DiscountedSalvageValueTransmission ::VarDenseIS
@@ -587,13 +587,13 @@ Sets used for the model run
     aggregation and accounting purposes.\n
 """
 struct Sets <: InputClass
-    Timeslice_full ::Vector{Int64}
+    Timeslice_full ::Vector{Int}
     Emission ::Vector{String}
     Technology ::Vector{String}
     Fuel ::Vector{String}
-    Year ::Vector{Int64}
-    Timeslice ::Vector{Int64}
-    Mode_of_operation ::Vector{Int64}
+    Year ::Vector{Int}
+    Timeslice ::Vector{Int}
+    Mode_of_operation ::Vector{Int}
     Region_full ::Vector{String}
     Storage ::Vector{String}
     ModalType ::Vector{String}
