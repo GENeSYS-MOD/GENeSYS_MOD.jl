@@ -55,7 +55,7 @@ function genesysmod_build_model(;elmod_daystep, elmod_hourstep, solver=nothing, 
         mkdir(resultdir)
     end
 
-    elmod_nthhour = Int64(elmod_daystep * 24 + elmod_hourstep)
+    elmod_nthhour = Int(elmod_daystep * 24 + elmod_hourstep)
     switch_dispatch = NoDispatch()
 
     switch = Switch(year,
