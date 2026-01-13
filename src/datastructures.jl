@@ -591,9 +591,9 @@ struct Sets <: InputClass
     Emission ::Vector{String}
     Technology ::Vector{String}
     Fuel ::Vector{String}
-    Year ::Vector{Int}
-    Timeslice ::Vector{Int}
-    Mode_of_operation ::Vector{Int}
+    Year ::Vector{Int64}
+    Timeslice ::Vector{Int64}
+    Mode_of_operation ::Vector{Int64}
     Region_full ::Vector{String}
     Storage ::Vector{String}
     ModalType ::Vector{String}
