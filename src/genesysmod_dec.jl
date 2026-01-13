@@ -146,13 +146,13 @@ function genesysmod_dec(model,Sets, Params,Switch, Maps)
 
 
     ######### Trade #############
-    Import = @variable(model, Import[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-    Export = @variable(model, Export[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-    NewTradeCapacity = @variable(model, NewTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-    TotalTradeCapacity = @variable(model, TotalTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-    NewTradeCapacityCosts = @variable(model, NewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-    DiscountedNewTradeCapacityCosts = @variable(model, DiscountedNewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ Maps.Set_Fuel_Regions] >= 0)
-
+    imp_exp_sets = isempty(Maps.Set_Fuel_Regions) ? Set([(String("ETS"),String(𝓡[1]),String(𝓡[1]))]) : Maps.Set_Fuel_Regions # dummy to avoid type problems in dispatch if se is empty
+    Import = @variable(model, Import[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
+    Export = @variable(model, Export[y=𝓨, l=𝓛, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
+    NewTradeCapacity = @variable(model, NewTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
+    TotalTradeCapacity = @variable(model, TotalTradeCapacity[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
+    NewTradeCapacityCosts = @variable(model, NewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
+    DiscountedNewTradeCapacityCosts = @variable(model, DiscountedNewTradeCapacityCosts[y=𝓨, f=𝓕, r1=𝓡, r2=𝓡; (f,r1,r2) ∈ imp_exp_sets] >= 0)
     NetTrade = @variable(model, NetTrade[𝓨,𝓛,𝓕,𝓡], container=DenseArray)
     NetTradeAnnual = @variable(model, NetTradeAnnual[𝓨,𝓕,𝓡], container=DenseArray)
     AnnualTotalTradeCosts = @variable(model, AnnualTotalTradeCosts[𝓨,𝓡], container=DenseArray)
