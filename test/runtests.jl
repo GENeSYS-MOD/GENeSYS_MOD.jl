@@ -1,4 +1,4 @@
-using GENeSYS_MOD
+using GENeSYSMOD
 using Test
 using JuMP
 using HiGHS
@@ -14,7 +14,7 @@ solver = HiGHS.Optimizer
 end
 
 #clean Results folder and subfolders of everything
-result_path = joinpath(pkgdir(GENeSYS_MOD),"test","TestData","Results")
+result_path = joinpath(pkgdir(GENeSYSMOD),"test","TestData","Results")
 for (root, dirs, files) in walkdir(result_path)
     for file in files
         rm(joinpath(root, file))

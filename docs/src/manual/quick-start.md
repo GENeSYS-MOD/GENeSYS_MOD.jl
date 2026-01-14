@@ -17,21 +17,21 @@
     *	[CPLEX](https://www.ibm.com/products/ilog-cplex-optimization-studio/cplex-optimizer)
     *	[HiGHS](https://highs.dev/), open source solver.
 
-5.	Clone the GitHub repository for [GENeSYS_MOD.jl](https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl)
+5.	Clone the GitHub repository for [GENeSYSMOD.jl](https://github.com/GENeSYS-MOD/GENeSYSMOD.jl)
     *	Download git: [Git - Downloads](https://git-scm.com/)
     *	Navigate to the folder where you want the repo to be located.
     * Open Git Bash by right clicking in the chosen folder and choosing "Git Bash Here"
     * Type the following command in Git Bash:
 
 ```
-git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.jl.git
+git clone https://github.com/GENeSYS-MOD/GENeSYSMOD.jl.git
 git pull
 ```
 
 6.	Open GENeSYS-MOD folder in Visual Studios
     *	File > Open folder
 
-7.	Change to Julia environment for GENeSYS_MOD.jl.
+7.	Change to Julia environment for GENeSYSMOD.jl.
 
 8.  Open the Julia REPL by using the Alt+J+O command. The REPL(read-eval-print loop) is the interactive command line interface in Julia.
 
@@ -53,8 +53,8 @@ git pull
 Create a folder where you will be able to store your scripts, inputs and outputs of the model. You can then include tyhe following at the top of your script: 
 
 ```julia
-Pkg.develop(path="..\\GENeSYS_MOD.jl")
-using GENeSYS_MOD
+Pkg.develop(path="..\\GENeSYSMOD.jl")
+using GENeSYSMOD
 ```
 
 Where you replace the path with the relative or absolute path to the package. Note the "\\".This will allow you to use the package functions.

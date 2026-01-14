@@ -1,4 +1,4 @@
-name = "GENeSYS_MOD"
+name = "GENeSYSMOD"
 uuid = "9f3a37f9-d498-4265-a124-3ae3e9ff3acf"
 authors = ["Dimitri Pinel <dimitri.pinel@sintef.no>", "Lars Hellemo <lars.hellemo@sintef.no>"]
 version = "4.0.0"
