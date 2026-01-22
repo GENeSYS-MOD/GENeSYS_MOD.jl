@@ -44,6 +44,9 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
+      - name: Clone external directory
+        run: |
+          git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.data.git external
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
