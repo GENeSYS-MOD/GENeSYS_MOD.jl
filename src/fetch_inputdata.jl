@@ -33,7 +33,7 @@ function update_and_process_data(;settings_file = nothing, scenario_option = "Eu
     # Pull latest changes
     if isnothing(datadir)
         start_dir = pwd()
-        repo_dir = joinpath(pwd(),"GENeSYS_MOD.data")
+        repo_dir = joinpath(@__DIR__,"..","..","GENeSYS_MOD.data")
         cd(repo_dir)
         println("Using present data directory")
     else

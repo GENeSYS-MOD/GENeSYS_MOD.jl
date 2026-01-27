@@ -1,11 +1,11 @@
 # Test for default parameters
-if !isdir("external")
-    datadir = nothing
-    settings_file = "GENeSYSMOD.jl/test/TestInputFetch/Set_filter_file.xlsx"
+if haskey(ENV, "GENESYSMOD_DATADIR")
+    datadir = ENV["GENESYSMOD_DATADIR"]
 else
-    datadir = "external"
-    settings_file = "test/TestInputFetch/Set_filter_file.xlsx"
+    datadir = nothing
 end
+
+settings_file = joinpath(@__DIR__,"TestInputFetch","Set_filter_file.xlsx")
 
 @testset "Default Parameters" begin
     @test update_and_process_data(datadir=datadir)
