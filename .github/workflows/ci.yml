@@ -51,7 +51,7 @@ jobs:
       # Make PyCall use Conda's Python
       - name: Force PyCall to use Conda Python
         run: |
-          julia -e 'using Pkg; ENV["PYTHON"]=""; Pkg.build("PyCall")'
+          julia -e 'using Pkg; ENV["PYTHON"]=""; Pkg.instantiate(); Pkg.build("PyCall")'
 
       # Install required Python packages into that Conda env
       - name: Install Python packages (Conda)
