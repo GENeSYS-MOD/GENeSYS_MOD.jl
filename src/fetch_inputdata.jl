@@ -1,5 +1,3 @@
-Conda.add(["pandas","xlsxwriter","openpyxl"]; satisfied_skip_solve=true) # Add the package and skip if it is already installed
-Conda.list()
 """
     update_and_process_data(; settings_file=nothing, scenario_option="Europe_EnVis_Green",
                             datadir=nothing, resultdir=nothing, output_format="long", processing_option="both")

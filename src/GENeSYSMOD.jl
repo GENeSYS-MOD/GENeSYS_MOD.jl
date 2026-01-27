@@ -14,7 +14,7 @@ using CSV
 using Statistics
 using PyCall
 using LibGit2
-using Conda
+using CondaPkg
 
 const DenseArray = JuMP.Containers.DenseAxisArray
 
