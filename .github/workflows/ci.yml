@@ -51,12 +51,12 @@ jobs:
       # Make PyCall use Conda's Python
       - name: Force PyCall to use Conda Python
         run: |
-          julia -e 'using Pkg; ENV["PYTHON"]=""; Pkg.instantiate(); Pkg.build("PyCall")'
+          julia --project=. -e 'using Pkg; ENV["PYTHON"]=""; Pkg.instantiate(); Pkg.build("PyCall")'
 
       # Install required Python packages into that Conda env
       - name: Install Python packages (Conda)
         run: |
-          julia -e '
+          julia --project=. -e '
             using Conda
             Conda.add("pandas"; channel="conda-forge")
             Conda.add("xlsxwriter"; channel="conda-forge")
