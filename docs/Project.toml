@@ -4,4 +4,4 @@ GENeSYSMOD = "9f3a37f9-d498-4265-a124-3ae3e9ff3acf"
 
 [compat]
 Documenter = "0.27.25"
-GENeSYSMOD = "4.0.1"
+GENeSYSMOD = "4.0.0"
