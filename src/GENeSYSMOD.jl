@@ -15,8 +15,11 @@ using Statistics
 using PyCall
 using LibGit2
 using CondaPkg
+using Downloads
 
 const DenseArray = JuMP.Containers.DenseAxisArray
+
+const LATEST_DATA_VERSION = "v1.0.5"
 
 include("datastructures.jl")
 include("utils.jl")
@@ -42,6 +45,6 @@ export genesysmod_build_model, genesysmod_build_model_dispatch
 export NoInfeasibilityTechs, WithInfeasibilityTechs # for use with the switch infeasibility_techs
 export OneNodeSimple, TwoNodes, OneNodeStorage
 export NoRawResult, CSVResult, TXTResult, TXTandCSV
-export update_and_process_data
+export update_and_process_data, fetch_data_release
 
 end

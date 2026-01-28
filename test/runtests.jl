@@ -6,6 +6,8 @@ using Ipopt
 
 solver = HiGHS.Optimizer
 
+const TEST_RESULTS_DIR = joinpath(pkgdir(GENeSYSMOD),"test","TestData","Results")
+
 @testset "GENeSYS-MOD" begin
     @testset "Investment Run" begin
         include("test.jl")
@@ -27,8 +29,7 @@ solver = HiGHS.Optimizer
 end
 
 #clean Results folder and subfolders of everything
-result_path = joinpath(pkgdir(GENeSYSMOD),"test","TestData","Results")
-for (root, dirs, files) in walkdir(result_path)
+for (root, dirs, files) in walkdir(TEST_RESULTS_DIR)
     for file in files
         rm(joinpath(root, file))
     end

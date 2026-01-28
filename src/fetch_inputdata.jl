@@ -99,3 +99,46 @@ from functions.function_import import master_function
     cd(start_dir)
     return true
 end
+
+"""
+    fetch_data_release(; version_tag::String="latest", dataset_name::String="MiddleEarth", dest_dir::AbstractString=pwd())
+
+Download GENeSYS-MOD input data files from a GitHub release of the data repository.
+
+# Arguments
+- `version_tag::String`: The version tag of the data release to download. Defaults to "latest", which uses `LATEST_DATA_VERSION`.
+- `dataset_name::String`: The name of the dataset to download. Defaults to "MiddleEarth".
+- `dest_dir::AbstractString`: The destination directory where the files will be saved. Defaults to the current working directory.
+
+# Downloads
+- `RegularParameters_<dataset_name>.xlsx`: Regular parameters file for the specified dataset
+- `Timeseries_<dataset_name>.xlsx`: Timeseries data file for the specified dataset
+
+# Errors
+Throws an error if either file fails to download, including the URL and error details.
+
+# Examples
+```julia
+fetch_data_release(version_tag="v1.0.5", dataset_name="Europe_EnVis_Green", dest_dir="path/to/save")
+```
+"""
+function fetch_data_release(;version_tag::String="latest", dataset_name::String="MiddleEarth", dest_dir::AbstractString=pwd())
+    if version_tag == "latest"
+        version_tag = LATEST_DATA_VERSION
+    end
+
+    regpar_file_url = "https://github.com/GENeSYS-MOD/GENeSYS_MOD.data/releases/download/$version_tag/RegularParameters_$dataset_name.xlsx"
+    timeserie_file_url = "https://github.com/GENeSYS-MOD/GENeSYS_MOD.data/releases/download/$version_tag/Timeseries_$dataset_name.xlsx"
+
+    try
+        Downloads.download(regpar_file_url, joinpath(dest_dir, "RegularParameters_$dataset_name.xlsx"))
+    catch e
+        error("Failed to download Regular Parameters file from $regpar_file_url. Error: $e")
+    end
+    try
+        Downloads.download(timeserie_file_url, joinpath(dest_dir, "Timeseries_$dataset_name.xlsx"))
+    catch e
+        error("Failed to download Timeseries file from $timeserie_file_url. Error: $e")
+    end
+
+end
