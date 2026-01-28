@@ -28,6 +28,7 @@ jobs:
           - version: 'nightly'
             os: ubuntu-latest
             arch: x64
+            allow-failure: true
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -44,8 +45,29 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
+      - name: Clone external directory
+        run: |
+          git clone https://github.com/GENeSYS-MOD/GENeSYS_MOD.data.git external
+      
+      - name: Instantiate project and CondaPkg env
+        run: |
+          julia --project -e 'using Pkg; Pkg.instantiate(); using CondaPkg; CondaPkg.resolve(); CondaPkg.status()'
+
+      # Export CondaPkg's Python path so PyCall will link to it on build
+      - name: Point PyCall to CondaPkg Python
+        shell: bash
+        run: |
+          PY=$(julia --project -e 'using CondaPkg; print(CondaPkg.which("python"))')
+          echo "Using CondaPkg python at: $PY"
+          echo "PYTHON=$PY" >> "$GITHUB_ENV"
+      
+      - name: Build PyCall
+        run: julia --project -e 'import Pkg; Pkg.build("PyCall")'
+
       - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-runtest@v1        
+        env:
+          GENESYSMOD_DATADIR: ${{ github.workspace }}/external
         with:
           depwarn: error
       - uses: julia-actions/julia-processcoverage@v1
